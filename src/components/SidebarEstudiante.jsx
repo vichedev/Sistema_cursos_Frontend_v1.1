@@ -51,7 +51,7 @@ export default function SidebarEstudiante({ selected, onSelect, onLogout }) {
           <div className="mb-4 p-2 bg-white rounded-full shadow-md border-2 border-blue-200">
             <img src="/logoadmin1.png" alt="Logo Educativo" className="h-16 w-16" />
           </div>
-          <h1 className="text-2xl font-extrabold text-blue-600 tracking-tight">Estudiante RNC</h1>
+          <h1 className="text-2xl font-extrabold text-blue-600 tracking-tight">Estudiante MAAT</h1>
           <p className="text-sm text-gray-500 mt-1 text-center select-none">Plataforma de Aprendizaje</p>
         </div>
 

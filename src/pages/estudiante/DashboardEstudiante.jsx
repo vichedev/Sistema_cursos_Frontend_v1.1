@@ -24,12 +24,7 @@ export default function DashboardEstudiante() {
 
       {/* Contenido principal sin margen */}
       <main className="flex-1 h-screen overflow-y-auto p-6">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-7">
-          {selected === "mis" ? "Mis Cursos" : "Cursos Disponibles"}
-        </h1>
-        <div className="max-w-7xl mx-auto">
           {selected === "mis" ? <MisCursos /> : <CursosDisponibles />}
-        </div>
       </main>
     </div>
   );
