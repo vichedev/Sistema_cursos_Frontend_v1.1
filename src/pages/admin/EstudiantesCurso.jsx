@@ -24,53 +24,53 @@ export default function EstudiantesCurso() {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
-        
+
         // Obtener datos del curso
         const cursoResponse = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/courses/${id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCurso(cursoResponse.data);
-        
+
         // Obtener estudiantes del curso con información de pago
         const estudiantesResponse = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/courses/${id}/estudiantes-con-pagos`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         // Si el endpoint no existe, usar el endpoint original y asumir que todos son gratis
         if (estudiantesResponse.status === 404) {
           const estudiantesBasic = await axios.get(
             `${import.meta.env.VITE_BACKEND_URL}/courses/${id}/estudiantes`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          
+
           const estudiantesConPago = estudiantesBasic.data.map(est => ({
             ...est,
             montoPagado: 0,
             metodoPago: 'Gratis',
             fechaInscripcion: null
           }));
-          
+
           setEstudiantes(estudiantesConPago);
-          
+
           // Calcular estadísticas
           const totalRecaudado = 0;
           const estudiantesPagados = 0;
           const estudiantesGratis = estudiantesConPago.length;
-          
+
           setPaymentData({ totalRecaudado, estudiantesPagados, estudiantesGratis });
         } else {
           setEstudiantes(estudiantesResponse.data.estudiantes || []);
-          
+
           // Calcular estadísticas de pago
           const estudiantesPagados = estudiantesResponse.data.estudiantes.filter(est => est.montoPagado > 0).length;
           const estudiantesGratis = estudiantesResponse.data.estudiantes.filter(est => est.montoPagado === 0).length;
           const totalRecaudado = estudiantesResponse.data.estudiantes.reduce((sum, est) => sum + est.montoPagado, 0);
-          
+
           setPaymentData({ totalRecaudado, estudiantesPagados, estudiantesGratis });
         }
-        
+
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Error al cargar los datos");
@@ -106,7 +106,7 @@ export default function EstudiantesCurso() {
             <div className="text-red-500 text-5xl mb-4">⚠️</div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">Error al cargar</h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg transition"
             >
@@ -127,12 +127,12 @@ export default function EstudiantesCurso() {
           <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
             <button
               className="flex items-center gap-2 text-white hover:text-gray-100 font-semibold mb-6 transition text-base md:text-lg"
-              onClick={() => navigate("/admin/dashboard")}
+              onClick={() => navigate("/admin/ver-todo")}
               type="button"
             >
-              <FiArrowLeft className="inline-block" /> Volver al Dashboard
+              <FiArrowLeft className="inline-block" /> Volver al los cursos
             </button>
-            
+
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
@@ -145,7 +145,7 @@ export default function EstudiantesCurso() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4 bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm">
                 <FiUsers className="text-xl" />
                 <span className="text-lg font-bold">
@@ -171,7 +171,7 @@ export default function EstudiantesCurso() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
@@ -185,7 +185,7 @@ export default function EstudiantesCurso() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
@@ -209,10 +209,10 @@ export default function EstudiantesCurso() {
                 <div className="flex-shrink-0 p-4 bg-white rounded-xl shadow-sm">
                   <HiOutlineAcademicCap className="text-4xl text-orange-500" />
                 </div>
-                
+
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-orange-700 mb-3">{curso.titulo}</h2>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-orange-100 rounded-lg">
@@ -225,7 +225,7 @@ export default function EstudiantesCurso() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-orange-100 rounded-lg">
                         <FaCalendarAlt className="text-orange-600" />
@@ -235,7 +235,7 @@ export default function EstudiantesCurso() {
                         <p className="font-medium">{curso.fecha || "Por definir"}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-orange-100 rounded-lg">
                         <FaClock className="text-orange-600" />
@@ -245,7 +245,7 @@ export default function EstudiantesCurso() {
                         <p className="font-medium">{curso.hora || "Por definir"}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-orange-100 rounded-lg">
                         <FaUserFriends className="text-orange-600" />
@@ -255,7 +255,7 @@ export default function EstudiantesCurso() {
                         <p className="font-medium">{curso.cupos}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-orange-100 rounded-lg">
                         <span className="text-orange-600 font-bold">T</span>
@@ -265,7 +265,7 @@ export default function EstudiantesCurso() {
                         <p className="font-medium">{curso.tipo?.replace(/_/g, " ")}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-orange-100 rounded-lg">
                         <FaDollarSign className="text-orange-600" />
@@ -275,7 +275,7 @@ export default function EstudiantesCurso() {
                         <p className="font-medium">${curso.precio || 0}</p>
                       </div>
                     </div>
-                    
+
                     {curso.profesor?.asignatura && (
                       <div className="flex items-center gap-2">
                         <div className="p-2 bg-orange-100 rounded-lg">
@@ -335,7 +335,7 @@ export default function EstudiantesCurso() {
                             <HiOutlineMail className="text-orange-500" />
                             <span className="text-sm truncate">{est.correo}</span>
                           </div>
-                          
+
                           {/* Información de pago */}
                           <div className="mt-2">
                             {est.montoPagado > 0 ? (
@@ -354,7 +354,7 @@ export default function EstudiantesCurso() {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 shadow-sm">
                   <table className="w-full">
@@ -420,7 +420,7 @@ export default function EstudiantesCurso() {
                     </tbody>
                   </table>
                 </div>
-                
+
                 {/* Summary Footer */}
                 <div className="mt-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -430,7 +430,7 @@ export default function EstudiantesCurso() {
                         Total de estudiantes: <strong>{estudiantes.length}</strong>
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-4">
                       <div className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
                         <strong>{paymentData.estudiantesPagados}</strong> pagados
@@ -439,7 +439,7 @@ export default function EstudiantesCurso() {
                         <strong>{paymentData.estudiantesGratis}</strong> gratis
                       </div>
                     </div>
-                    
+
                     <div className="text-sm text-gray-500">
                       Curso ID: <span className="font-mono">{id}</span>
                     </div>
