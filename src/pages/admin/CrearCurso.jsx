@@ -3,7 +3,7 @@ import SidebarAdmin from "../../components/admin/SidebarAdmin";
 import Swal from "sweetalert2";
 import axios from "axios";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
-import InfoPortada from "../../components/admin/InfoPortada";
+import { FaBook, FaChalkboardTeacher, FaCalendarAlt, FaClock, FaLink, FaUsers, FaDollarSign, FaBell, FaPaperPlane } from "react-icons/fa";
 
 export default function CrearCurso() {
   const [form, setForm] = useState({
@@ -190,69 +190,79 @@ export default function CrearCurso() {
     <div className="flex min-h-screen bg-gray-50">
       <SidebarAdmin />
       <main className="flex-1 h-screen overflow-y-auto md:ml-72 p-4 md:p-6">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Crear Nuevo Curso</h1>
-            <p className="text-gray-500 mt-2">Completa la información para crear un nuevo curso en la plataforma</p>
+        <div className="min-h-screen bg-gray-50 p-6">
+          {/* Header con gradiente */}
+          <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
+            <h1 className="text-2xl md:text-3xl font-bold">Crear Nuevo Curso</h1>
+            <p className="text-blue-100 mt-2">Completa la información para crear un nuevo curso en la plataforma</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* Columna Izquierda */}
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {/* Imagen de portada */}
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Imagen de Portada</h2>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                        <FaBook />
+                      </span>
+                      Imagen de Portada
+                    </h2>
                     <div className="flex flex-col items-center">
                       <CursoImageUpload preview={preview} onImageChange={handleImage} />
-                      <p className="text-xs text-gray-400 text-center mt-2">Tamaño recomendado: 400x400px</p>
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-sm font-medium text-gray-500 mb-1">Subir portada</h3>
-                      <p className="text-xs text-gray-400">Así lo verán las estudiantes</p>
+                      <p className="text-xs text-gray-500 text-center mt-3">Tamaño recomendado: 400x400px</p>
                     </div>
                   </div>
 
                   {/* Título */}
                   <div>
-                    <label className="block mb-2 font-medium text-gray-700">Título del curso</label>
+                    <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                      <span className="text-blue-600"><FaBook /></span>
+                      Título del curso
+                    </label>
                     <input
                       name="titulo"
                       value={form.titulo}
                       onChange={handleChange}
                       required
-                      className={`w-full px-4 py-3 bg-white border ${errors.titulo ? 'border-red-500' : 'border-gray-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800`}
+                      className={`w-full px-5 py-4 bg-white border ${errors.titulo ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                       placeholder="Introducción a la Programación"
                     />
-                    {errors.titulo && <p className="mt-1 text-sm text-red-500">{errors.titulo}</p>}
+                    {errors.titulo && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.titulo}</p>}
                   </div>
 
                   {/* Descripción */}
                   <div>
-                    <label className="block mb-2 font-medium text-gray-700">Descripción</label>
+                    <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                      <span className="text-blue-600">📝</span>
+                      Descripción
+                    </label>
                     <textarea
                       name="descripcion"
                       value={form.descripcion}
                       onChange={handleChange}
                       required
-                      className={`w-full px-4 py-3 bg-white border ${errors.descripcion ? 'border-red-500' : 'border-gray-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800`}
+                      className={`w-full px-5 py-4 bg-white border ${errors.descripcion ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm`}
                       rows={4}
                       placeholder="Describe los objetivos y contenido del curso..."
                     />
-                    {errors.descripcion && <p className="mt-1 text-sm text-red-500">{errors.descripcion}</p>}
+                    {errors.descripcion && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.descripcion}</p>}
                   </div>
 
                   {/* Profesor */}
                   <div>
-                    <label className="block mb-2 font-medium text-gray-700">Profesor</label>
+                    <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                      <span className="text-purple-600"><FaChalkboardTeacher /></span>
+                      Profesor
+                    </label>
                     <select
                       name="profesorId"
                       value={form.profesorId}
                       onChange={handleChange}
                       required
-                      className={`w-full px-4 py-3 bg-white border ${errors.profesorId ? 'border-red-500' : 'border-gray-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800`}
+                      className={`w-full px-5 py-4 bg-white border ${errors.profesorId ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                     >
                       <option value="">Seleccione un profesor</option>
                       {Array.isArray(profesores) && profesores.map((p) => (
@@ -261,21 +271,21 @@ export default function CrearCurso() {
                         </option>
                       ))}
                     </select>
-                    {errors.profesorId && <p className="mt-1 text-sm text-red-500">{errors.profesorId}</p>}
+                    {errors.profesorId && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.profesorId}</p>}
                   </div>
                 </div>
 
                 {/* Columna Derecha */}
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {/* Tipo de curso y Fecha */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className="block mb-2 font-medium text-gray-700">Tipo de curso</label>
+                      <label className="block mb-3 font-medium text-gray-700">Tipo de curso</label>
                       <select
                         name="tipo"
                         value={form.tipo}
                         onChange={handleTipoChange}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800"
+                        className="w-full px-5 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm"
                       >
                         <option value="ONLINE_GRATIS">Online Gratis</option>
                         <option value="ONLINE_PAGADO">Online Pagado</option>
@@ -285,25 +295,31 @@ export default function CrearCurso() {
                     </div>
                     
                     <div>
-                      <label className="block mb-2 font-medium text-gray-700">Fecha</label>
+                      <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                        <span className="text-orange-600"><FaCalendarAlt /></span>
+                        Fecha
+                      </label>
                       <input
                         type="date"
                         name="fecha"
                         value={form.fecha || ""}
                         onChange={handleChange}
                         required
-                        className={`w-full px-4 py-3 bg-white border ${errors.fecha ? 'border-red-500' : 'border-gray-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800`}
+                        className={`w-full px-5 py-4 bg-white border ${errors.fecha ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                       />
-                      {errors.fecha && <p className="mt-1 text-sm text-red-500">{errors.fecha}</p>}
+                      {errors.fecha && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.fecha}</p>}
                     </div>
                   </div>
 
                   {/* Hora */}
                   <div>
-                    <label className="block mb-2 font-medium text-gray-700">Hora</label>
+                    <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                      <span className="text-orange-600"><FaClock /></span>
+                      Hora
+                    </label>
                     <div className="relative">
                       <div
-                        className={`w-full px-4 py-3 bg-white border ${errors.hora ? 'border-red-500' : 'border-gray-200'} rounded-lg text-gray-800 cursor-pointer flex items-center justify-between`}
+                        className={`w-full px-5 py-4 bg-white border ${errors.hora ? 'border-red-500' : 'border-gray-200'} rounded-xl text-gray-800 cursor-pointer flex items-center justify-between shadow-sm`}
                         onClick={() => setShowHourDropdown(!showHourDropdown)}
                       >
                         <span>{form.hora || "Seleccionar hora"}</span>
@@ -311,13 +327,13 @@ export default function CrearCurso() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                       </div>
-                      {errors.hora && <p className="mt-1 text-sm text-red-500">{errors.hora}</p>}
+                      {errors.hora && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.hora}</p>}
 
                       {showHourDropdown && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-                          <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl p-5">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                              <label className="block text-sm text-gray-600 mb-1">Horas</label>
+                              <label className="block text-sm text-gray-600 mb-2">Horas</label>
                               <select
                                 value={form.hora ? form.hora.split(':')[0] : '00'}
                                 onChange={(e) => {
@@ -325,7 +341,7 @@ export default function CrearCurso() {
                                   const minutes = form.hora ? form.hora.split(':')[1] : '00';
                                   handleChange({ target: { name: 'hora', value: `${hours}:${minutes}` } });
                                 }}
-                                className="w-full p-2 border border-gray-200 rounded-md text-center"
+                                className="w-full p-3 border border-gray-200 rounded-lg text-center shadow-sm"
                               >
                                 {Array.from({ length: 24 }, (_, i) => (
                                   <option key={i} value={i.toString().padStart(2, '0')}>
@@ -336,7 +352,7 @@ export default function CrearCurso() {
                             </div>
 
                             <div>
-                              <label className="block text-sm text-gray-600 mb-1">Minutos</label>
+                              <label className="block text-sm text-gray-600 mb-2">Minutos</label>
                               <select
                                 value={form.hora ? form.hora.split(':')[1] : '00'}
                                 onChange={(e) => {
@@ -344,7 +360,7 @@ export default function CrearCurso() {
                                   const minutes = e.target.value;
                                   handleChange({ target: { name: 'hora', value: `${hours}:${minutes}` } });
                                 }}
-                                className="w-full p-2 border border-gray-200 rounded-md text-center"
+                                className="w-full p-3 border border-gray-200 rounded-lg text-center shadow-sm"
                               >
                                 <option value="00">00</option>
                                 <option value="15">15</option>
@@ -358,14 +374,14 @@ export default function CrearCurso() {
                             <button
                               type="button"
                               onClick={() => handleChange({ target: { name: 'hora', value: '' } })}
-                              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition"
                             >
                               Limpiar
                             </button>
                             <button
                               type="button"
                               onClick={() => setShowHourDropdown(false)}
-                              className="px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition"
+                              className="px-5 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition shadow-md"
                             >
                               Aplicar
                             </button>
@@ -377,7 +393,8 @@ export default function CrearCurso() {
 
                   {/* Link/Ubicación */}
                   <div>
-                    <label className="block mb-2 font-medium text-gray-700">
+                    <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                      <span className="text-green-600"><FaLink /></span>
                       {form.tipo.startsWith("ONLINE") ? "Link de la videollamada" : "Ubicación (Google Maps)"}
                     </label>
                     <input
@@ -385,16 +402,19 @@ export default function CrearCurso() {
                       value={form.link}
                       onChange={handleChange}
                       required
-                      className={`w-full px-4 py-3 bg-white border ${errors.link ? 'border-red-500' : 'border-gray-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800`}
+                      className={`w-full px-5 py-4 bg-white border ${errors.link ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                       placeholder={form.tipo.startsWith("ONLINE") ? "https://meet.google.com/..." : "https://goo.gl/maps/..."}
                     />
-                    {errors.link && <p className="mt-1 text-sm text-red-500">{errors.link}</p>}
+                    {errors.link && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.link}</p>}
                   </div>
 
                   {/* Cupos y Precio */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className="block mb-2 font-medium text-gray-700">Cupos disponibles</label>
+                      <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                        <span className="text-indigo-600"><FaUsers /></span>
+                        Cupos disponibles
+                      </label>
                       <input
                         name="cupos"
                         type="number"
@@ -402,38 +422,46 @@ export default function CrearCurso() {
                         onChange={handleChange}
                         min={1}
                         required
-                        className={`w-full px-4 py-3 bg-white border ${errors.cupos ? 'border-red-500' : 'border-gray-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800`}
+                        className={`w-full px-5 py-4 bg-white border ${errors.cupos ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                       />
-                      {errors.cupos && <p className="mt-1 text-sm text-red-500">{errors.cupos}</p>}
+                      {errors.cupos && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.cupos}</p>}
                     </div>
                     
                     {form.tipo.endsWith("PAGADO") && (
                       <div>
-                        <label className="block mb-2 font-medium text-gray-700">Precio (USD)</label>
+                        <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
+                          <span className="text-amber-600"><FaDollarSign /></span>
+                          Precio (USD)
+                        </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-3 text-gray-500">$</span>
+                          <span className="absolute left-4 top-4 text-gray-500">$</span>
                           <input
                             name="precio"
                             type="number"
                             value={form.precio === 0 ? '' : form.precio}
                             onChange={handleChange}
                             placeholder="0.00"
-                            className={`w-full pl-8 pr-4 py-3 bg-white border ${errors.precio ? 'border-red-500' : 'border-gray-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800`}
+                            className={`w-full pl-10 pr-5 py-4 bg-white border ${errors.precio ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                             inputMode="decimal"
                             step="0.01"
                             min="0"
                           />
                         </div>
-                        {errors.precio && <p className="mt-1 text-sm text-red-500">{errors.precio}</p>}
+                        {errors.precio && <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.precio}</p>}
                       </div>
                     )}
                   </div>
 
                   {/* Opciones de Notificación */}
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Opciones de Notificación</h2>
-                    <div className="flex flex-col gap-4">
-                      <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="p-2 bg-purple-100 rounded-lg text-purple-600">
+                        <FaBell />
+                      </span>
+                      Opciones de Notificación
+                    </h2>
+                    <div className="flex flex-col gap-5">
+                      <label className="flex items-center gap-4 cursor-pointer p-3 bg-white rounded-xl border border-gray-200 hover:border-purple-300 transition">
                         <div className="relative">
                           <input
                             type="checkbox"
@@ -441,13 +469,16 @@ export default function CrearCurso() {
                             onChange={(e) => setForm({ ...form, notificarCorreo: e.target.checked })}
                             className="sr-only"
                           />
-                          <div className={`w-10 h-5 rounded-full ${form.notificarCorreo ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition transform ${form.notificarCorreo ? 'translate-x-5' : ''}`}></div>
+                          <div className={`w-12 h-6 rounded-full ${form.notificarCorreo ? 'bg-blue-500' : 'bg-gray-300'} transition`}></div>
+                          <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${form.notificarCorreo ? 'translate-x-6' : ''} shadow-md`}></div>
                         </div>
-                        <span className="text-gray-700">Notificar por correo electrónico</span>
+                        <div>
+                          <span className="text-gray-700 font-medium">Notificar por correo electrónico</span>
+                          <p className="text-sm text-gray-500">Los estudiantes recibirán un email</p>
+                        </div>
                       </label>
                       
-                      <label className="flex items-center gap-3 cursor-pointer">
+                      <label className="flex items-center gap-4 cursor-pointer p-3 bg-white rounded-xl border border-gray-200 hover:border-green-300 transition">
                         <div className="relative">
                           <input
                             type="checkbox"
@@ -455,10 +486,13 @@ export default function CrearCurso() {
                             onChange={(e) => setForm({ ...form, notificarWhatsapp: e.target.checked })}
                             className="sr-only"
                           />
-                          <div className={`w-10 h-5 rounded-full ${form.notificarWhatsapp ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition transform ${form.notificarWhatsapp ? 'translate-x-5' : ''}`}></div>
+                          <div className={`w-12 h-6 rounded-full ${form.notificarWhatsapp ? 'bg-green-500' : 'bg-gray-300'} transition`}></div>
+                          <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${form.notificarWhatsapp ? 'translate-x-6' : ''} shadow-md`}></div>
                         </div>
-                        <span className="text-gray-700">Notificar por WhatsApp</span>
+                        <div>
+                          <span className="text-gray-700 font-medium">Notificar por WhatsApp</span>
+                          <p className="text-sm text-gray-500">Los estudiantes recibirán un mensaje</p>
+                        </div>
                       </label>
                     </div>
                   </div>
@@ -468,17 +502,22 @@ export default function CrearCurso() {
                     <button 
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
+                      className="w-full py-5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-3"
                     >
                       {isSubmitting ? (
-                        <div className="flex items-center justify-center">
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
                           Creando curso...
-                        </div>
-                      ) : "Crear curso"}
+                        </>
+                      ) : (
+                        <>
+                          <FaPaperPlane />
+                          Crear curso
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

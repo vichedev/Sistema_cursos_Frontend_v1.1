@@ -62,7 +62,7 @@ export default function SidebarAdmin({ className = "" }) {
           <div className="mb-4 p-2 bg-white rounded-full shadow-md border-2 border-blue-200">
             <img src="/logoadmin1.png" alt="Logo Educativo" className="h-16 w-16" />
           </div>
-          <h1 className="text-2xl font-extrabold text-blue-600 tracking-tight">RNC ACADEMY</h1>
+          <h1 className="text-2xl font-extrabold text-blue-600 tracking-tight">MAAT ACADEMY</h1>
           <p className="text-sm text-gray-500 mt-1 text-center select-none">Sistema de Gestión Educativa</p>
         </div>
 

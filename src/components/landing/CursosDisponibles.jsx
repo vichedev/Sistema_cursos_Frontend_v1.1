@@ -29,7 +29,7 @@ const CursosDisponibles = () => {
       <div className="max-w-7xl mx-auto text-center mb-16">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
           <span className="bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-            Cursos Disponibles en RNC Academy
+            Cursos Disponibles en MAAT ACADEMY
           </span>
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">

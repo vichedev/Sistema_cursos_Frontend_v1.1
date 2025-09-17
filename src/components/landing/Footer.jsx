@@ -6,7 +6,7 @@ const Footer = () => {
         <div className="flex flex-col items-center md:items-start text-center md:text-left">
           <img
             src="/img/rnc_academy_logo.png"
-            alt="RNC Academy"
+            alt="MAAT ACADEMY"
             className="h-10 mb-3"
           />
           <p className="max-w-xs text-sm leading-relaxed">
@@ -42,7 +42,7 @@ const Footer = () => {
       </div>
 
       <div className="mt-10 border-t border-gray-700 pt-6 text-center text-gray-500 text-sm select-none">
-        © {new Date().getFullYear()} RNC Academy. Todos los derechos reservados.
+        © {new Date().getFullYear()} MAAT ACADEMY. Todos los derechos reservados.
       </div>
     </footer>
   );

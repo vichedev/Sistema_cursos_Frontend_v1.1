@@ -12,11 +12,11 @@ const Nosotros = () => {
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
             <span className="block">Más que educación,</span>
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
-              somos RNC Academy, tu puente al conocimiento
+              somos MAAT ACADEMY, tu puente al conocimiento
             </span>
           </h2>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            En RNC Academy, transformamos vidas con cursos prácticos y actualizados que potencian tus habilidades y abren nuevas oportunidades profesionales en tecnología y negocios digitales.
+            En MAAT ACADEMY, transformamos vidas con cursos prácticos y actualizados que potencian tus habilidades y abren nuevas oportunidades profesionales en tecnología y negocios digitales.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ const Nosotros = () => {
           <div className="relative rounded-3xl overflow-hidden">
             <img
               src="/logo_render.png"
-              alt="Equipo RNC Academy"
+              alt="Equipo MAAT ACADEMY"
               className="w-full h-auto object-cover"
             />
           </div>
@@ -76,7 +76,7 @@ const Nosotros = () => {
           <div>
             <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Nuestra historia</h3>
             <p className="text-gray-600 mb-4">
-              RNC Academy nació con la visión de democratizar la educación tecnológica en Ecuador, brindando acceso a cursos de alta calidad que preparan a nuestros estudiantes para los retos del mundo digital actual. Nuestro compromiso es formar profesionales competentes, con habilidades prácticas y certificadas.
+              MAAT ACADEMY nació con la visión de democratizar la educación tecnológica en Ecuador, brindando acceso a cursos de alta calidad que preparan a nuestros estudiantes para los retos del mundo digital actual. Nuestro compromiso es formar profesionales competentes, con habilidades prácticas y certificadas.
             </p>
             <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
               <div className="flex">
@@ -115,7 +115,7 @@ const Nosotros = () => {
         {/* CTA */}
         <div className="mt-20 text-center">
           <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
-            ¿Listo para potenciar tu carrera con RNC Academy?
+            ¿Listo para potenciar tu carrera con MAAT ACADEMY?
           </h3>
           <a
             href="https://wa.link/by3a5o"

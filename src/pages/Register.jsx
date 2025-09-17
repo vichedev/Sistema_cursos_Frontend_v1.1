@@ -62,7 +62,7 @@ export default function Register() {
             alt="Libro abierto"
             className="mb-8 max-h-72 mx-auto object-contain"
           />
-          <h2 className="text-4xl font-extrabold text-white mb-4 drop-shadow-lg">Únete a RNC Academy</h2>
+          <h2 className="text-4xl font-extrabold text-white mb-4 drop-shadow-lg">Únete a MAAT ACADEMY</h2>
           <p className="text-blue-900 text-lg leading-relaxed drop-shadow-md">
             Completa el formulario para crear tu cuenta y acceder a cursos y recursos exclusivos.
           </p>

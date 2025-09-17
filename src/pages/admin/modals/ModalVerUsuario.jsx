@@ -6,7 +6,7 @@ export default function ModalVerUsuario({ user, onClose, loading, error }) {
     return (
       <Modal onClose={onClose}>
         <div className="flex flex-col items-center justify-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600">Cargando usuario...</p>
         </div>
       </Modal>
@@ -59,8 +59,8 @@ export default function ModalVerUsuario({ user, onClose, loading, error }) {
   return (
     <Modal onClose={onClose}>
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
-          <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4 shadow-md">
+          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
@@ -70,8 +70,8 @@ export default function ModalVerUsuario({ user, onClose, loading, error }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto px-1 py-2">
         {fields.map(({ label, value }) => (
-          <div key={label} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <label className="block text-xs font-semibold text-orange-600 uppercase tracking-wide mb-1">{label}</label>
+          <div key={label} className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
+            <label className="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">{label}</label>
             <div className="text-gray-800 font-medium truncate" title={value}>
               {value}
             </div>
@@ -81,7 +81,7 @@ export default function ModalVerUsuario({ user, onClose, loading, error }) {
 
       <button
         onClick={onClose}
-        className="mt-6 w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-md transition-all duration-300"
+        className="mt-6 w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-md transition-all duration-300"
       >
         Cerrar
       </button>

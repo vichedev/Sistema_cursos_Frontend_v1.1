@@ -51,7 +51,7 @@ const Contactos = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 to-blue-800 py-12 px-4 sm:px-6 lg:px-8 text-white">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-extrabold mb-8 text-center">Contáctanos - RNC Academy</h2>
+        <h2 className="text-4xl font-extrabold mb-8 text-center">Contáctanos - MAAT ACADEMY</h2>
         <p className="text-center max-w-2xl mx-auto mb-12 text-blue-200">
           ¿Tienes alguna duda o necesitas ayuda? Nuestro equipo de soporte está listo para asistirte.
           Completa el formulario o usa los medios directos para contactarnos.

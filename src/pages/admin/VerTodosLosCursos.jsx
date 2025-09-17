@@ -3,12 +3,16 @@ import CursoCardAdmin from "../../components/admin/CursoCardAdmin";
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { FaPlus, FaFilter, FaMoneyBillWave, FaGraduationCap, FaSearch } from "react-icons/fa";
 
 export default function Vertodosloscursos() {
   useAuth(['ADMIN']);
 
   const [cursos, setCursos] = useState([]);
+  const [filteredCursos, setFilteredCursos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('PAGADO'); // 'PAGADO', 'GRATIS', 'TODOS'
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -23,8 +27,6 @@ export default function Vertodosloscursos() {
         },
       })
       .then((res) => {
-       
-
         // Verificar si la respuesta es HTML (error de ngrok)
         if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE html>')) {
           console.error("Se recibió HTML en lugar de JSON - problema con ngrok o servidor");
@@ -46,24 +48,75 @@ export default function Vertodosloscursos() {
           cursosData = [];
         }
 
-        setCursos(cursosData);
+        // Ordenar cursos: primero los más recientes (por ID descendente)
+        const cursosOrdenados = cursosData.sort((a, b) => b.id - a.id);
+        setCursos(cursosOrdenados);
+        setFilteredCursos(cursosOrdenados);
       })
       .catch((err) => {
         console.error("Error al cargar todos los cursos:", err);
         setCursos([]);
+        setFilteredCursos([]);
       })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
+  // Filtrar cursos basado en la pestaña activa y término de búsqueda
+  useEffect(() => {
+    let filtered = cursos;
+
+    // Filtrar por tipo (PAGADO/GRATIS)
+    if (activeTab !== 'TODOS') {
+      filtered = filtered.filter(curso => 
+        activeTab === 'PAGADO' ? curso.tipo.endsWith('PAGADO') : curso.tipo.endsWith('GRATIS')
+      );
+    }
+
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(curso =>
+        curso.titulo.toLowerCase().includes(term) ||
+        (curso.descripcion && curso.descripcion.toLowerCase().includes(term)) ||
+        (curso.profesor && (
+          curso.profesor.nombres.toLowerCase().includes(term) ||
+          curso.profesor.apellidos.toLowerCase().includes(term)
+        ))
+      );
+    }
+
+    setFilteredCursos(filtered);
+  }, [cursos, activeTab, searchTerm]);
+
+  const handleCursoCreated = (nuevoCurso) => {
+    // Agregar el nuevo curso al principio de la lista
+    setCursos(prevCursos => [nuevoCurso, ...prevCursos]);
+  };
+
+  const handleCursoDeleted = (cursoId) => {
+    setCursos(prevCursos => prevCursos.filter(curso => curso.id !== cursoId));
+  };
+
+  const handleCursoUpdated = (cursoActualizado) => {
+    setCursos(prevCursos => 
+      prevCursos.map(curso => 
+        curso.id === cursoActualizado.id ? cursoActualizado : curso
+      )
+    );
+  };
+
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gradient-to-tr from-gray-100 to-gray-300">
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <SidebarAdmin className="fixed top-0 left-0 h-screen w-72 overflow-y-auto" />
         <main className="flex-1 h-screen overflow-y-auto p-4 md:p-8 md:ml-72">
           <div className="flex items-center justify-center h-full">
-            <div className="text-xl font-semibold text-gray-700">Cargando cursos...</div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
+              <div className="text-xl font-semibold text-gray-700">Cargando cursos...</div>
+            </div>
           </div>
         </main>
       </div>
@@ -71,43 +124,172 @@ export default function Vertodosloscursos() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-tr from-gray-100 to-gray-300">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Sidebar fijo con scroll */}
       <SidebarAdmin className="fixed top-0 left-0 h-screen w-72 overflow-y-auto" />
 
       {/* Contenido principal con margen para sidebar */}
       <main className="flex-1 h-screen overflow-y-auto p-4 md:p-8 md:ml-72">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-2">TODOS LOS CURSOS</h1>
-            <p className="text-lg text-gray-500">Gestiona tus cursos y estudiantes aquí.</p>
+        {/* Header con gradiente */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">TODOS LOS CURSOS</h1>
+              <p className="text-blue-100">Gestiona tus cursos y estudiantes aquí</p>
+            </div>
+            <a
+              href="/admin/crear-curso"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-blue-600 font-bold shadow-md hover:bg-gray-100 transition"
+            >
+              <FaPlus />
+              Crear nuevo curso
+            </a>
           </div>
-          <a
-            href="/admin/crear-curso"
-            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-400 to-yellow-400 text-white font-bold shadow hover:from-yellow-500 hover:to-orange-400 transition"
-          >
-            Crear nuevo curso
-          </a>
         </div>
-        
+
+        {/* Filtros y búsqueda */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+            {/* Barra de búsqueda */}
+            <div className="flex-1 relative">
+              <div className="relative">
+                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar cursos por título, descripción o profesor..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+            </div>
+
+            {/* Contador de cursos */}
+            <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+              <span className="text-blue-700 font-medium">
+                {filteredCursos.length} curso{filteredCursos.length !== 1 ? 's' : ''} encontrado{filteredCursos.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Tabs de filtrado */}
+          <div className="mt-6 flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveTab('PAGADO')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
+                activeTab === 'PAGADO'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaMoneyBillWave />
+              Cursos Pagados
+              <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                {cursos.filter(c => c.tipo.endsWith('PAGADO')).length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('GRATIS')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
+                activeTab === 'GRATIS'
+                  ? 'bg-green-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaGraduationCap />
+              Cursos Gratuitos
+              <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                {cursos.filter(c => c.tipo.endsWith('GRATIS')).length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('TODOS')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
+                activeTab === 'TODOS'
+                  ? 'bg-gray-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaFilter />
+              Todos los Cursos
+              <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                {cursos.length}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Grid de cursos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {!Array.isArray(cursos) || cursos.length === 0 ? (
-            <div className="col-span-full text-center text-gray-400 mt-32">
-              <p className="text-2xl font-semibold">
-                {!Array.isArray(cursos) ? "Error al cargar cursos" : "Aún no hay cursos creados."}
+          {filteredCursos.length === 0 ? (
+            <div className="col-span-full text-center py-16 bg-white rounded-2xl shadow-lg">
+              <div className="text-6xl mb-4">📚</div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                {searchTerm ? 'No se encontraron cursos' : 'No hay cursos disponibles'}
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm
+                  ? 'Intenta con otros términos de búsqueda'
+                  : activeTab === 'PAGADO'
+                  ? 'No hay cursos pagados creados aún'
+                  : activeTab === 'GRATIS'
+                  ? 'No hay cursos gratuitos creados aún'
+                  : 'No hay cursos creados aún'}
               </p>
-              {!Array.isArray(cursos) && (
-                <p className="text-sm mt-2 text-red-500">
-                  Verifica la consola para más detalles del error
-                </p>
+              {!searchTerm && (
+                <a
+                  href="/admin/crear-curso"
+                  className="inline-flex items-center gap-2 mt-4 px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition"
+                >
+                  <FaPlus />
+                  Crear primer curso
+                </a>
               )}
             </div>
           ) : (
-            cursos.map((curso) => (
-              <CursoCardAdmin key={curso.id} curso={curso} setCursos={setCursos} />
+            filteredCursos.map((curso) => (
+              <CursoCardAdmin 
+                key={curso.id} 
+                curso={curso} 
+                onCursoDeleted={handleCursoDeleted}
+                onCursoUpdated={handleCursoUpdated}
+              />
             ))
           )}
         </div>
+
+        {/* Estadísticas rápidas */}
+        {cursos.length > 0 && (
+          <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Resumen de Cursos</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="text-2xl font-bold text-blue-600">{cursos.length}</div>
+                <div className="text-sm text-gray-600">Total</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="text-2xl font-bold text-green-600">
+                  {cursos.filter(c => c.tipo.endsWith('PAGADO')).length}
+                </div>
+                <div className="text-sm text-gray-600">Pagados</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="text-2xl font-bold text-blue-600">
+                  {cursos.filter(c => c.tipo.endsWith('GRATIS')).length}
+                </div>
+                <div className="text-sm text-gray-600">Gratuitos</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="text-2xl font-bold text-purple-600">
+                  {cursos.filter(c => c.tipo.startsWith('ONLINE')).length}
+                </div>
+                <div className="text-sm text-gray-600">Online</div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
