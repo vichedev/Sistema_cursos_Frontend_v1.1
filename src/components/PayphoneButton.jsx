@@ -25,7 +25,7 @@ const PayphoneButton = ({ curso, userId, onSuccess, onError }) => {
       }
 
       const response = await axios.post(
-        'http://localhost:3001/payments/create-payphone-payment',
+        `${import.meta.env.VITE_BACKEND_URL}/payments/create-payphone-payment`,
         { cursoId: curso.id, userId },
         {
           headers: {

@@ -21,20 +21,39 @@ export default function CrearCurso() {
   const [imagenFile, setImagenFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [profesores, setProfesores] = useState([]);
-
   const [showHourDropdown, setShowHourDropdown] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:3001/users/profesores", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => setProfesores(res.data))
-      .catch(() => setProfesores([]));
+      .get(`${import.meta.env.VITE_BACKEND_URL}/users/profesores`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      })
+      .then((res) => {
+        
+        // ✅ Manejar diferentes estructuras de respuesta
+        if (res.data && Array.isArray(res.data.data)) {
+          setProfesores(res.data.data);
+        } else if (Array.isArray(res.data)) {
+          setProfesores(res.data);
+        } else if (res.data && typeof res.data === 'object') {
+          // Si es un objeto, intentar extraer array de alguna propiedad
+          const possibleArrays = Object.values(res.data).filter(item => Array.isArray(item));
+          setProfesores(possibleArrays.length > 0 ? possibleArrays[0] : []);
+        } else {
+          setProfesores([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error al obtener profesores:", err);
+        setProfesores([]);
+      });
   }, []);
 
-  // Profesor seleccionado completo
-  const profesorSeleccionado = profesores.find(p => p.id === Number(form.profesorId));
-
+  // ✅ Asegurar que profesores sea siempre un array antes de usar find
+  const profesorSeleccionado = Array.isArray(profesores) 
+    ? profesores.find(p => p.id === Number(form.profesorId)) 
+    : null;
 
   const handleImage = (e) => {
     const file = e.target.files[0];
@@ -75,7 +94,7 @@ export default function CrearCurso() {
       });
       if (imagenFile) data.append("imagen", imagenFile);
 
-      await axios.post("http://localhost:3001/courses/create", data, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/courses/create`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -161,7 +180,7 @@ export default function CrearCurso() {
                       className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-200 text-gray-800 transition text-sm sm:text-base"
                     >
                       <option value="">Seleccione un profesor</option>
-                      {profesores.map((p) => (
+                      {Array.isArray(profesores) && profesores.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.nombres} {p.apellidos}
                         </option>

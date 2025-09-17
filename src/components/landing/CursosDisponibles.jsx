@@ -9,7 +9,7 @@ const CursosDisponibles = () => {
   useEffect(() => {
     const fetchCursos = async () => {
       try {
-        const res = await fetch('http://localhost:3001/courses/all');
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/courses/all`);
         const data = await res.json();
         setCursos(data);
       } catch (error) {
@@ -44,7 +44,7 @@ const CursosDisponibles = () => {
             className="bg-white rounded-3xl shadow-lg border border-gray-200 flex flex-col overflow-hidden"
           >
             <img
-              src={curso.imagen ? `http://localhost:3001/uploads/${curso.imagen}` : "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop"}
+              src={curso.imagen ? `${import.meta.env.VITE_BACKEND_URL}/uploads/${curso.imagen}` : "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop"}
               alt={curso.titulo}
               className="w-full h-48 object-cover rounded-t-3xl"
             />

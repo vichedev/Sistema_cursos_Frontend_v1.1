@@ -8,7 +8,7 @@ export default function VerifyEmail() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_URL = import.meta.env.VITE_API_URL || `${import.meta.env.VITE_BACKEND_URL}`;
 
   const params = new URLSearchParams(location.search);
   const token = params.get('token');
@@ -99,9 +99,8 @@ export default function VerifyEmail() {
         {(status === 'success' || status === 'error') && (
           <>
             <div
-              className={`flex justify-center mb-6 w-20 h-20 rounded-full items-center mx-auto ${
-                status === 'success' ? 'bg-green-100' : 'bg-red-100'
-              } shadow-lg`}
+              className={`flex justify-center mb-6 w-20 h-20 rounded-full items-center mx-auto ${status === 'success' ? 'bg-green-100' : 'bg-red-100'
+                } shadow-lg`}
               aria-live="polite"
             >
               {status === 'success' ? (
@@ -139,20 +138,18 @@ export default function VerifyEmail() {
               )}
             </div>
             <h2
-              className={`text-3xl font-extrabold mb-4 ${
-                status === 'success' ? 'text-green-700' : 'text-red-700'
-              }`}
+              className={`text-3xl font-extrabold mb-4 ${status === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}
             >
               {status === 'success' ? '¡Correo verificado!' : 'Error de verificación'}
             </h2>
             <p className="text-gray-700 mb-8 px-4">{message}</p>
             <button
               onClick={handleLoginRedirect}
-              className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition duration-300 ${
-                status === 'success'
-                  ? 'bg-gradient-to-r from-green-500 to-green-700 text-white hover:from-green-600 hover:to-green-800'
-                  : 'bg-gradient-to-r from-red-500 to-red-700 text-white hover:from-red-600 hover:to-red-800'
-              }`}
+              className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition duration-300 ${status === 'success'
+                ? 'bg-gradient-to-r from-green-500 to-green-700 text-white hover:from-green-600 hover:to-green-800'
+                : 'bg-gradient-to-r from-red-500 to-red-700 text-white hover:from-red-600 hover:to-red-800'
+                }`}
               aria-label="Ir a inicio de sesión"
             >
               {status === 'success' ? 'Iniciar sesión' : 'Volver al inicio de sesión'}

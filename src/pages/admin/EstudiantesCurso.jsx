@@ -11,25 +11,69 @@ export default function EstudiantesCurso() {
   const { id } = useParams();
   const [estudiantes, setEstudiantes] = useState([]);
   const [curso, setCurso] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    axios
-      .get(`http://localhost:3001/courses/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setCurso(res.data))
-      .catch(() => setCurso(null));
-    axios
-      .get(`http://localhost:3001/courses/${id}/estudiantes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setEstudiantes(res.data))
-      .catch(() => setEstudiantes([]));
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        
+        // Obtener datos del curso
+        const cursoResponse = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/courses/${id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setCurso(cursoResponse.data);
+        
+        // Obtener estudiantes del curso
+        const estudiantesResponse = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/courses/${id}/estudiantes`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        // CORRECCIÓN: Asegurar que estudiantes siempre sea un array
+        setEstudiantes(Array.isArray(estudiantesResponse.data) ? estudiantesResponse.data : []);
+        
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Error al cargar los datos");
+        setEstudiantes([]); // Asegurar que estudiantes sea un array vacío en caso de error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [id]);
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-orange-50">
+        <SidebarAdmin />
+        <main className="flex-1 flex justify-center items-center py-3 px-0 sm:px-2">
+          <div className="text-center text-orange-500 font-semibold">
+            Cargando estudiantes...
+          </div>
+        </main>
+      </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-orange-50">
+        <SidebarAdmin />
+        <main className="flex-1 flex justify-center items-center py-3 px-0 sm:px-2">
+          <div className="text-center text-red-500 font-semibold">
+            {error}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-orange-50">
@@ -44,6 +88,7 @@ export default function EstudiantesCurso() {
           >
             <FiArrowLeft className="inline-block" /> Volver al Dashboard
           </button>
+          
           {/* Encabezado */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
             <div className="flex items-center gap-3 md:gap-4">
@@ -51,7 +96,6 @@ export default function EstudiantesCurso() {
                 <FaUsers />
               </span>
               <div>
-
                 <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">Estudiantes Inscritos</h2>
                 <span className="text-xs sm:text-sm text-gray-400 font-semibold block mt-0.5">
                   Curso: {curso?.titulo || "Cargando..."}
@@ -77,7 +121,6 @@ export default function EstudiantesCurso() {
                   <span><b>Hora:</b> {curso.hora || "Por definir"}</span>
                   <span><b>Profesor:</b> {curso.profesor ? `${curso.profesor.nombres} ${curso.profesor.apellidos}` : "Por confirmar"}</span>
                   <span><b>Asignatura:</b> {curso.profesor ? curso.profesor.asignatura : "Por confirmar"}</span>
-
                   <span><b>Cupos:</b> {curso.cupos}</span>
                 </div>
               </div>
@@ -96,7 +139,7 @@ export default function EstudiantesCurso() {
               ) : (
                 estudiantes.map((est, i) => (
                   <div
-                    key={est.id}
+                    key={est.id || i}
                     className="flex items-center gap-3 bg-orange-50/60 rounded-xl shadow-sm p-3"
                   >
                     <div className="flex flex-col items-center">
@@ -106,7 +149,9 @@ export default function EstudiantesCurso() {
                       <span className="text-xs text-orange-500 mt-1 font-bold">{i + 1}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-700 truncate">{est.nombres} {est.apellidos}</div>
+                      <div className="font-semibold text-gray-700 truncate">
+                        {est.nombres} {est.apellidos}
+                      </div>
                       <div className="text-xs text-gray-500 truncate flex items-center gap-1">
                         <HiOutlineMail className="text-orange-500" /> {est.correo}
                       </div>
@@ -115,6 +160,7 @@ export default function EstudiantesCurso() {
                 ))
               )}
             </div>
+            
             {/* DESKTOP: Tabla */}
             <div className="hidden md:block">
               {estudiantes.length === 0 ? (
@@ -135,7 +181,7 @@ export default function EstudiantesCurso() {
                     <tbody>
                       {estudiantes.map((est, i) => (
                         <tr
-                          key={est.id}
+                          key={est.id || i}
                           className="hover:bg-orange-50 transition-all"
                         >
                           <td className="px-2 sm:px-5 py-2 rounded-l-xl text-base font-bold text-orange-500">{i + 1}</td>

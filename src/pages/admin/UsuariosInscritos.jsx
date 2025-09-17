@@ -10,8 +10,9 @@ import ModalCrearUsuarioAdmin from "./modals/ModalCrearUsuarioAdmin";
 // Componente para mostrar cursos con desplegable
 const CursosDesplegable = ({ cursos }) => {
   const [mostrarCursos, setMostrarCursos] = useState(false);
-  
-  if (cursos.length === 0) {
+
+  // CORRECCIÓN: Verificar si cursos es undefined o null antes de acceder a length
+  if (!cursos || cursos.length === 0) {
     return <span className="text-gray-400">Sin cursos</span>;
   }
 
@@ -30,23 +31,23 @@ const CursosDesplegable = ({ cursos }) => {
   return (
     <div className="relative">
       {/* Resumen de cursos (siempre visible) */}
-      <div 
+      <div
         className="flex items-center cursor-pointer group"
         onClick={() => setMostrarCursos(!mostrarCursos)}
       >
         <span className="text-sm text-gray-600 group-hover:text-orange-600 mr-1">
           {cursos.length} curso{cursos.length !== 1 ? 's' : ''}
         </span>
-        <svg 
-          className={`w-4 h-4 transition-transform ${mostrarCursos ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
+        <svg
+          className={`w-4 h-4 transition-transform ${mostrarCursos ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </div>
-      
+
       {/* Lista desplegable de cursos */}
       {mostrarCursos && (
         <div className="absolute z-10 mt-1 p-2 bg-white border border-gray-200 rounded-lg shadow-lg w-64 max-h-60 overflow-y-auto">
@@ -54,7 +55,7 @@ const CursosDesplegable = ({ cursos }) => {
           <div className="flex flex-wrap gap-1">
             {cursos.map((curso, index) => (
               <span
-                key={curso.id}
+                key={curso.id || index}
                 className={`inline-block ${colors[index % colors.length]} text-xs font-semibold px-2 py-0.5 rounded mb-1`}
                 title={curso.titulo}
               >
@@ -89,10 +90,20 @@ export default function UsuariosInscritos() {
     setError(null);
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:3001/users/usuarios-por-rol", {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/users/usuarios-por-rol`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setData(res.data))
+      .then((res) => {
+        // CORRECCIÓN: Asegurar que cada usuario tenga un array de cursos
+        const processedData = {
+          estudiantes: (res.data.estudiantes || []).map(user => ({
+            ...user,
+            cursos: user.cursos || [] // Asegurar que cursos sea un array
+          })),
+          administradores: res.data.administradores || []
+        };
+        setData(processedData);
+      })
       .catch(() => setError("Error al cargar los usuarios"))
       .finally(() => setLoading(false));
   };
@@ -103,14 +114,12 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      // Enviar la contraseña en texto plano - el backend debe encargarse del hashing
-      await axios.post("http://localhost:3001/users", newUser, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/users`, newUser, {
         headers: { Authorization: `Bearer ${token}` },
       });
       closeModal();
       fetchUsuarios();
     } catch (err) {
-      // Capturar el mensaje específico del backend
       const errorMessage = err.response?.data?.message || "Error al crear usuario";
       setModalError(errorMessage);
     } finally {
@@ -126,7 +135,7 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`http://localhost:3001/users/${user.id}`, {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setModalUser(res.data);
@@ -145,7 +154,7 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`http://localhost:3001/users/${user.id}`, {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setModalUser(res.data);
@@ -179,20 +188,18 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      
-      // Si la contraseña está vacía, no la incluimos en la actualización
+
       const userToUpdate = { ...updatedUser };
       if (!userToUpdate.password || userToUpdate.password.trim() === "") {
         delete userToUpdate.password;
       }
-      
-      await axios.put(`http://localhost:3001/users/${updatedUser.id}`, userToUpdate, {
+
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/users/${updatedUser.id}`, userToUpdate, {
         headers: { Authorization: `Bearer ${token}` },
       });
       closeModal();
       fetchUsuarios();
     } catch (err) {
-      // Capturar mensaje específico del backend para mostrar al usuario
       const errorMessage = err.response?.data?.message || "Error al actualizar usuario";
       setModalError(errorMessage);
     } finally {
@@ -207,13 +214,12 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3001/users/${modalUser.id}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/users/${modalUser.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       closeModal();
       fetchUsuarios();
     } catch (err) {
-      // Mostrar el mensaje específico del backend si existe
       const errorMessage = err.response?.data?.message || "Error al eliminar usuario";
       setModalError(errorMessage);
     } finally {
@@ -223,13 +229,10 @@ export default function UsuariosInscritos() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-tr from-gray-100 to-gray-300">
-      {/* Sidebar fijo con scroll */}
       <SidebarAdmin className="fixed top-0 left-0 h-screen w-72 overflow-y-auto" />
 
-      {/* Contenido principal con margen para sidebar */}
       <main className="flex-1 p-6 md:p-10 overflow-hidden md:ml-72">
         <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-3xl p-6 md:p-10 border border-orange-100 w-full flex flex-col h-full">
-          {/* Cabecera fija */}
           <div className="flex-shrink-0">
             <button
               onClick={() => (window.location.href = "/admin/dashboard")}
@@ -246,12 +249,11 @@ export default function UsuariosInscritos() {
               <div className="text-center text-orange-500 font-semibold">Cargando usuarios...</div>
             ) : (
               <>
-                {/* Tabs */}
                 <div className="flex border-b border-orange-200 mb-6">
                   <button
                     className={`flex-1 py-2 text-center font-semibold ${activeTab === "estudiantes"
-                        ? "border-b-4 border-orange-500 text-orange-600"
-                        : "text-gray-500 hover:text-orange-600"
+                      ? "border-b-4 border-orange-500 text-orange-600"
+                      : "text-gray-500 hover:text-orange-600"
                       }`}
                     onClick={() => handleTabChange("estudiantes")}
                     aria-selected={activeTab === "estudiantes"}
@@ -260,8 +262,8 @@ export default function UsuariosInscritos() {
                   </button>
                   <button
                     className={`flex-1 py-2 text-center font-semibold ${activeTab === "administradores"
-                        ? "border-b-4 border-orange-500 text-orange-600"
-                        : "text-gray-500 hover:text-orange-600"
+                      ? "border-b-4 border-orange-500 text-orange-600"
+                      : "text-gray-500 hover:text-orange-600"
                       }`}
                     onClick={() => handleTabChange("administradores")}
                     aria-selected={activeTab === "administradores"}
@@ -273,9 +275,7 @@ export default function UsuariosInscritos() {
             )}
           </div>
 
-          {/* Contenido con scroll */}
           <div className="flex-grow overflow-y-auto">
-            {/* Contenido Tab Estudiantes */}
             {activeTab === "estudiantes" && !loading && !error && (
               <section>
                 {data.estudiantes.length === 0 ? (
@@ -311,7 +311,7 @@ export default function UsuariosInscritos() {
                             <td className="p-3 border border-orange-100">
                               <CursosDesplegable cursos={user.cursos} />
                             </td>
-                            <td className="p-3 border border-orange-100">{user.cursos.length}</td>
+                            <td className="p-3 border border-orange-100">{user.cursos?.length || 0}</td>
                             <td className="p-3 border border-orange-100 text-center">{'•'.repeat(10)}</td>
                             <td className="p-3 border border-orange-100 text-center space-x-2">
                               <button
@@ -345,7 +345,6 @@ export default function UsuariosInscritos() {
               </section>
             )}
 
-            {/* Contenido Tab Administradores */}
             {activeTab === "administradores" && !loading && !error && (
               <section>
                 <button
@@ -394,7 +393,6 @@ export default function UsuariosInscritos() {
                               <td className="p-3 border border-orange-100">{admin.id}</td>
                               <td className="p-3 border border-orange-100">
                                 {admin.nombres} {admin.apellidos}
-                                {/* Badge MASTER para el admin principal */}
                                 {admin.id === 1 && (
                                   <span
                                     className="bg-yellow-200 text-yellow-800 ml-2 inline-block text-xs font-semibold px-2 py-0.5 rounded-full"
@@ -403,7 +401,6 @@ export default function UsuariosInscritos() {
                                     MASTER
                                   </span>
                                 )}
-                                {/* Badge de asignatura para profesores */}
                                 {admin.asignatura && (
                                   <span
                                     className={`${colorClass} ml-2 inline-block text-xs font-semibold px-2 py-0.5 rounded-full`}
@@ -432,7 +429,6 @@ export default function UsuariosInscritos() {
                                 >
                                   Editar
                                 </button>
-                                {/* Solo mostrar botón eliminar si NO es el admin master (ID 1) */}
                                 {admin.id !== 1 ? (
                                   <button
                                     onClick={() => openDeleteModal(admin)}
@@ -442,8 +438,8 @@ export default function UsuariosInscritos() {
                                     Eliminar
                                   </button>
                                 ) : (
-                                  <span 
-                                    className="text-gray-400 cursor-not-allowed text-xs" 
+                                  <span
+                                    className="text-gray-400 cursor-not-allowed text-xs"
                                     title="El administrador principal no puede ser eliminado"
                                   >
                                     Protegido

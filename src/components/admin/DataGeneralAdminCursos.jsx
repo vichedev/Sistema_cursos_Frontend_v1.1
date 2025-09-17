@@ -4,28 +4,60 @@ import axios from "axios";
 export default function DataGeneralAdminCursos() {
   const [stats, setStats] = useState(null);
   const [allCursos, setAllCursos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
     // 1) Estadísticas resumen
     axios
-      .get("http://localhost:3001/stats/general", {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/stats/general`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setStats(res.data))
       .catch(() => setStats(null));
 
     // 2) Todos los cursos (para tablas detalladas)
+    // ✅ CORREGIDO: Eliminé el espacio en "/courses/ all" -> "/courses/all"
     axios
-      .get("http://localhost:3001/courses/all", {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/courses/all`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setAllCursos(res.data))
-      .catch(() => setAllCursos([]));
+      .then((res) => {
+        
+        
+        // ✅ Manejar diferentes estructuras de respuesta
+        if (res.data && Array.isArray(res.data.data)) {
+          setAllCursos(res.data.data);
+        } else if (Array.isArray(res.data)) {
+          setAllCursos(res.data);
+        } else if (res.data && typeof res.data === 'object') {
+          // Si es un objeto, intentar extraer array de alguna propiedad
+          const possibleArrays = Object.values(res.data).filter(item => Array.isArray(item));
+          setAllCursos(possibleArrays.length > 0 ? possibleArrays[0] : []);
+        } else {
+          setAllCursos([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error al obtener cursos:", err);
+        setAllCursos([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  if (!stats) {
+  // ✅ Asegurar que allCursos sea siempre un array antes de usar filter
+  const cursosGratis = Array.isArray(allCursos) 
+    ? allCursos.filter((c) => c.tipo && c.tipo.endsWith("GRATIS")) 
+    : [];
+
+  const cursosPagados = Array.isArray(allCursos) 
+    ? allCursos.filter((c) => c.tipo && c.tipo.endsWith("PAGADO")) 
+    : [];
+
+  if (loading) {
     return (
       <div className="p-6 text-center text-orange-300/80">
         Cargando estadísticas…
@@ -33,15 +65,19 @@ export default function DataGeneralAdminCursos() {
     );
   }
 
-  // Filtrar gratis / pagados
-  const cursosGratis = allCursos.filter((c) => c.tipo.endsWith("GRATIS"));
-  const cursosPagados = allCursos.filter((c) => c.tipo.endsWith("PAGADO"));
+  if (!stats) {
+    return (
+      <div className="p-6 text-center text-red-500">
+        Error al cargar las estadísticas
+      </div>
+    );
+  }
 
   const totalGeneral =
-    stats.totalCursos +
-    stats.totalEstudiantes +
-    stats.totalProfesores +
-    stats.totalInscripciones || 1;
+    (stats.totalCursos || 0) +
+    (stats.totalEstudiantes || 0) +
+    (stats.totalProfesores || 0) +
+    (stats.totalInscripciones || 0) || 1;
 
   const porcentaje = (value) =>
     ((value / totalGeneral) * 100).toFixed(2);
@@ -49,7 +85,7 @@ export default function DataGeneralAdminCursos() {
   const cards = [
     {
       title: "Cursos",
-      value: stats.totalCursos,
+      value: stats.totalCursos || 0,
       description: "Cursos creados",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-200",
@@ -58,7 +94,7 @@ export default function DataGeneralAdminCursos() {
     },
     {
       title: "Estudiantes",
-      value: stats.totalEstudiantes,
+      value: stats.totalEstudiantes || 0,
       description: "Inscripciones registradas",
       bgColor: "bg-yellow-50",
       borderColor: "border-yellow-200",
@@ -67,7 +103,7 @@ export default function DataGeneralAdminCursos() {
     },
     {
       title: "Profesores",
-      value: stats.totalProfesores,
+      value: stats.totalProfesores || 0,
       description: "Docentes registrados",
       bgColor: "bg-amber-50",
       borderColor: "border-amber-200",
@@ -76,7 +112,7 @@ export default function DataGeneralAdminCursos() {
     },
     {
       title: "Inscripciones",
-      value: stats.totalInscripciones,
+      value: stats.totalInscripciones || 0,
       description: "Total de inscripciones",
       bgColor: "bg-rose-50",
       borderColor: "border-rose-200",
@@ -157,7 +193,7 @@ export default function DataGeneralAdminCursos() {
                       className="hover:bg-orange-50 transition"
                     >
                       <td className="px-4 py-2 select-text">{c.id}</td>
-                      <td className="px-4 py-2 font-medium select-text">{c.titulo}</td>
+                      <td className="px-4 py-2 font-medium select-text">{c.titulo || "Sin título"}</td>
                       <td className="px-4 py-2 select-text">
                         {c.fecha
                           ? new Date(c.fecha).toLocaleDateString()
@@ -198,13 +234,13 @@ export default function DataGeneralAdminCursos() {
                       className="hover:bg-yellow-50 transition"
                     >
                       <td className="px-4 py-2 select-text">{c.id}</td>
-                      <td className="px-4 py-2 font-medium select-text">{c.titulo}</td>
+                      <td className="px-4 py-2 font-medium select-text">{c.titulo || "Sin título"}</td>
                       <td className="px-4 py-2 select-text">
                         {c.fecha
                           ? new Date(c.fecha).toLocaleDateString()
                           : "—"}
                       </td>
-                      <td className="px-4 py-2 select-text">${c.precio.toFixed(2)}</td>
+                      <td className="px-4 py-2 select-text">${(c.precio || 0).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>

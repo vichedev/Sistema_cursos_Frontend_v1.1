@@ -16,8 +16,8 @@ const PaymentSuccess = () => {
       try {
         // Obtener clientTransactionId de la URL o localStorage
         const urlParams = new URLSearchParams(location.search);
-        const clientTransactionId = urlParams.get('clientTransactionId') || 
-                                   localStorage.getItem('currentPaymentId');
+        const clientTransactionId = urlParams.get('clientTransactionId') ||
+          localStorage.getItem('currentPaymentId');
 
         if (!clientTransactionId) {
           setPaymentStatus('error');
@@ -31,7 +31,7 @@ const PaymentSuccess = () => {
         // ✅ VERIFICAR CON TOKEN DE AUTENTICACIÓN
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `http://localhost:3001/payments/check-payment-status?clientTransactionId=${clientTransactionId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/payments/check-payment-status?clientTransactionId=${clientTransactionId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -45,10 +45,10 @@ const PaymentSuccess = () => {
           setPaymentStatus('success');
           setPaymentData(response.data);
           Swal.fire('¡Éxito!', 'Pago verificado correctamente', 'success');
-          
+
           // Limpiar el localStorage
           localStorage.removeItem('currentPaymentId');
-          
+
         } else if (verificationAttempts < 5) {
           // Reintentar después de 2 segundos
           setTimeout(() => {
@@ -57,8 +57,8 @@ const PaymentSuccess = () => {
         } else {
           setPaymentStatus('pending');
           Swal.fire(
-            'Pendiente', 
-            'El pago está siendo procesado. Recibirás una confirmación por email.', 
+            'Pendiente',
+            'El pago está siendo procesado. Recibirás una confirmación por email.',
             'info'
           );
         }
@@ -97,7 +97,7 @@ const PaymentSuccess = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">¡Pago Exitoso!</h2>
           <p className="text-gray-600 mb-4">Tu inscripción ha sido confirmada.</p>
           <p className="text-gray-600 mb-6">Recibirás un email de confirmación en breve.</p>
-          
+
           {paymentData && (
             <div className="bg-gray-50 p-4 rounded-lg text-left">
               <p className="text-sm text-gray-600">
@@ -108,7 +108,7 @@ const PaymentSuccess = () => {
               </p>
             </div>
           )}
-          
+
           <button
             onClick={() => navigate('/estudiante/dashboard')}
             className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"

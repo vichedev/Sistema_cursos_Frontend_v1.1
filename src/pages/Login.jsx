@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
+
+
+
 export default function Login() {
   const [form, setForm] = useState({ usuario: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +22,7 @@ export default function Login() {
     setShowResendButton(false);
     try {
       console.log('📤 Enviando al login:', form);
-      const res = await axios.post('http://localhost:3001/auth/login', form);
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/login`, form);
       console.log('✅ Respuesta del login:', res.data);
 
       localStorage.setItem('token', res.data.token);
@@ -43,14 +46,14 @@ export default function Login() {
       });
     } catch (err) {
       console.error('❌ Error completo:', err.response);
-      
+
       // Si el error es de cuenta no verificada, mostrar botón para reenviar
       const message = err.response?.data?.message || 'Credenciales incorrectas';
       if (message.includes('verificada')) {
         setShowResendButton(true);
         setEmailToResend(form.usuario.includes('@') ? form.usuario : '');
       }
-      
+
       Swal.fire('Error', message, 'error');
     } finally {
       setIsLoading(false);
@@ -62,9 +65,9 @@ export default function Login() {
       Swal.fire('Error', 'Por favor ingresa tu correo electrónico', 'error');
       return;
     }
-    
+
     try {
-      await axios.post('http://localhost:3001/auth/resend-verification', { email: emailToResend });
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/resend-verification`, { email: emailToResend });
       Swal.fire('Éxito', 'Correo de verificación reenviado. Por favor revisa tu bandeja de entrada.', 'success');
       setShowResendButton(false);
     } catch (err) {

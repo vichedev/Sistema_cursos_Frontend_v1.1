@@ -30,7 +30,7 @@ export default function Register() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await axios.post('http://localhost:3001/auth/register', form);
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/register`, form);
       Swal.fire({
         title: '¡Registro exitoso!',
         text: res.data.message || 'Ahora verifica tu correo electrónico para activar tu cuenta.',

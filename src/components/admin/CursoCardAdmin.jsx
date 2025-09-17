@@ -16,7 +16,7 @@ export default function CursoCardAdmin({ curso, setCursos }) {
     });
     if (!confirm.isConfirmed) return;
 
-    await axios.delete(`http://localhost:3001/courses/${curso.id}`, {
+    await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/courses/${curso.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setCursos((prev) => prev.filter((c) => c.id !== curso.id));
@@ -28,7 +28,7 @@ export default function CursoCardAdmin({ curso, setCursos }) {
       <img
         src={
           curso.imagen
-            ? `http://localhost:3001/uploads/${curso.imagen}`
+            ? `${import.meta.env.VITE_BACKEND_URL}/uploads/${curso.imagen}`
             : "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop"
         }
         alt={curso.titulo}

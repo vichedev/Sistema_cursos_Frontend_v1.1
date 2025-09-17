@@ -33,15 +33,15 @@ export default function EditarCurso() {
 
     // Cargar profesores
     axios
-      .get("http://localhost:3001/users/profesores", {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/users/profesores`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then((res) => setProfesores(res.data))
       .catch(() => setProfesores([]));
 
-    // Cargar datos del curso
+    // Cargar datos del curso - CORREGIDO: Quité los espacios
     axios
-      .get(`http://localhost:3001/courses/${id}`, {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/courses/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -58,17 +58,18 @@ export default function EditarCurso() {
           hora: curso.hora || ""
         });
 
-        // Establecer preview de la imagen existente
+        // Establecer preview de la imagen existente - CORREGIDO: Quité los espacios
         if (curso.imagen) {
           const imagenUrl = curso.imagen.startsWith("http")
             ? curso.imagen
-            : `http://localhost:3001/uploads/${curso.imagen}`;
+            : `${import.meta.env.VITE_BACKEND_URL}/uploads/${curso.imagen}`;
           setPreview(imagenUrl);
         }
 
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Error al cargar curso:", err);
         Swal.fire("Error", "No se pudo cargar el curso", "error");
         setLoading(false);
       });
@@ -130,7 +131,8 @@ export default function EditarCurso() {
 
       console.log("Datos a enviar:", Object.fromEntries(data.entries()));
 
-      await axios.put(`http://localhost:3001/courses/${id}`, data, {
+      // CORREGIDO: Quité los espacios en la URL
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/courses/${id}`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
