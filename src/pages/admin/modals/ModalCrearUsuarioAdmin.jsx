@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaUserPlus, FaEnvelope, FaUser, FaIdCard, FaPhone, FaLock, FaBook } from "react-icons/fa";
 
 function Modal({ children, onClose }) {
@@ -41,38 +41,87 @@ export default function ModalCrearUsuario({ onClose, onCreate, loading, error })
     asignatura: "",
   });
 
+  const [validationError, setValidationError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    correo: '',
+    usuario: '',
+    cedula: '',
+    celular: ''
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
+    if (validationError) setValidationError("");
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
+
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Manejo de errores del backend
+  useEffect(() => {
+    if (error) {
+      if (error.includes('correo') || error.includes('Correo')) {
+        setFieldErrors(prev => ({ ...prev, correo: "Este correo ya está registrado" }));
+      } else if (error.includes('usuario') || error.includes('Usuario')) {
+        setFieldErrors(prev => ({ ...prev, usuario: "Este usuario ya existe" }));
+      } else if (error.includes('cédula') || error.includes('cedula')) {
+        setFieldErrors(prev => ({ ...prev, cedula: "Esta cédula ya está registrada" }));
+      } else if (error.includes('celular') || error.includes('teléfono')) {
+        setFieldErrors(prev => ({ ...prev, celular: "Este número ya está registrado" }));
+      } else {
+        setValidationError(error);
+      }
+    }
+  }, [error]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setValidationError("");
+    setFieldErrors({ correo: '', usuario: '', cedula: '', celular: '' });
+
+    // Validaciones básicas
+    if (!form.nombres.trim() || !form.apellidos.trim() || !form.correo.trim() || 
+        !form.usuario.trim() || !form.cedula.trim() || !form.celular.trim() || !form.password.trim()) {
+      setValidationError("Por favor, completa todos los campos obligatorios.");
+      return;
+    }
+
+    if (!isValidEmail(form.correo)) {
+      setFieldErrors(prev => ({ ...prev, correo: "Por favor, ingresa un correo electrónico válido." }));
+      return;
+    }
+
+    if (form.password.length < 6) {
+      setValidationError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
     await onCreate(form);
   };
 
   return (
     <Modal onClose={onClose}>
-      {/* Header */}
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
           <FaUserPlus className="text-white w-8 h-8" />
         </div>
         <h2 className="text-3xl font-extrabold text-gray-900">Agregar Administrador/Docente</h2>
-        
       </div>
 
-      {/* Error message */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg border border-red-300 flex items-center gap-3">
+      {validationError && (
+        <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-300 flex items-center gap-3">
           <svg className="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.681-1.36 3.446 0l6.518 11.59c.75 1.334-.213 2.98-1.723 2.98H3.462c-1.51 0-2.473-1.646-1.723-2.98l6.518-11.59zM11 13a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-.993.883L9 6v4a1 1 0 001.993.117L11 10V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
-          <span>{error}</span>
+          <span>{validationError}</span>
         </div>
       )}
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6 max-h-[65vh] overflow-y-auto px-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InputField
@@ -104,6 +153,7 @@ export default function ModalCrearUsuario({ onClose, onCreate, loading, error })
           onChange={handleChange}
           placeholder="correo@ejemplo.com"
           required
+          error={fieldErrors.correo}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -115,6 +165,7 @@ export default function ModalCrearUsuario({ onClose, onCreate, loading, error })
             onChange={handleChange}
             placeholder="Nombre de usuario"
             required
+            error={fieldErrors.usuario}
           />
           <InputField
             icon={<FaLock className="text-blue-600" />}
@@ -137,6 +188,7 @@ export default function ModalCrearUsuario({ onClose, onCreate, loading, error })
             onChange={handleChange}
             placeholder="Número de cédula"
             required
+            error={fieldErrors.cedula}
           />
           <InputField
             icon={<FaPhone className="text-blue-600" />}
@@ -146,6 +198,7 @@ export default function ModalCrearUsuario({ onClose, onCreate, loading, error })
             onChange={handleChange}
             placeholder="Número de celular"
             required
+            error={fieldErrors.celular}
           />
         </div>
 
@@ -186,7 +239,7 @@ export default function ModalCrearUsuario({ onClose, onCreate, loading, error })
   );
 }
 
-function InputField({ icon, label, name, value, onChange, placeholder, type = "text", required = false }) {
+function InputField({ icon, label, name, value, onChange, placeholder, type = "text", required = false, error = "" }) {
   return (
     <div>
       <label className="flex items-center gap-2 mb-2 font-semibold text-gray-700">
@@ -200,8 +253,17 @@ function InputField({ icon, label, name, value, onChange, placeholder, type = "t
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className="w-full px-5 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm"
+        className={`w-full px-5 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm
+          ${error ? 'border-red-500' : 'border-gray-300'}`}
       />
+      {error && (
+        <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

@@ -170,8 +170,8 @@ export default function CursosEstudiante() {
         <div className="hidden md:block bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">CURSOS DISPONIBLES</h1>
-              <p className="text-blue-100">Explora e inscríbete en nuestros cursos</p>
+              <h1 className="text-2xl font-bold mb-2">CURSOS DISPONIBLES</h1>
+              
             </div>
           </div>
         </div>
