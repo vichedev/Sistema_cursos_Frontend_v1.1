@@ -369,7 +369,7 @@ export default function CursosEstudiante() {
                         </div>
                       ) : curso.precio > 0 ? (
                         <>
-                          <p className="text-xs text-blue-600 font-semibold mb-2 text-center">
+                          <p className="text-xs text-orange-600 font-semibold mb-2 text-center">
                             Curso de pago. Paga con Payphone y te inscribes automáticamente.
                           </p>
                           <div className="flex justify-center">

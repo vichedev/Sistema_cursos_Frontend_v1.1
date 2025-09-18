@@ -57,7 +57,7 @@ const PayphoneButton = ({ curso, userId, onSuccess, onError }) => {
       <button
         onClick={handlePayment}
         disabled={loading}
-        className={`px-6 py-2 rounded-xl font-semibold text-white ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+        className={`px-6 py-2 rounded-xl font-semibold text-white ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-blue-700'
           }`}
       >
         {loading ? 'Procesando...' : `Pagar $${curso?.precio || 0}`}
