@@ -1,9 +1,12 @@
+// src/pages/estudiante/MisCursos.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { FaSearch, FaFilter, FaMoneyBillWave, FaGraduationCap } from "react-icons/fa";
 import { isCourseExpired } from '../../utils/dateUtils';
+import EstudianteLayout from "../../layouts/EstudianteLayout"; // ⬅️ agregado
 
-export default function MisCursos() {
+// ⬇️ Tu componente original, solo renombrado
+function MisCursosContent() {
   const [misCursos, setMisCursos] = useState([]);
   const [cursosActivos, setCursosActivos] = useState([]);
   const [cursosInactivos, setCursosInactivos] = useState([]);
@@ -394,5 +397,14 @@ function CursoCard({ curso }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ⬇️ Export default: solo agrega el layout SIN cambiar tu diseño
+export default function MisCursos() {
+  return (
+    <EstudianteLayout>
+      <MisCursosContent />
+    </EstudianteLayout>
   );
 }
