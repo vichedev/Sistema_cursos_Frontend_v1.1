@@ -278,13 +278,16 @@ function MisCursosContent() {
             </div>
           )}
         </div>
+
+
       </main>
     </div>
   );
 }
 
-// Componente de tarjeta de curso para reutilizar
+
 function CursoCard({ curso }) {
+  const [isOpen, setIsOpen] = useState(false);
   const isExpired = isCourseExpired(curso);
 
   return (
@@ -353,52 +356,73 @@ function CursoCard({ curso }) {
           )}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          {/* Acceso o mensaje de inactivo/Expirado */}
-          {isExpired ? (
-            <div className="text-center bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold text-sm">
-              Curso finalizado - Ya no disponible
+        {/* Botón para abrir detalles */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-semibold transition-all duration-300"
+        >
+          {isOpen ? 'Ver menos' : 'Ver más detalles'}
+        </button>
+
+        {/* Detalles desplegables */}
+        {isOpen && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="text-gray-500 text-sm mb-2">
+              <span className="font-medium">Fecha:</span> {curso.fecha || "Por definir"}
+              {" | "}
+              <span className="font-medium">Hora:</span> {curso.hora || "Por definir"}
             </div>
-          ) : curso.activo ? (
-            curso.link ? (
-              <a
-                href={curso.link}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-xl font-bold text-center block hover:from-blue-600 hover:to-blue-700 transition shadow-md"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {curso.tipo && curso.tipo.startsWith("ONLINE") ? "Ir a clase" : "Ver ubicación"}
-              </a>
-            ) : (
-              <div className="text-center text-gray-500 text-sm">
-                Enlace no disponible temporalmente
+
+            {/* Acceso o mensaje de inactivo/Expirado */}
+            {isExpired ? (
+              <div className="text-center bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold text-sm">
+                Curso finalizado - Ya no disponible
               </div>
-            )
-          ) : (
-            <div className="text-center bg-red-50 text-red-700 p-3 rounded-lg font-semibold text-sm">
-              Acceso no disponible - Curso inactivo
-            </div>
-          )}
+            ) : curso.activo ? (
+              curso.link ? (
+                <a
+                  href={curso.link}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-xl font-bold text-center block hover:from-blue-600 hover:to-blue-700 transition shadow-md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {curso.tipo && curso.tipo.startsWith("ONLINE") ? "Ir a clase" : "Ver ubicación"}
+                </a>
+              ) : (
+                <div className="text-center text-gray-500 text-sm">
+                  Enlace no disponible temporalmente
+                </div>
+              )
+            ) : (
+              <div className="text-center bg-red-50 text-red-700 p-3 rounded-lg font-semibold text-sm">
+                Acceso no disponible - Curso inactivo
+              </div>
+            )}
 
-          {/* Leyenda para curso inactivo o expirado */}
-          {(!curso.activo || isExpired) && (
-            <div className="mt-3 p-3 text-center bg-gray-100 text-gray-600 rounded-lg text-xs">
-              {isExpired
-                ? "Este curso ya finalizó según su fecha programada"
-                : "Este curso fue eliminado pero se mantiene en tu historial"}
-            </div>
-          )}
+            {/* Leyenda para curso inactivo o expirado */}
+            {(!curso.activo || isExpired) && (
+              <div className="mt-3 p-3 text-center bg-gray-100 text-gray-600 rounded-lg text-xs">
+                {isExpired
+                  ? "Este curso ya finalizó según su fecha programada"
+                  : "Este curso fue eliminado pero se mantiene en tu historial"}
+              </div>
+            )}
 
-          <div className="mt-3 text-center">
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-              Inscrito
-            </span>
+            <div className="mt-3 text-center">
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                Inscrito
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
+
+
+
+
 
 // ⬇️ Export default: solo agrega el layout SIN cambiar tu diseño
 export default function MisCursos() {

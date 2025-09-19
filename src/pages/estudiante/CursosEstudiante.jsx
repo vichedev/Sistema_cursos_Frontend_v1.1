@@ -247,7 +247,6 @@ export function CursosEstudianteContent() {
 
           {/* Contenedor scrollable para cursos */}
           <div className="flex-1 overflow-y-auto">
-            {/* Grid de cursos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCursos.length === 0 ? (
                 <div className="col-span-full text-center py-16 bg-white rounded-2xl shadow-lg">
@@ -272,7 +271,7 @@ export function CursosEstudianteContent() {
                   return (
                     <div
                       key={curso.id}
-                      className="group bg-white rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col"
+                      className="group bg-white rounded-2xl shadow-xl border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col"
                     >
                       <div className="relative">
                         <img
@@ -282,7 +281,7 @@ export function CursosEstudianteContent() {
                               : "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop"
                           }
                           alt={curso.titulo}
-                          className="w-full h-60 object-cover rounded-t-3xl cursor-pointer group-hover:brightness-90 transition"
+                          className="w-full h-48 object-cover rounded-t-2xl cursor-pointer group-hover:brightness-90 transition"
                           onError={(e) => {
                             e.target.src = "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop";
                           }}
@@ -297,64 +296,62 @@ export function CursosEstudianteContent() {
                           }
                         />
 
-                        {/* ETIQUETAS COMBINADAS - Aquí está el cambio principal */}
+                        {/* Etiquetas de estado */}
                         <div className="absolute top-2 left-2 flex flex-col gap-1">
-                          {/* Etiqueta principal (Pagado/Gratis) */}
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold shadow ${curso.precio > 0
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-sky-100 text-sky-600'
-                            }`}>
+                          <span
+                            className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md ${curso.precio > 0 ? "bg-yellow-100 text-yellow-800" : "bg-sky-100 text-sky-600"
+                              }`}
+                          >
                             {curso.precio > 0 ? 'PAGADO' : 'GRATIS'}
                           </span>
-
-                          {/* Etiqueta de estado (Finalizado) */}
                           {isExpired && (
-                            <span className="px-3 py-1 rounded-full text-xs bg-red-100 text-red-600 font-bold shadow">
+                            <span className="px-4 py-2 rounded-lg text-sm bg-red-100 text-red-600 font-bold shadow-md">
                               FINALIZADO
                             </span>
                           )}
                         </div>
 
-                        <span className="absolute top-2 right-2 px-3 py-1 rounded-full text-xs bg-gray-200 text-gray-800 font-medium shadow">
+                        {/* Cupos disponibles */}
+                        <span className="absolute top-2 right-2 px-4 py-2 rounded-full text-xs bg-gray-200 text-gray-800 font-medium shadow-lg">
                           {curso.cupos || 0} cupos
                         </span>
                       </div>
 
                       <div className="flex-1 flex flex-col justify-between p-6">
-                        <div>
-                          <h3 className="text-2xl font-bold text-gray-900 mb-2">{curso.titulo || "Curso sin título"}</h3>
-                          <p className="text-gray-700 mb-3">{curso.descripcion || "Sin descripción"}</p>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-3">{curso.titulo || "Curso sin título"}</h3>
+                        <p className="text-gray-700 mb-4">{curso.descripcion || "Sin descripción"}</p>
 
-                          {curso.profesorNombre && (
-                            <div className="mb-2 flex flex-wrap gap-2 items-center">
-                              <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
-                                Profesor: {curso.profesorNombre}
+                        {/* Profesor y asignatura */}
+                        {curso.profesorNombre && (
+                          <div className="flex flex-wrap gap-3 mb-4">
+                            <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                              Profesor: {curso.profesorNombre}
+                            </span>
+
+                            {curso.asignatura && (
+                              <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-semibold">
+                                Asignatura: {curso.asignatura}
                               </span>
+                            )}
+                          </div>
+                        )}
 
-                              {curso.asignatura && (
-                                <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-semibold">
-                                  Asignatura: {curso.asignatura}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
+                        {/* Precio y fecha */}
+                        <div className="flex justify-between items-center mb-5">
                           {curso.precio > 0 && (
-                            <div className="mb-3">
-                              <span className="inline-block px-3 py-1 rounded-full bg-yellow-50 text-yellow-800 text-base font-bold">
-                                ${curso.precio}
-                              </span>
-                            </div>
+                            <span className="px-4 py-2 rounded-lg bg-yellow-50 text-yellow-800 text-base font-bold">
+                              ${curso.precio}
+                            </span>
                           )}
-
-                          <div className="text-gray-500 text-xs mb-2">
+                          <div className="text-xs text-gray-500">
                             Fecha: <span className="font-medium">{curso.fecha || "Por definir"}</span>
                             {" | "}
                             Hora: <span className="font-medium">{curso.hora || "Por definir"}</span>
                           </div>
                         </div>
 
-                        <div className="mt-3">
+                        {/* Botones de acción */}
+                        <div>
                           {isExpired ? (
                             <div className="text-center bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold text-sm">
                               Este curso ya ha finalizado
@@ -367,7 +364,7 @@ export function CursosEstudianteContent() {
                             </div>
                           ) : curso.precio > 0 ? (
                             <>
-                              <p className="text-xs text-orange-600 font-semibold mb-2 text-center">
+                              <p className="text-xs text-orange-600 font-semibold mb-3 text-center">
                                 Curso de pago. Paga con Payphone y te inscribes automáticamente.
                               </p>
                               <div className="flex justify-center">
@@ -386,12 +383,12 @@ export function CursosEstudianteContent() {
                             </>
                           ) : (
                             <>
-                              <p className="text-xs text-green-700 font-semibold mb-2 text-center">
+                              <p className="text-xs text-green-700 font-semibold mb-3 text-center">
                                 Curso gratuito. Haz clic para inscribirte.
                               </p>
                               <button
                                 onClick={() => handleEnroll(curso.id)}
-                                className="w-full bg-gradient-to-r from-green-400 to-lime-400 text-white px-5 py-2 rounded-xl font-bold shadow hover:scale-105 transition"
+                                className="w-full bg-gradient-to-r from-green-400 to-lime-400 text-white px-5 py-2 rounded-xl font-bold shadow-lg hover:scale-105 transition"
                               >
                                 Inscribirse gratis
                               </button>
@@ -404,6 +401,8 @@ export function CursosEstudianteContent() {
                 })
               )}
             </div>
+
+
           </div>
 
           <ImageModal

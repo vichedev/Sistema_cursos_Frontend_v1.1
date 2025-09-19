@@ -42,19 +42,32 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
       </div>
 
       {/* Info usuario */}
-      <div className="px-6 py-4 bg-blue-50 mx-4 rounded-xl mb-4 border border-blue-200">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 rounded-full">
-            <FiUser className="text-blue-600 text-lg" />
+      <div className="px-6 py-4 bg-white mx-4 rounded-xl mb-4 border border-indigo-100 shadow-md relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full"></div>
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="p-3 bg-indigo-100 border-2 border-indigo-200 rounded-full">
+            <FiUser className="text-indigo-600 text-lg" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-blue-800 truncate">{userData.nombres || userData.usuario}</p>
-            <p className="text-sm text-blue-600 truncate">@{userData.usuario}</p>
-            <p className="text-xs text-blue-500 font-medium uppercase">{userData.rol}</p>
+            <p className="font-bold text-gray-800 truncate text-lg mb-1">{userData.nombres || userData.usuario}</p>
+            <p className="text-sm text-gray-500 mb-2">@{userData.usuario}</p>
+            <div className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-md text-xs font-semibold border border-indigo-200 inline-flex items-center gap-1 mb-2">
+              <span>🎓</span>
+              <span>Docente Administrador</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
+              <span className="flex items-center gap-1">
+                <svg className="w-3 h-3 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+                Privilegios completos
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
+      
       <div className="px-4 mb-4">
         <div className="h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
       </div>
@@ -113,11 +126,10 @@ function SidebarLink({ to, label, active, icon, onNavigate }) {
     <Link
       to={to}
       onClick={onNavigate}
-      className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 gap-3 ${
-        active
-          ? 'bg-green-50 text-green-700 shadow-inner border border-green-300'
-          : 'text-gray-700 hover:bg-green-50 hover:text-green-600'
-      }`}
+      className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 gap-3 ${active
+        ? 'bg-green-50 text-green-700 shadow-inner border border-green-300'
+        : 'text-gray-700 hover:bg-green-50 hover:text-green-600'
+        }`}
     >
       <div className="p-1.5 bg-green-100 rounded-lg">{icon}</div>
       <span className="select-none">{label}</span>

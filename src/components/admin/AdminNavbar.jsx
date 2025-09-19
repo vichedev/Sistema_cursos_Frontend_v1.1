@@ -1,14 +1,137 @@
-// src/components/admin/AdminNavbar.jsx
-import { useState, useEffect } from 'react';
-import { FaBell, FaTimes, FaEnvelope, FaWhatsapp, FaBook } from 'react-icons/fa';
+import { useState, useEffect, useRef } from 'react';
+import { FaBell, FaTimes, FaEnvelope, FaWhatsapp, FaBook, FaUser, FaChevronDown, FaSignOutAlt } from 'react-icons/fa';
+
+// Componente de Perfil Desplegable para Administrador
+function PerfilDesplegableAdmin({ userData }) {
+  const [abierto, setAbierto] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleCerrarSesion = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    window.location.href = "/login";
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setAbierto(!abierto)}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+      >
+        <FaUser className="text-blue-600" />
+        <span className="hidden sm:block text-sm font-medium text-gray-700">
+          {userData?.nombres || 'Administrador'}
+        </span>
+        <FaChevronDown className={`text-blue-600 transition-transform ${abierto ? 'rotate-180' : ''}`} />
+      </button>
+
+      {abierto && (
+        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+          {/* Header del perfil */}
+          <div className="px-4 py-3 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-800">{userData?.nombres} {userData?.apellidos}</h3>
+            <p className="text-sm text-gray-600 truncate">{userData?.correo}</p>
+          </div>
+
+          {/* Información del perfil */}
+          <div className="px-4 py-3 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Usuario:</span>
+              <span className="font-medium">{userData?.usuario}</span>
+            </div>
+            {userData?.cedula && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Cédula:</span>
+                <span className="font-medium">{userData.cedula}</span>
+              </div>
+            )}
+            {userData?.celular && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Celular:</span>
+                <span className="font-medium">{userData.celular}</span>
+              </div>
+            )}
+            {userData?.ciudad && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Ciudad:</span>
+                <span className="font-medium">{userData.ciudad}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Badge de Administrador */}
+          <div className="px-4 py-2 bg-blue-50 border-y border-gray-100">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+              👑 Administrador
+            </span>
+          </div>
+
+          {/* Acciones */}
+          <div className="pt-2">
+            <button
+              onClick={handleCerrarSesion}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <FaSignOutAlt />
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminNavbar({ notifications = [], onClearNotification, onMenuClick, onMarkAsRead }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     setUnreadCount(notifications.filter(n => !n.read).length);
   }, [notifications]);
+
+  // Obtener datos del administrador
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+      
+      if (!userId) return;
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/users/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUserData(data);
+        }
+      } catch (error) {
+        console.error("Error fetching admin data:", error);
+      }
+    };
+
+    fetchAdminData();
+  }, []);
 
   const markAsRead = (id) => {
     onMarkAsRead?.(id);
@@ -17,18 +140,20 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
   return (
     <nav className="relative z-10 bg-white shadow-md border-b border-gray-200 px-3 sm:px-4 py-3">
       <div className="flex items-center gap-3">
-        <button type="button" className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200" onClick={onMenuClick} aria-label="Abrir menú">
+        <button 
+          type="button" 
+          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200" 
+          onClick={onMenuClick} 
+          aria-label="Abrir menú"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5">
             <path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
           </svg>
         </button>
 
-        <div className="text-lg sm:text-xl font-bold text-blue-700 truncate">
-          Panel Administrativo
-        </div>
-
         <div className="ml-auto" />
 
+        {/* Notificaciones */}
         <div className="relative">
           <button
             onClick={() => setShowNotifications(v => !v)}
@@ -113,6 +238,9 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
             </div>
           )}
         </div>
+
+        {/* Perfil del Administrador */}
+        <PerfilDesplegableAdmin userData={userData} />
       </div>
     </nav>
   );
@@ -129,6 +257,7 @@ function getNotificationIcon(type) {
       return <FaBook className="text-white text-sm" />;
   }
 }
+
 function getNotificationIconColor(type) {
   switch (type) {
     case 'email':
