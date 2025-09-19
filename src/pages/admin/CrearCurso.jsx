@@ -160,40 +160,7 @@ export default function CrearCurso() {
         confirmButtonColor: "#3b82f6"
       });
 
-      // Notificaciones (simulación de progreso)
-      if (form.notificarCorreo || form.notificarWhatsapp) {
-        const notificationId = Date.now();
 
-        addNotification({
-          id: notificationId,                 // 👈 Asegura tener un id para updateProgress
-          type: "course",
-          title: "Enviando notificaciones",
-          message: `Curso: ${form.titulo}`,
-          progress: { total: 25, completed: 0 },
-          timestamp: new Date()
-        });
-
-        const interval = setInterval(() => {
-          updateProgress(notificationId, {
-            total: 25,
-            completed: (prev) => {
-              const next = prev + 1;
-              if (next >= 25) {
-                clearInterval(interval);
-                addNotification({
-                  type: "course",
-                  title: "Notificaciones enviadas",
-                  message: `Todas las notificaciones para "${form.titulo}" han sido enviadas`,
-                  timestamp: new Date()
-                });
-              }
-              return next;
-            }
-          });
-        }, 2000);
-      }
-
-      // Reset
       setForm({
         titulo: "",
         descripcion: "",
