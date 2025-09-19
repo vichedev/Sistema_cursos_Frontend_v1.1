@@ -20,44 +20,51 @@ import MisCursos from "./pages/estudiante/MisCursos";
 import PaymentSuccess from "./pages/estudiante/PaymentSuccess";
 import PaymentFailed from "./pages/estudiante/PaymentFailed";
 
+
+// NOTISFICATION CONTEXT
+import { NotificationProvider } from './context/NotificationContext';
+
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Landing page como raíz */}
-        <Route path="/" element={<LandingPage />} />
+    <NotificationProvider>
+      <Router>
+        <Routes>
+          {/* Landing page como raíz */}
+          <Route path="/" element={<LandingPage />} />
 
-        {/* Auth */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} /> {/* Nueva ruta */}
+          {/* Auth */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} /> {/* Nueva ruta */}
 
-        {/* ADMIN */}
-        <Route path="/admin/dashboard" element={<DashboardAdmin />} />
-        <Route path="/admin/crear-curso" element={<CrearCurso />} />
-        <Route path="/admin/ver-todo" element={<VerTodosLosCursos />} />
-        <Route path="/admin/editar-curso/:id" element={<EditarCurso />} />
-        <Route path="/admin/estudiantes-curso/:id" element={<EstudiantesCurso />} />
-        <Route path="/admin/usuarios-inscritos" element={<UsuariosInscritos />} />
+          {/* ADMIN */}
+          <Route path="/admin/dashboard" element={<DashboardAdmin />} />
+          <Route path="/admin/crear-curso" element={<CrearCurso />} />
+          <Route path="/admin/ver-todo" element={<VerTodosLosCursos />} />
+          <Route path="/admin/editar-curso/:id" element={<EditarCurso />} />
+          <Route path="/admin/estudiantes-curso/:id" element={<EstudiantesCurso />} />
+          <Route path="/admin/usuarios-inscritos" element={<UsuariosInscritos />} />
 
-        {/* ESTUDIANTE */}
-        <Route path="/estudiante/dashboard" element={<DashboardEstudiante />} />
-        <Route path="/estudiante/cursos" element={<CursosEstudiante />} />
-        <Route path="/estudiante/mis-cursos" element={<MisCursos />} />
+          {/* ESTUDIANTE */}
+          <Route path="/estudiante/dashboard" element={<DashboardEstudiante />} />
+          <Route path="/estudiante/cursos" element={<CursosEstudiante />} />
+          <Route path="/estudiante/mis-cursos" element={<MisCursos />} />
 
-        {/* RUTAS DE PAGO - PAYPHONE */}
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/failed" element={<PaymentFailed />} />
-        <Route path="/payment/cancelled" element={<PaymentFailed />} />
+          {/* RUTAS DE PAGO - PAYPHONE */}
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/failed" element={<PaymentFailed />} />
+          <Route path="/payment/cancelled" element={<PaymentFailed />} />
 
-        {/* RUTAS DE PAGO LEGACY (por compatibilidad) */}
-        <Route path="/pago-exitoso" element={<PaymentSuccess />} />
-        <Route path="/pago-fallido" element={<PaymentFailed />} />
+          {/* RUTAS DE PAGO LEGACY (por compatibilidad) */}
+          <Route path="/pago-exitoso" element={<PaymentSuccess />} />
+          <Route path="/pago-fallido" element={<PaymentFailed />} />
 
-        {/* Default fallback para rutas no definidas */}
-        <Route path="*" element={<LandingPage />} />
-      </Routes>
-    </Router>
+          {/* Default fallback para rutas no definidas */}
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
+      </Router>
+
+    </NotificationProvider >
   );
 }
 

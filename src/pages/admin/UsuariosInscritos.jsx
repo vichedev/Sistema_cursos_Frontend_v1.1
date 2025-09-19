@@ -1,26 +1,27 @@
+// src/pages/admin/UsuariosInscritos.jsx
 import { useState, useEffect } from "react";
 import axios from "axios";
-import SidebarAdmin from "../../components/admin/SidebarAdmin";
 import ModalVerUsuario from "./modals/ModalVerUsuario";
 import ModalEditarUsuario from "./modals/ModalEditarUsuario";
 import ModalEliminarUsuario from "./modals/ModalEliminarUsuario";
 import ModalCrearUsuarioAdmin from "./modals/ModalCrearUsuarioAdmin";
-import { 
-  FaArrowLeft, 
-  FaUsers, 
-  FaChalkboardTeacher, 
-  FaEye, 
-  FaEdit, 
-  FaTrash, 
+import {
+  FaArrowLeft,
+  FaUsers,
+  FaChalkboardTeacher,
+  FaEye,
+  FaEdit,
+  FaTrash,
   FaPlus,
   FaGraduationCap,
   FaLock,
   FaBuilding,
   FaMapMarkerAlt,
-  FaBriefcase
+  FaBriefcase,
 } from "react-icons/fa";
+import AdminLayout from "../../layouts/AdminLayout";
 
-// Componente para mostrar cursos con desplegable
+// Subcomponente: cursos del alumno (dropdown)
 const CursosDesplegable = ({ cursos }) => {
   const [mostrarCursos, setMostrarCursos] = useState(false);
 
@@ -44,13 +45,13 @@ const CursosDesplegable = ({ cursos }) => {
     <div className="relative">
       <div
         className="flex items-center cursor-pointer group"
-        onClick={() => setMostrarCursos(!mostrarCursos)}
+        onClick={() => setMostrarCursos((v) => !v)}
       >
         <span className="text-sm text-blue-600 font-medium group-hover:text-blue-700 mr-2">
-          {cursos.length} curso{cursos.length !== 1 ? 's' : ''}
+          {cursos.length} curso{cursos.length !== 1 ? "s" : ""}
         </span>
         <svg
-          className={`w-4 h-4 text-blue-500 transition-transform ${mostrarCursos ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-blue-500 transition-transform ${mostrarCursos ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -84,7 +85,7 @@ export default function UsuariosInscritos() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("estudiantes");
 
-  // Estados para modales
+  // Modales
   const [modalType, setModalType] = useState(null);
   const [modalUser, setModalUser] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
@@ -104,11 +105,11 @@ export default function UsuariosInscritos() {
       })
       .then((res) => {
         const processedData = {
-          estudiantes: (res.data.estudiantes || []).map(user => ({
+          estudiantes: (res.data.estudiantes || []).map((user) => ({
             ...user,
-            cursos: user.cursos || []
+            cursos: user.cursos || [],
           })),
-          administradores: res.data.administradores || []
+          administradores: res.data.administradores || [],
         };
         setData(processedData);
       })
@@ -227,141 +228,292 @@ export default function UsuariosInscritos() {
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <SidebarAdmin className="fixed top-0 left-0 h-screen w-72 overflow-y-auto" />
-
-      <main className="flex-1 p-6 md:p-8 overflow-hidden md:ml-72">
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
-                <FaUsers className="text-4xl" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Gestión de Usuarios</h1>
-                <p className="text-blue-100 text-lg">Administra estudiantes y profesores del sistema</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => (window.location.href = "/admin/dashboard")}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-6 py-3 rounded-xl transition backdrop-blur-sm"
-            >
-              <FaArrowLeft />
-              Volver al Dashboard
-            </button>
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-full py-24">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
+            <div className="text-xl font-semibold text-gray-700">Cargando usuarios...</div>
           </div>
         </div>
+      </AdminLayout>
+    );
+  }
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-          {error ? (
-            <div className="text-center p-8 bg-red-50 rounded-xl border border-red-200">
-              <div className="text-red-500 text-4xl mb-4">⚠️</div>
-              <div className="text-red-600 font-semibold text-lg mb-2">{error}</div>
+  return (
+    <AdminLayout>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
+              <FaUsers className="text-4xl" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Gestión de Usuarios</h1>
+              <p className="text-blue-100 text-lg">Administra estudiantes y profesores del sistema</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => (window.location.href = "/admin/dashboard")}
+            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-6 py-3 rounded-xl transition backdrop-blur-sm"
+          >
+            <FaArrowLeft />
+            Volver al Dashboard
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
+        {error ? (
+          <div className="text-center p-8 bg-red-50 rounded-xl border border-red-200">
+            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <div className="text-red-600 font-semibold text-lg mb-2">{error}</div>
+            <button
+              onClick={fetchUsuarios}
+              className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-xl transition"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 mb-8">
               <button
-                onClick={fetchUsuarios}
-                className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-xl transition"
+                className={`flex items-center gap-2 px-6 py-4 font-semibold transition ${
+                  activeTab === "estudiantes"
+                    ? "border-b-4 border-blue-500 text-blue-600"
+                    : "text-gray-500 hover:text-blue-600"
+                }`}
+                onClick={() => handleTabChange("estudiantes")}
               >
-                Reintentar
+                <FaGraduationCap />
+                Estudiantes
+                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">
+                  {data.estudiantes.length}
+                </span>
+              </button>
+
+              <button
+                className={`flex items-center gap-2 px-6 py-4 font-semibold transition ${
+                  activeTab === "administradores"
+                    ? "border-b-4 border-blue-500 text-blue-600"
+                    : "text-gray-500 hover:text-blue-600"
+                }`}
+                onClick={() => handleTabChange("administradores")}
+              >
+                <FaChalkboardTeacher />
+                Profesores
+                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">
+                  {data.administradores.length}
+                </span>
               </button>
             </div>
-          ) : loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500 mx-auto mb-4"></div>
-              <div className="text-blue-600 font-semibold">Cargando usuarios...</div>
-            </div>
-          ) : (
-            <>
-              {/* Tabs Navigation */}
-              <div className="flex border-b border-gray-200 mb-8">
-                <button
-                  className={`flex items-center gap-2 px-6 py-4 font-semibold transition ${
-                    activeTab === "estudiantes"
-                      ? "border-b-4 border-blue-500 text-blue-600"
-                      : "text-gray-500 hover:text-blue-600"
-                  }`}
-                  onClick={() => handleTabChange("estudiantes")}
-                >
-                  <FaGraduationCap />
-                  Estudiantes
-                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">
-                    {data.estudiantes.length}
-                  </span>
-                </button>
 
-                <button
-                  className={`flex items-center gap-2 px-6 py-4 font-semibold transition ${
-                    activeTab === "administradores"
-                      ? "border-b-4 border-blue-500 text-blue-600"
-                      : "text-gray-500 hover:text-blue-600"
-                  }`}
-                  onClick={() => handleTabChange("administradores")}
-                >
-                  <FaChalkboardTeacher />
-                  Profesores
-                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">
-                    {data.administradores.length}
-                  </span>
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="overflow-y-auto">
-                {activeTab === "estudiantes" && (
-                  <section>
-                    {data.estudiantes.length === 0 ? (
-                      <div className="text-center py-16 bg-gray-50 rounded-2xl">
-                        <div className="text-6xl mb-4">👨‍🎓</div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No hay estudiantes inscritos</h3>
-                        <p className="text-gray-500">Aún no hay estudiantes registrados en el sistema.</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
-                        <table className="w-full">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">ID</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Nombre</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Correo</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
-                                <FaMapMarkerAlt className="inline mr-1" />
-                                Ciudad
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
-                                <FaBuilding className="inline mr-1" />
-                                Empresa
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
-                                <FaBriefcase className="inline mr-1" />
-                                Cargo
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Cursos</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
-                                <FaLock className="inline mr-1" />
-                                Contraseña
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Acciones</th>
+            {/* Contenido */}
+            <div className="overflow-y-auto">
+              {activeTab === "estudiantes" && (
+                <section>
+                  {data.estudiantes.length === 0 ? (
+                    <div className="text-center py-16 bg-gray-50 rounded-2xl">
+                      <div className="text-6xl mb-4">👨‍🎓</div>
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                        No hay estudiantes inscritos
+                      </h3>
+                      <p className="text-gray-500">
+                        Aún no hay estudiantes registrados en el sistema.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              ID
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Nombre
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Correo
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              <FaMapMarkerAlt className="inline mr-1" />
+                              Ciudad
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              <FaBuilding className="inline mr-1" />
+                              Empresa
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              <FaBriefcase className="inline mr-1" />
+                              Cargo
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Cursos
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              <FaLock className="inline mr-1" />
+                              Contraseña
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Acciones
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {data.estudiantes.map((user) => (
+                            <tr key={user.id} className="hover:bg-blue-50 transition-colors">
+                              <td className="px-6 py-4">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                                  {user.id}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-semibold text-gray-900">
+                                {user.nombres} {user.apellidos}
+                              </td>
+                              <td className="px-6 py-4 text-gray-700">{user.correo}</td>
+                              <td className="px-6 py-4 text-gray-600">{user.ciudad || "-"}</td>
+                              <td className="px-6 py-4 text-gray-600">{user.empresa || "-"}</td>
+                              <td className="px-6 py-4 text-gray-600">{user.cargo || "-"}</td>
+                              <td className="px-6 py-4">
+                                <CursosDesplegable cursos={user.cursos} />
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-500 rounded-full">
+                                  •••
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => openViewModal(user)}
+                                    className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+                                    title="Ver"
+                                  >
+                                    <FaEye />
+                                  </button>
+                                  <button
+                                    onClick={() => openEditModal(user)}
+                                    className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
+                                    title="Editar"
+                                  >
+                                    <FaEdit />
+                                  </button>
+                                  <button
+                                    onClick={() => openDeleteModal(user)}
+                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                                    title="Eliminar"
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {data.estudiantes.map((user) => (
-                              <tr key={user.id} className="hover:bg-blue-50 transition-colors">
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {activeTab === "administradores" && (
+                <section>
+                  <button
+                    onClick={() => {
+                      setModalType("crear");
+                      setModalUser(null);
+                      setModalError(null);
+                    }}
+                    className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md mb-6"
+                  >
+                    <FaPlus />
+                    Agregar Profesor
+                  </button>
+
+                  {data.administradores.length === 0 ? (
+                    <div className="text-center py-16 bg-gray-50 rounded-2xl">
+                      <div className="text-6xl mb-4">👨‍🏫</div>
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                        No hay profesores registrados
+                      </h3>
+                      <p className="text-gray-500">Agrega el primer profesor al sistema.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              ID
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Nombre
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Correo
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Usuario
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Rol
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              <FaLock className="inline mr-1" />
+                              Contraseña
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
+                              Acciones
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {data.administradores.map((admin, index) => {
+                            const colors = [
+                              "bg-red-100 text-red-800 border border-red-200",
+                              "bg-green-100 text-green-800 border border-green-200",
+                              "bg-blue-100 text-blue-800 border border-blue-200",
+                              "bg-yellow-100 text-yellow-800 border border-yellow-200",
+                              "bg-purple-100 text-purple-800 border border-purple-200",
+                            ];
+                            const colorClass = colors[index % colors.length];
+
+                            return (
+                              <tr key={admin.id} className="hover:bg-blue-50 transition-colors">
                                 <td className="px-6 py-4">
                                   <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                                    {user.id}
+                                    {admin.id}
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 font-semibold text-gray-900">
-                                  {user.nombres} {user.apellidos}
-                                </td>
-                                <td className="px-6 py-4 text-gray-700">{user.correo}</td>
-                                <td className="px-6 py-4 text-gray-600">{user.ciudad || "-"}</td>
-                                <td className="px-6 py-4 text-gray-600">{user.empresa || "-"}</td>
-                                <td className="px-6 py-4 text-gray-600">{user.cargo || "-"}</td>
                                 <td className="px-6 py-4">
-                                  <CursosDesplegable cursos={user.cursos} />
+                                  <div className="font-semibold text-gray-900">
+                                    {admin.nombres} {admin.apellidos}
+                                    {admin.id === 1 && (
+                                      <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                        MASTER
+                                      </span>
+                                    )}
+                                  </div>
+                                  {admin.asignatura && (
+                                    <span
+                                      className={`${colorClass} text-xs font-semibold px-2 py-1 rounded-full mt-1 inline-block`}
+                                    >
+                                      📚 {admin.asignatura}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-gray-700">{admin.correo}</td>
+                                <td className="px-6 py-4 text-gray-600">{admin.usuario}</td>
+                                <td className="px-6 py-4">
+                                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
+                                    {admin.rol}
+                                  </span>
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                   <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-500 rounded-full">
@@ -371,202 +523,84 @@ export default function UsuariosInscritos() {
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-2">
                                     <button
-                                      onClick={() => openViewModal(user)}
+                                      onClick={() => openViewModal(admin)}
                                       className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
                                       title="Ver"
                                     >
                                       <FaEye />
                                     </button>
                                     <button
-                                      onClick={() => openEditModal(user)}
+                                      onClick={() => openEditModal(admin)}
                                       className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
                                       title="Editar"
                                     >
                                       <FaEdit />
                                     </button>
-                                    <button
-                                      onClick={() => openDeleteModal(user)}
-                                      className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
-                                      title="Eliminar"
-                                    >
-                                      <FaTrash />
-                                    </button>
+                                    {admin.id !== 1 ? (
+                                      <button
+                                        onClick={() => openDeleteModal(admin)}
+                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                                        title="Eliminar"
+                                      >
+                                        <FaTrash />
+                                      </button>
+                                    ) : (
+                                      <span
+                                        className="p-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"
+                                        title="El administrador principal no puede ser eliminado"
+                                      >
+                                        <FaTrash />
+                                      </span>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </section>
-                )}
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
-                {activeTab === "administradores" && (
-                  <section>
-                    <button
-                      onClick={() => {
-                        setModalType("crear");
-                        setModalUser(null);
-                        setModalError(null);
-                      }}
-                      className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md mb-6"
-                    >
-                      <FaPlus />
-                      Agregar Profesor
-                    </button>
-
-                    {data.administradores.length === 0 ? (
-                      <div className="text-center py-16 bg-gray-50 rounded-2xl">
-                        <div className="text-6xl mb-4">👨‍🏫</div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No hay profesores registrados</h3>
-                        <p className="text-gray-500">Agrega el primer profesor al sistema.</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
-                        <table className="w-full">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">ID</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Nombre</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Correo</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Usuario</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Rol</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">
-                                <FaLock className="inline mr-1" />
-                                Contraseña
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Acciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {data.administradores.map((admin, index) => {
-                              const colors = [
-                                "bg-red-100 text-red-800 border border-red-200",
-                                "bg-green-100 text-green-800 border border-green-200",
-                                "bg-blue-100 text-blue-800 border border-blue-200",
-                                "bg-yellow-100 text-yellow-800 border border-yellow-200",
-                                "bg-purple-100 text-purple-800 border border-purple-200",
-                              ];
-                              const colorClass = colors[index % colors.length];
-                              
-                              return (
-                                <tr key={admin.id} className="hover:bg-blue-50 transition-colors">
-                                  <td className="px-6 py-4">
-                                    <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                                      {admin.id}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <div className="font-semibold text-gray-900">
-                                      {admin.nombres} {admin.apellidos}
-                                      {admin.id === 1 && (
-                                        <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">
-                                          MASTER
-                                        </span>
-                                      )}
-                                    </div>
-                                    {admin.asignatura && (
-                                      <span className={`${colorClass} text-xs font-semibold px-2 py-1 rounded-full mt-1 inline-block`}>
-                                        📚 {admin.asignatura}
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="px-6 py-4 text-gray-700">{admin.correo}</td>
-                                  <td className="px-6 py-4 text-gray-600">{admin.usuario}</td>
-                                  <td className="px-6 py-4">
-                                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
-                                      {admin.rol}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                    <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-500 rounded-full">
-                                      •••
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={() => openViewModal(admin)}
-                                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
-                                        title="Ver"
-                                      >
-                                        <FaEye />
-                                      </button>
-                                      <button
-                                        onClick={() => openEditModal(admin)}
-                                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
-                                        title="Editar"
-                                      >
-                                        <FaEdit />
-                                      </button>
-                                      {admin.id !== 1 ? (
-                                        <button
-                                          onClick={() => openDeleteModal(admin)}
-                                          className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
-                                          title="Eliminar"
-                                        >
-                                          <FaTrash />
-                                        </button>
-                                      ) : (
-                                        <span
-                                          className="p-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"
-                                          title="El administrador principal no puede ser eliminado"
-                                        >
-                                          <FaTrash />
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </section>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* MODALES */}
-        {modalType === "crear" && (
-          <ModalCrearUsuarioAdmin
-            onClose={closeModal}
-            onCreate={handleCreateUser}
-            loading={modalLoading}
-            error={modalError}
-          />
-        )}
-        {modalType === "ver" && (
-          modalLoading ? (
-            <ModalVerUsuario user={null} loading={modalLoading} error={modalError} onClose={closeModal} />
-          ) : (
-            modalUser && <ModalVerUsuario user={modalUser} onClose={closeModal} />
-          )
-        )}
-        {modalType === "editar" && modalUser && (
-          <ModalEditarUsuario
-            user={modalUser}
-            onClose={closeModal}
-            onUpdate={handleUpdateUser}
-            loading={modalLoading}
-            error={modalError}
-          />
-        )}
-        {modalType === "eliminar" && modalUser && (
-          <ModalEliminarUsuario
-            user={modalUser}
-            onClose={closeModal}
-            onDelete={handleDeleteUser}
-            loading={modalLoading}
-            error={modalError}
-          />
-        )}
-      </main>
-    </div>
+      {/* MODALES */}
+      {modalType === "crear" && (
+        <ModalCrearUsuarioAdmin
+          onClose={closeModal}
+          onCreate={handleCreateUser}
+          loading={modalLoading}
+          error={modalError}
+        />
+      )}
+      {modalType === "ver" &&
+        (modalLoading ? (
+          <ModalVerUsuario user={null} loading={modalLoading} error={modalError} onClose={closeModal} />
+        ) : (
+          modalUser && <ModalVerUsuario user={modalUser} onClose={closeModal} />
+        ))}
+      {modalType === "editar" && modalUser && (
+        <ModalEditarUsuario
+          user={modalUser}
+          onClose={closeModal}
+          onUpdate={handleUpdateUser}
+          loading={modalLoading}
+          error={modalError}
+        />
+      )}
+      {modalType === "eliminar" && modalUser && (
+        <ModalEliminarUsuario
+          user={modalUser}
+          onClose={closeModal}
+          onDelete={handleDeleteUser}
+          loading={modalLoading}
+          error={modalError}
+        />
+      )}
+    </AdminLayout>
   );
 }
