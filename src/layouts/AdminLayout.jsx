@@ -8,13 +8,12 @@ import { useNotifications } from "../context/NotificationContext";
 export default function AdminLayout({ children }) {
   useAuth(["ADMIN"]);
   const { notifications, clearAllNotifications } = useNotifications();
-
-  // 👇 controla el drawer del sidebar en móvil
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-tr from-gray-100 to-gray-300">
-      {/* Sidebar móvil como drawer */}
+    // Pantalla completa y layout en columnas; importante min-h-0 para permitir scroll del main
+    <div className="h-screen flex bg-gradient-to-tr from-gray-100 to-gray-300 min-h-0">
+      {/* Drawer móvil */}
       <div
         className={`fixed inset-y-0 left-0 z-40 w-72 transform transition-transform duration-300 md:hidden
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
@@ -26,7 +25,7 @@ export default function AdminLayout({ children }) {
         </div>
       </div>
 
-      {/* Backdrop cuando el drawer está abierto */}
+      {/* Backdrop móvil */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 md:hidden"
@@ -34,19 +33,23 @@ export default function AdminLayout({ children }) {
         />
       )}
 
-      {/* Sidebar fijo en desktop */}
+      {/* Sidebar fijo desktop */}
       <aside className="hidden md:block fixed inset-y-0 left-0 w-72 z-30 bg-white border-r">
         <SidebarAdmin />
       </aside>
 
-      {/* Contenedor principal (desplazado solo en md+) */}
-      <div className="flex-1 flex flex-col w-full md:ml-72">
-        <AdminNavbar
-          notifications={notifications}
-          onClearNotification={clearAllNotifications}
-          // 👇 pasamos un handler para el botón hamburguesa
-          onMenuClick={() => setSidebarOpen(true)}
-        />
+      {/* Contenedor principal: deja espacio del sidebar en md+, y limita el scroll al main */}
+      <div className="flex-1 flex flex-col md:ml-72 min-h-0">
+        {/* Navbar sticky */}
+        <div className="sticky top-0 z-40">
+          <AdminNavbar
+            notifications={notifications}
+            onClearNotification={clearAllNotifications}
+            onMenuClick={() => setSidebarOpen(true)} // abre drawer en móvil
+          />
+        </div>
+
+        {/* Solo el main scrollea */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {children}
         </main>

@@ -90,27 +90,26 @@ export default function VerTodosLosCursos() {
 
   return (
     <AdminLayout>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">TODOS LOS CURSOS</h1>
-            <p className="text-blue-100">
-              Gestiona tus cursos y estudiantes aquí
-            </p>
-          </div>
-          <a
-            href="/admin/crear-curso"
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-blue-600 font-bold shadow-md hover:bg-gray-100 transition"
-          >
-            <FaPlus />
-            Crear nuevo curso
-          </a>
-        </div>
-      </div>
-
       {/* Barra búsqueda + filtros */}
       <div className="bg-white rounded-2xl shadow-lg p-4 md:p-5 mb-6">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">TODOS LOS CURSOS</h1>
+              <p className="text-blue-100">
+                Gestiona tus cursos y estudiantes aquí
+              </p>
+            </div>
+            <a
+              href="/admin/crear-curso"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-blue-600 font-bold shadow-md hover:bg-gray-100 transition"
+            >
+              <FaPlus />
+              Crear nuevo curso
+            </a>
+          </div>
+        </div>
         <div className="flex flex-col lg:flex-row items-stretch gap-4">
           {/* Search */}
           <div className="relative flex-grow">
@@ -137,33 +136,30 @@ export default function VerTodosLosCursos() {
         <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
           <button
             onClick={() => setActiveTab("PAGADO")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
-              activeTab === "PAGADO"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === "PAGADO"
                 ? "bg-blue-500 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+              }`}
           >
             <FaMoneyBillWave /> Pagados
           </button>
 
           <button
             onClick={() => setActiveTab("GRATIS")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
-              activeTab === "GRATIS"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === "GRATIS"
                 ? "bg-green-500 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+              }`}
           >
             <FaGraduationCap /> Gratuitos
           </button>
 
           <button
             onClick={() => setActiveTab("TODOS")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${
-              activeTab === "TODOS"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === "TODOS"
                 ? "bg-gray-600 text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+              }`}
           >
             <FaFilter /> Todos
           </button>
@@ -200,6 +196,7 @@ export default function VerTodosLosCursos() {
           ))
         )}
       </div>
+      
     </AdminLayout>
   );
 }

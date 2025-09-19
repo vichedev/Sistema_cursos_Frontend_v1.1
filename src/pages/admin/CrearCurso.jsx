@@ -149,13 +149,12 @@ export default function CrearCurso() {
         html: `
           <div class="text-left">
             <p>El curso <strong>${form.titulo}</strong> ha sido creado exitosamente.</p>
-            ${
-              form.notificarCorreo || form.notificarWhatsapp
-                ? `
+            ${form.notificarCorreo || form.notificarWhatsapp
+            ? `
               <p class="mt-3">Las notificaciones se están enviando en segundo plano.</p>
               <p class="text-sm text-gray-600">Puedes ver el progreso en el icono de campana.</p>`
-                : ""
-            }
+            : ""
+          }
           </div>
         `,
         confirmButtonColor: "#3b82f6"
@@ -225,16 +224,15 @@ export default function CrearCurso() {
 
   return (
     <AdminLayout>
-      {/* Header */}
-      <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
-        <h1 className="text-2xl md:text-3xl font-bold">Crear Nuevo Curso</h1>
-        <p className="text-blue-100 mt-2">
-          Completa la información para crear un nuevo curso en la plataforma
-        </p>
-      </div>
-
       {/* Card formulario */}
       <div className="bg-white rounded-2xl shadow-lg p-8">
+        {/* Header */}
+        <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
+          <h1 className="text-2xl md:text-3xl font-bold">Crear Nuevo Curso</h1>
+          <p className="text-blue-100 mt-2">
+            Completa la información para crear un nuevo curso en la plataforma
+          </p>
+        </div>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             {/* Columna Izquierda */}
@@ -268,9 +266,8 @@ export default function CrearCurso() {
                   value={form.titulo}
                   onChange={handleChange}
                   required
-                  className={`w-full px-5 py-4 bg-white border ${
-                    errors.titulo ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                  className={`w-full px-5 py-4 bg-white border ${errors.titulo ? "border-red-500" : "border-gray-200"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                   placeholder="Introducción a la Programación"
                 />
                 {errors.titulo && (
@@ -291,9 +288,8 @@ export default function CrearCurso() {
                   value={form.descripcion}
                   onChange={handleChange}
                   required
-                  className={`w-full px-5 py-4 bg-white border ${
-                    errors.descripcion ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm`}
+                  className={`w-full px-5 py-4 bg-white border ${errors.descripcion ? "border-red-500" : "border-gray-200"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm`}
                   rows={4}
                   placeholder="Describe los objetivos y contenido del curso..."
                 />
@@ -317,9 +313,8 @@ export default function CrearCurso() {
                   value={form.profesorId}
                   onChange={handleChange}
                   required
-                  className={`w-full px-5 py-4 bg-white border ${
-                    errors.profesorId ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                  className={`w-full px-5 py-4 bg-white border ${errors.profesorId ? "border-red-500" : "border-gray-200"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                 >
                   <option value="">Seleccione un profesor</option>
                   {Array.isArray(profesores) &&
@@ -369,9 +364,8 @@ export default function CrearCurso() {
                     value={form.fecha || ""}
                     onChange={handleChange}
                     required
-                    className={`w-full px-5 py-4 bg-white border ${
-                      errors.fecha ? "border-red-500" : "border-gray-200"
-                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                    className={`w-full px-5 py-4 bg-white border ${errors.fecha ? "border-red-500" : "border-gray-200"
+                      } rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                   />
                   {errors.fecha && (
                     <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
@@ -391,9 +385,8 @@ export default function CrearCurso() {
                 </label>
                 <div className="relative">
                   <div
-                    className={`w-full px-5 py-4 bg-white border ${
-                      errors.hora ? "border-red-500" : "border-gray-200"
-                    } rounded-xl text-gray-800 cursor-pointer flex items-center justify-between shadow-sm`}
+                    className={`w-full px-5 py-4 bg-white border ${errors.hora ? "border-red-500" : "border-gray-200"
+                      } rounded-xl text-gray-800 cursor-pointer flex items-center justify-between shadow-sm`}
                     onClick={() => setShowHourDropdown((s) => !s)}
                   >
                     <span>{form.hora || "Seleccionar hora"}</span>
@@ -492,9 +485,8 @@ export default function CrearCurso() {
                   value={form.link}
                   onChange={handleChange}
                   required
-                  className={`w-full px-5 py-4 bg-white border ${
-                    errors.link ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                  className={`w-full px-5 py-4 bg-white border ${errors.link ? "border-red-500" : "border-gray-200"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                   placeholder={
                     form.tipo.startsWith("ONLINE") ? "https://meet.google.com/..." : "https://goo.gl/maps/..."
                   }
@@ -520,9 +512,8 @@ export default function CrearCurso() {
                     onChange={handleChange}
                     min={1}
                     required
-                    className={`w-full px-5 py-4 bg-white border ${
-                      errors.cupos ? "border-red-500" : "border-gray-200"
-                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                    className={`w-full px-5 py-4 bg-white border ${errors.cupos ? "border-red-500" : "border-gray-200"
+                      } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                   />
                   {errors.cupos && (
                     <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.cupos}</p>
@@ -545,9 +536,8 @@ export default function CrearCurso() {
                         value={form.precio === 0 ? "" : form.precio}
                         onChange={handleChange}
                         placeholder="0.00"
-                        className={`w-full pl-10 pr-5 py-4 bg-white border ${
-                          errors.precio ? "border-red-500" : "border-gray-200"
-                        } rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                        className={`w-full pl-10 pr-5 py-4 bg-white border ${errors.precio ? "border-red-500" : "border-gray-200"
+                          } rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                         inputMode="decimal"
                         step="0.01"
                         min="0"

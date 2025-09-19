@@ -171,7 +171,7 @@ export default function DashboardAdminCursos() {
     },
     {
       title: "Estudiantes",
-      value: paymentStats.totalPagados + paymentStats.totalGratis,
+      value: stats?.totalEstudiantes || 0,
       icon: <FaUsers className="text-2xl" />,
       color: "bg-gradient-to-r from-green-500 to-green-600",
       textColor: "text-white"
