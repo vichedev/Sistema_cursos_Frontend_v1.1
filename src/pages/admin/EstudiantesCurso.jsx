@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 import { HiOutlineAcademicCap } from "react-icons/hi";
 import { FiUsers, FiDownload, FiMail } from "react-icons/fi";
+import { isCourseExpired } from '../../utils/dateUtils';
 
 export default function EstudiantesCurso() {
   const { id } = useParams();
@@ -161,6 +162,8 @@ export default function EstudiantesCurso() {
     );
   }
 
+  const isExpired = curso ? isCourseExpired(curso) : false;
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <SidebarAdmin />
@@ -173,7 +176,14 @@ export default function EstudiantesCurso() {
                 <FaUserGraduate className="text-4xl" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold mb-2">Estudiantes Inscritos</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-bold mb-2">Estudiantes Inscritos</h1>
+                  {isExpired && (
+                    <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold">
+                      CURSO FINALIZADO
+                    </span>
+                  )}
+                </div>
                 <p className="text-blue-100 text-lg">
                   Curso: <span className="font-semibold">{curso?.titulo || "Cargando..."}</span>
                 </p>

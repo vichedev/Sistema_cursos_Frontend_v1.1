@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { FaSearch, FaFilter, FaMoneyBillWave, FaGraduationCap } from "react-icons/fa";
+import { isCourseExpired } from '../../utils/dateUtils';
 
 export default function MisCursos() {
   const [misCursos, setMisCursos] = useState([]);
@@ -25,7 +26,7 @@ export default function MisCursos() {
 
       try {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/courses/mis-cursos?userId=${userId}`, {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
             'ngrok-skip-browser-warning': 'true',
             'Content-Type': 'application/json',
@@ -190,8 +191,8 @@ export default function MisCursos() {
               <button
                 onClick={() => setActiveTab('ACTIVOS')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === 'ACTIVOS'
-                    ? 'bg-blue-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 <FaGraduationCap />
@@ -204,8 +205,8 @@ export default function MisCursos() {
               <button
                 onClick={() => setActiveTab('INACTIVOS')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === 'INACTIVOS'
-                    ? 'bg-green-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-green-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 <FaMoneyBillWave />
@@ -218,8 +219,8 @@ export default function MisCursos() {
               <button
                 onClick={() => setActiveTab('GRATIS')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === 'GRATIS'
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 <FaFilter />
@@ -232,8 +233,8 @@ export default function MisCursos() {
               <button
                 onClick={() => setActiveTab('PAGADOS')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === 'PAGADOS'
-                    ? 'bg-yellow-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-yellow-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 <FaMoneyBillWave />
@@ -281,12 +282,14 @@ export default function MisCursos() {
 
 // Componente de tarjeta de curso para reutilizar
 function CursoCard({ curso }) {
+  const isExpired = isCourseExpired(curso);
+
   return (
     <div className="bg-white rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       <div className="relative">
         <img
-          src={curso.imagen 
-            ? `${import.meta.env.VITE_BACKEND_URL}/uploads/${curso.imagen}` 
+          src={curso.imagen
+            ? `${import.meta.env.VITE_BACKEND_URL}/uploads/${curso.imagen}`
             : "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop"
           }
           alt={curso.titulo}
@@ -295,23 +298,34 @@ function CursoCard({ curso }) {
             e.target.src = "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop";
           }}
         />
-        <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold shadow ${
-          curso.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
-          {curso.activo ? 'ACTIVO' : 'INACTIVO'}
-        </span>
-        {curso.precio > 0 && (
-          <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold shadow">
-            ${curso.precio}
+
+        {/* ETIQUETAS COMBINADAS */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
+          {/* Etiqueta de tipo */}
+          <span className={`px-3 py-1 rounded-full text-xs font-bold shadow ${curso.precio > 0
+            ? 'bg-yellow-100 text-yellow-800'
+            : 'bg-blue-100 text-blue-700'
+            }`}>
+            {curso.precio > 0 ? 'PAGADO' : 'GRATIS'}
           </span>
-        )}
+
+          {/* Etiqueta de estado */}
+          <span className={`px-3 py-1 rounded-full text-xs font-bold shadow ${isExpired
+            ? 'bg-red-100 text-red-700'
+            : curso.activo
+              ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'
+            }`}>
+            {isExpired ? 'FINALIZADO' : curso.activo ? 'ACTIVO' : 'INACTIVO'}
+          </span>
+        </div>
       </div>
-      
+
       <div className="flex-1 flex flex-col justify-between p-6">
         <div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">{curso.titulo || "Sin título"}</h3>
           <p className="text-gray-600 text-sm mb-4 line-clamp-3">{curso.descripcion || "Sin descripción"}</p>
-          
+
           <div className="flex flex-wrap gap-2 mb-4">
             {curso.tipo && (
               <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
@@ -337,8 +351,12 @@ function CursoCard({ curso }) {
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-100">
-          {/* Acceso o mensaje de inactivo */}
-          {curso.activo ? (
+          {/* Acceso o mensaje de inactivo/Expirado */}
+          {isExpired ? (
+            <div className="text-center bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold text-sm">
+              Curso finalizado - Ya no disponible
+            </div>
+          ) : curso.activo ? (
             curso.link ? (
               <a
                 href={curso.link}
@@ -359,10 +377,12 @@ function CursoCard({ curso }) {
             </div>
           )}
 
-          {/* Leyenda para curso inactivo */}
-          {!curso.activo && (
+          {/* Leyenda para curso inactivo o expirado */}
+          {(!curso.activo || isExpired) && (
             <div className="mt-3 p-3 text-center bg-gray-100 text-gray-600 rounded-lg text-xs">
-              Este curso fue eliminado pero se mantiene en tu historial
+              {isExpired
+                ? "Este curso ya finalizó según su fecha programada"
+                : "Este curso fue eliminado pero se mantiene en tu historial"}
             </div>
           )}
 

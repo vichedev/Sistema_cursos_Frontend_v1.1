@@ -11,7 +11,7 @@ export default function Vertodosloscursos() {
   const [cursos, setCursos] = useState([]);
   const [filteredCursos, setFilteredCursos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('PAGADO'); // 'PAGADO', 'GRATIS', 'TODOS'
+  const [activeTab, setActiveTab] = useState('TODOS'); // 'PAGADO', 'GRATIS', 'TODOS'
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -282,16 +282,13 @@ export default function Vertodosloscursos() {
                 <CursoCardAdmin
                   key={curso.id}
                   curso={curso}
-                  onCursoDeleted={handleCursoDeleted}
-                  onCursoUpdated={handleCursoUpdated}
+                  setCursos={setCursos}
                 />
               ))
             )}
           </div>
         </div>
       </main>
-
-
     </div>
   );
 }
