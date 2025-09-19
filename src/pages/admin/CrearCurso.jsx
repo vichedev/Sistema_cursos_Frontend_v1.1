@@ -62,15 +62,26 @@ export default function CrearCurso() {
 
   const handleChange = (e) => {
     let value = e.target.value;
-    if (e.target.name === "cupos") value = Number(value);
-    if (e.target.name === "precio") value = value === "" ? "" : Number(value);
 
+    if (e.target.name === "cupos") {
+      // Permite que 'cupos' sea vacío, de lo contrario convierte el valor a número
+      value = value === "" ? "" : Number(value);
+    }
+
+    if (e.target.name === "precio") {
+      // Permite que 'precio' sea vacío, de lo contrario convierte el valor a número
+      value = value === "" ? "" : Number(value);
+    }
+
+    // Actualizar el estado del formulario
     setForm((prev) => ({ ...prev, [e.target.name]: value }));
 
+    // Eliminar cualquier error si el campo tiene un valor válido
     if (errors[e.target.name]) {
       setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
     }
   };
+
 
   const handleTipoChange = (e) => {
     setForm((prev) => ({ ...prev, tipo: e.target.value, link: "" }));
@@ -477,7 +488,7 @@ export default function CrearCurso() {
                     type="number"
                     value={form.cupos}
                     onChange={handleChange}
-                    min={1}
+                    min={0}
                     required
                     className={`w-full px-5 py-4 bg-white border ${errors.cupos ? "border-red-500" : "border-gray-200"
                       } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm`}
@@ -516,6 +527,7 @@ export default function CrearCurso() {
                   </div>
                 )}
               </div>
+
 
               {/* Notificaciones */}
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">

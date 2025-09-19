@@ -130,9 +130,10 @@ export default function EditarCurso() {
 
   const validateForm = () => {
     const newErrors = {};
+
+    // Validación para el campo 'Cupos'
     if (!form.titulo.trim()) newErrors.titulo = "El título es obligatorio";
-    if (!form.descripcion.trim())
-      newErrors.descripcion = "La descripción es obligatoria";
+    if (!form.descripcion.trim()) newErrors.descripcion = "La descripción es obligatoria";
     if (!form.profesorId) newErrors.profesorId = "Debes seleccionar un profesor";
     if (!form.fecha) newErrors.fecha = "La fecha es obligatoria";
     if (!form.hora) newErrors.hora = "La hora es obligatoria";
@@ -141,19 +142,22 @@ export default function EditarCurso() {
         ? "El link de la videollamada es obligatorio"
         : "La ubicación es obligatoria";
 
+    // Si el tipo es "PAGADO", se asegura de que el precio sea mayor que 0
     if (form.tipo.endsWith("PAGADO")) {
       if (!form.precio || Number(form.precio) <= 0) {
         newErrors.precio = "El precio debe ser mayor a 0 para cursos pagados";
       }
     }
 
-    if (!form.cupos || form.cupos < 1) {
-      newErrors.cupos = "Debe haber al menos 1 cupo disponible";
+    // Permitir que 'Cupos' sea 0 o más
+    if (form.cupos < 0) {
+      newErrors.cupos = "Debe haber al menos 1 cupo disponible o puede ser 0";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -485,7 +489,7 @@ export default function EditarCurso() {
                       type="number"
                       value={form.cupos}
                       onChange={handleChange}
-                      min={1}
+                      min={0}
                       required
                       className={`w-full px-5 py-4 bg-white border ${errors.cupos ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm`}
                     />
