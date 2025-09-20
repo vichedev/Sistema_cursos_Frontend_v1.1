@@ -19,7 +19,7 @@ import {
   FaBriefcase,
 } from "react-icons/fa";
 import { FiMail } from "react-icons/fi";
-import AdminLayout from "../../layouts/AdminLayout";
+
 
 // Subcomponente: cursos del alumno (dropdown)
 const CursosDesplegable = ({ cursos }) => {
@@ -164,7 +164,7 @@ export default function UsuariosInscritos() {
 
   const openEditModal = async (user) => {
     setModalLoading(true);
-       setModalError(null);
+    setModalError(null);
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/${user.id}`, {
@@ -238,19 +238,17 @@ export default function UsuariosInscritos() {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-full py-24">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
-            <div className="text-xl font-semibold text-gray-700">Cargando usuarios...</div>
-          </div>
+      <div className="flex items-center justify-center h-full py-24">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
+          <div className="text-xl font-semibold text-gray-700">Cargando usuarios...</div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
+    <div className="bg-white rounded-2xl shadow-lg p-8">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-5 md:p-8 text-white shadow-xl mb-6 md:mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 md:gap-6">
@@ -291,11 +289,10 @@ export default function UsuariosInscritos() {
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-5 md:mb-8 overflow-x-auto scrollbar-thin -mx-4 px-4">
               <button
-                className={`flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 font-semibold transition whitespace-nowrap ${
-                  activeTab === "estudiantes"
+                className={`flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 font-semibold transition whitespace-nowrap ${activeTab === "estudiantes"
                     ? "border-b-4 border-blue-500 text-blue-600"
                     : "text-gray-500 hover:text-blue-600"
-                }`}
+                  }`}
                 onClick={() => setActiveTab("estudiantes")}
               >
                 <FaGraduationCap />
@@ -306,11 +303,10 @@ export default function UsuariosInscritos() {
               </button>
 
               <button
-                className={`flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 font-semibold transition whitespace-nowrap ${
-                  activeTab === "administradores"
+                className={`flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 font-semibold transition whitespace-nowrap ${activeTab === "administradores"
                     ? "border-b-4 border-blue-500 text-blue-600"
                     : "text-gray-500 hover:text-blue-600"
-                }`}
+                  }`}
                 onClick={() => setActiveTab("administradores")}
               >
                 <FaChalkboardTeacher />
@@ -749,6 +745,6 @@ export default function UsuariosInscritos() {
           error={modalError}
         />
       )}
-    </AdminLayout>
+    </div>
   );
 }

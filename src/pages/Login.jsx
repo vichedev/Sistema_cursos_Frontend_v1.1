@@ -22,11 +22,15 @@ export default function Login() {
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/login`, form);
       console.log('✅ Respuesta del login:', res.data);
 
+      // ✅ GUARDAR TODOS LOS DATOS IMPORTANTES
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('rol', res.data.rol);
       localStorage.setItem('userId', res.data.userId);
       localStorage.setItem('usuario', res.data.usuario);
       localStorage.setItem('nombres', res.data.nombres);
+      localStorage.setItem('apellidos', res.data.apellidos || '');
+      localStorage.setItem('correo', res.data.correo || '');
+      localStorage.setItem('celular', res.data.celular || '');
       localStorage.setItem('cargo', res.data.cargo || '');
 
       Swal.fire({
@@ -46,10 +50,11 @@ export default function Login() {
           toast.addEventListener('mouseleave', Swal.resumeTimer)
         }
       }).then(() => {
+        // ✅ CORREGIDO: Usar navigate en lugar de window.location.href
         if (res.data.rol === 'ADMIN') {
-          window.location.href = '/admin/dashboard';
+          navigate('/admin/dashboard', { replace: true });
         } else {
-          window.location.href = '/estudiante/dashboard';
+          navigate('/estudiante/dashboard', { replace: true });
         }
       });
     } catch (err) {
@@ -88,6 +93,7 @@ export default function Login() {
     }
   };
 
+  // ... (el resto del código permanece igual)
   const handleResendVerification = async () => {
     if (!emailToResend) {
       Swal.fire({

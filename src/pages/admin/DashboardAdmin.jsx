@@ -1,10 +1,6 @@
-import AdminLayout from "../../layouts/AdminLayout";
+// src/pages/admin/DashboardAdmin.jsx
 import DataGeneralAdminCursos from "../../components/admin/DataGeneralAdminCursos";
 
 export default function DashboardAdmin() {
-  return (
-    <AdminLayout>
-      <DataGeneralAdminCursos />
-    </AdminLayout>
-  );
+  return <DataGeneralAdminCursos />; // ✅ Solo el contenido, sin AdminLayout
 }

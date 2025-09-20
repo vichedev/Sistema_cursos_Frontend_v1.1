@@ -15,7 +15,6 @@ import {
   FaSave,
 } from "react-icons/fa";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
-import AdminLayout from "../../layouts/AdminLayout";
 
 export default function EditarCurso() {
   const { id } = useParams();
@@ -218,7 +217,6 @@ export default function EditarCurso() {
 
   if (loading) {
     return (
-      <AdminLayout>
         <div className="flex justify-center items-center h-full">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
@@ -227,12 +225,12 @@ export default function EditarCurso() {
             </div>
           </div>
         </div>
-      </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout>
+
+    <div className="bg-white rounded-2xl shadow-lg p-8">
       <div className="min-h-screen bg-gray-50 p-6">
         {/* Header */}
         <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
@@ -549,6 +547,7 @@ export default function EditarCurso() {
           </form>
         </div>
       </div>
-    </AdminLayout>
+    </div>
+
   );
 }

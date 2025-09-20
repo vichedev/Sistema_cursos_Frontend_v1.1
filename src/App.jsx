@@ -1,11 +1,12 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import LandingPage from "./pages/LandingPage";
 
-// ADMIN
+// ADMIN - Importa el layout y las páginas
+import AdminLayout from "./layouts/AdminLayout";
 import DashboardAdmin from "./pages/admin/DashboardAdmin";
 import CrearCurso from "./pages/admin/CrearCurso";
 import EditarCurso from "./pages/admin/EditarCurso";
@@ -13,7 +14,8 @@ import EstudiantesCurso from "./pages/admin/EstudiantesCurso";
 import UsuariosInscritos from "./pages/admin/UsuariosInscritos";
 import VerTodosLosCursos from "./pages/admin/VerTodosLosCursos";
 
-// ESTUDIANTE (cada página usa su EstudianteLayout por dentro)
+// ESTUDIANTE - Importa el layout y las páginas
+import EstudianteLayout from "./layouts/EstudianteLayout";
 import DashboardEstudiante from "./pages/estudiante/DashboardEstudiante";
 import CursosEstudiante from "./pages/estudiante/CursosEstudiante";
 import MisCursos from "./pages/estudiante/MisCursos";
@@ -38,18 +40,24 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
-          {/* ADMIN */}
-          <Route path="/admin/dashboard" element={<DashboardAdmin />} />
-          <Route path="/admin/crear-curso" element={<CrearCurso />} />
-          <Route path="/admin/ver-todo" element={<VerTodosLosCursos />} />
-          <Route path="/admin/editar-curso/:id" element={<EditarCurso />} />
-          <Route path="/admin/estudiantes-curso/:id" element={<EstudiantesCurso />} />
-          <Route path="/admin/usuarios-inscritos" element={<UsuariosInscritos />} />
+          {/* ADMIN - Rutas protegidas con layout ANIDADO */}
+          <Route path="/admin/*" element={<AdminLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardAdmin />} />
+            <Route path="crear-curso" element={<CrearCurso />} />
+            <Route path="ver-todo" element={<VerTodosLosCursos />} />
+            <Route path="editar-curso/:id" element={<EditarCurso />} />
+            <Route path="estudiantes-curso/:id" element={<EstudiantesCurso />} />
+            <Route path="usuarios-inscritos" element={<UsuariosInscritos />} />
+          </Route>
 
-          {/* ESTUDIANTE (sin layout aquí) */}
-          <Route path="/estudiante/dashboard" element={<DashboardEstudiante />} />
-          <Route path="/estudiante/cursos" element={<CursosEstudiante />} />
-          <Route path="/estudiante/mis-cursos" element={<MisCursos />} />
+          {/* ESTUDIANTE - Rutas protegidas con layout ANIDADO */}
+          <Route path="/estudiante/*" element={<EstudianteLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardEstudiante />} />
+            <Route path="cursos" element={<CursosEstudiante />} />
+            <Route path="mis-cursos" element={<MisCursos />} />
+          </Route>
 
           {/* PAGOS */}
           <Route path="/payment/success" element={<PaymentSuccess />} />

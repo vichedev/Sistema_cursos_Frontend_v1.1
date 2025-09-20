@@ -16,7 +16,6 @@ import {
 import { HiOutlineAcademicCap } from "react-icons/hi";
 import { FiUsers, FiDownload, FiMail } from "react-icons/fi";
 import { isCourseExpired } from '../../utils/dateUtils';
-import AdminLayout from "../../layouts/AdminLayout";
 
 export default function EstudiantesCurso() {
   const { id } = useParams();
@@ -119,49 +118,45 @@ export default function EstudiantesCurso() {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="flex justify-center items-center py-6">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500"></div>
-            <div className="text-blue-600 font-semibold text-lg">Cargando estudiantes...</div>
-          </div>
+      <div className="flex justify-center items-center py-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500"></div>
+          <div className="text-blue-600 font-semibold text-lg">Cargando estudiantes...</div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <AdminLayout>
-        <div className="flex justify-center items-center py-6">
-          <div className="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md mx-4">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">Error al cargar</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md"
-              >
-                Reintentar
-              </button>
-              <button
-                onClick={() => navigate("/admin/ver-todo")}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md"
-              >
-                Volver a cursos
-              </button>
-            </div>
+      <div className="flex justify-center items-center py-6">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md mx-4">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Error al cargar</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md"
+            >
+              Reintentar
+            </button>
+            <button
+              onClick={() => navigate("/admin/ver-todo")}
+              className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md"
+            >
+              Volver a cursos
+            </button>
           </div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   const isExpired = curso ? isCourseExpired(curso) : false;
 
   return (
-    <AdminLayout>
+    <div className="bg-white rounded-2xl shadow-lg p-8">
       {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -510,6 +505,6 @@ export default function EstudiantesCurso() {
           </>
         )}
       </div>
-    </AdminLayout>
+    </div>
   );
 }
