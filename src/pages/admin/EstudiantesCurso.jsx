@@ -98,7 +98,7 @@ export default function EstudiantesCurso() {
         `${est.nombres} ${est.apellidos}`,
         est.correo,
         `$${est.montoPagado.toFixed(2)}`,
-        est.metodoPago,
+        est.metodoPago || 'Gratis',
         est.fechaInscripcion ? new Date(est.fechaInscripcion).toLocaleDateString() : 'N/A'
       ])
     ].map(row => row.join(',')).join('\n');
@@ -130,20 +130,20 @@ export default function EstudiantesCurso() {
   if (error) {
     return (
       <div className="flex justify-center items-center py-6">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md mx-4">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">Error al cargar</h2>
+        <div className="text-center p-6 md:p-8 bg-white rounded-xl md:rounded-2xl shadow-lg max-w-md mx-4">
+          <div className="text-red-500 text-5xl md:text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-3">Error al cargar</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
             <button
               onClick={() => window.location.reload()}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transition shadow-md text-sm md:text-base"
             >
               Reintentar
             </button>
             <button
               onClick={() => navigate("/admin/ver-todo")}
-              className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md"
+              className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transition shadow-md text-sm md:text-base"
             >
               Volver a cursos
             </button>
@@ -156,42 +156,42 @@ export default function EstudiantesCurso() {
   const isExpired = curso ? isCourseExpired(curso) : false;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
-              <FaUserGraduate className="text-4xl" />
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl md:rounded-2xl p-5 md:p-8 text-white shadow-xl mb-6 md:mb-8">
+        <div className="flex flex-col gap-5 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="p-2 md:p-4 bg-white/20 rounded-xl md:rounded-2xl backdrop-blur-sm">
+              <FaUserGraduate className="text-2xl md:text-4xl" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold mb-2">Estudiantes Inscritos</h1>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3">
+                <h1 className="text-xl md:text-3xl font-bold">Estudiantes Inscritos</h1>
                 {isExpired && (
-                  <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold">
+                  <span className="px-2 md:px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs md:text-sm font-semibold self-start sm:self-auto">
                     CURSO FINALIZADO
                   </span>
                 )}
               </div>
-              <p className="text-blue-100 text-lg">
+              <p className="text-blue-100 text-sm md:text-lg mt-1">
                 Curso: <span className="font-semibold">{curso?.titulo || "Cargando..."}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex items-center gap-3 bg-white/20 px-5 py-3 rounded-xl backdrop-blur-sm">
-              <FiUsers className="text-2xl" />
-              <span className="text-xl font-bold">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-3 bg-white/20 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl backdrop-blur-sm">
+              <FiUsers className="text-lg md:text-2xl" />
+              <span className="text-base md:text-xl font-bold">
                 {estudiantes.length} Inscrito{estudiantes.length === 1 ? "" : "s"}
               </span>
             </div>
 
             <button
               onClick={() => navigate("/admin/ver-todo")}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-5 py-3 rounded-xl transition backdrop-blur-sm"
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl transition backdrop-blur-sm text-sm md:text-base"
             >
-              <FaArrowLeft />
+              <FaArrowLeft className="text-sm md:text-base" />
               Volver a cursos
             </button>
           </div>
@@ -199,43 +199,43 @@ export default function EstudiantesCurso() {
       </div>
 
       {/* Estadísticas de Pagos */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <FaMoneyBillWave className="text-2xl" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 md:p-6 rounded-xl md:rounded-2xl text-white shadow-lg">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl backdrop-blur-sm">
+              <FaMoneyBillWave className="text-lg md:text-2xl" />
             </div>
             <div>
-              <p className="text-sm opacity-90">Total Recaudado</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xs md:text-sm opacity-90">Total Recaudado</p>
+              <p className="text-xl md:text-2xl font-bold">
                 ${paymentData.totalRecaudado.toFixed(2)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <FaDollarSign className="text-2xl" />
+        <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 md:p-6 rounded-xl md:rounded-2xl text-white shadow-lg">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl backdrop-blur-sm">
+              <FaDollarSign className="text-lg md:text-2xl" />
             </div>
             <div>
-              <p className="text-sm opacity-90">Estudiantes Pagados</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xs md:text-sm opacity-90">Estudiantes Pagados</p>
+              <p className="text-xl md:text-2xl font-bold">
                 {paymentData.estudiantesPagados}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <FaUserFriends className="text-2xl" />
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 md:p-6 rounded-xl md:rounded-2xl text-white shadow-lg">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="p-2 md:p-3 bg-white/20 rounded-lg md:rounded-xl backdrop-blur-sm">
+              <FaUserFriends className="text-lg md:text-2xl" />
             </div>
             <div>
-              <p className="text-sm opacity-90">Estudiantes Gratis</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xs md:text-sm opacity-90">Estudiantes Gratis</p>
+              <p className="text-xl md:text-2xl font-bold">
                 {paymentData.estudiantesGratis}
               </p>
             </div>
@@ -245,83 +245,83 @@ export default function EstudiantesCurso() {
 
       {/* Información del Curso */}
       {curso && (
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            <div className="flex-shrink-0 p-5 bg-blue-100 rounded-2xl">
-              <HiOutlineAcademicCap className="text-5xl text-blue-600" />
+        <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-5 md:p-8 mb-6 md:mb-8">
+          <div className="flex flex-col lg:flex-row gap-5 md:gap-8 items-start">
+            <div className="flex-shrink-0 p-3 md:p-5 bg-blue-100 rounded-xl md:rounded-2xl self-center">
+              <HiOutlineAcademicCap className="text-3xl md:text-5xl text-blue-600" />
             </div>
 
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">{curso.titulo}</h2>
+            <div className="flex-1 w-full">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">{curso.titulo}</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <FaChalkboardTeacher className="text-blue-600 text-xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg md:rounded-xl">
+                  <div className="p-2 md:p-3 bg-blue-100 rounded-lg">
+                    <FaChalkboardTeacher className="text-blue-600 text-base md:text-xl" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Profesor</p>
-                    <p className="font-semibold text-gray-800">
+                    <p className="text-xs md:text-sm text-gray-500">Profesor</p>
+                    <p className="font-semibold text-gray-800 text-sm md:text-base">
                       {curso.profesor ? `${curso.profesor.nombres} ${curso.profesor.apellidos}` : "Por confirmar"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="p-3 bg-orange-100 rounded-lg">
-                    <FaCalendarAlt className="text-orange-600 text-xl" />
+                <div className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg md:rounded-xl">
+                  <div className="p-2 md:p-3 bg-orange-100 rounded-lg">
+                    <FaCalendarAlt className="text-orange-600 text-base md:text-xl" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Fecha</p>
-                    <p className="font-semibold text-gray-800">{curso.fecha || "Por definir"}</p>
+                    <p className="text-xs md:text-sm text-gray-500">Fecha</p>
+                    <p className="font-semibold text-gray-800 text-sm md:text-base">{curso.fecha || "Por definir"}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <FaClock className="text-purple-600 text-xl" />
+                <div className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg md:rounded-xl">
+                  <div className="p-2 md:p-3 bg-purple-100 rounded-lg">
+                    <FaClock className="text-purple-600 text-base md:text-xl" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Hora</p>
-                    <p className="font-semibold text-gray-800">{curso.hora || "Por definir"}</p>
+                    <p className="text-xs md:text-sm text-gray-500">Hora</p>
+                    <p className="font-semibold text-gray-800 text-sm md:text-base">{curso.hora || "Por definir"}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <FaUserFriends className="text-green-600 text-xl" />
+                <div className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg md:rounded-xl">
+                  <div className="p-2 md:p-3 bg-green-100 rounded-lg">
+                    <FaUserFriends className="text-green-600 text-base md:text-xl" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Cupos</p>
-                    <p className="font-semibold text-gray-800">{curso.cupos} disponibles</p>
+                    <p className="text-xs md:text-sm text-gray-500">Cupos</p>
+                    <p className="font-semibold text-gray-800 text-sm md:text-base">{curso.cupos} disponibles</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="p-3 bg-indigo-100 rounded-lg">
-                    <FaIdBadge className="text-indigo-600 text-xl" />
+                <div className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg md:rounded-xl">
+                  <div className="p-2 md:p-3 bg-indigo-100 rounded-lg">
+                    <FaIdBadge className="text-indigo-600 text-base md:text-xl" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Tipo</p>
-                    <p className="font-semibold text-gray-800">{curso.tipo?.replace(/_/g, " ")}</p>
+                    <p className="text-xs md:text-sm text-gray-500">Tipo</p>
+                    <p className="font-semibold text-gray-800 text-sm md:text-base">{curso.tipo?.replace(/_/g, " ")}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <FaDollarSign className="text-amber-600 text-xl" />
+                <div className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg md:rounded-xl">
+                  <div className="p-2 md:p-3 bg-amber-100 rounded-lg">
+                    <FaDollarSign className="text-amber-600 text-base md:text-xl" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Precio</p>
-                    <p className="font-semibold text-gray-800">${curso.precio || 0}</p>
+                    <p className="text-xs md:text-sm text-gray-500">Precio</p>
+                    <p className="font-semibold text-gray-800 text-sm md:text-base">${curso.precio || 0}</p>
                   </div>
                 </div>
               </div>
 
               {curso.profesor?.asignatura && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                  <p className="text-sm text-gray-600">Asignatura del profesor:</p>
-                  <p className="font-semibold text-blue-700">{curso.profesor.asignatura}</p>
+                <div className="mt-4 md:mt-6 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg md:rounded-xl border border-blue-200">
+                  <p className="text-xs md:text-sm text-gray-600">Asignatura del profesor:</p>
+                  <p className="font-semibold text-blue-700 text-sm md:text-base">{curso.profesor.asignatura}</p>
                 </div>
               )}
             </div>
@@ -330,35 +330,35 @@ export default function EstudiantesCurso() {
       )}
 
       {/* Lista de Estudiantes */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-5 md:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-6 md:mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-              <FaUserGraduate className="text-blue-600" />
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-2 md:gap-3">
+              <FaUserGraduate className="text-blue-600 text-lg md:text-xl" />
               Lista de Estudiantes
             </h2>
-            <p className="text-gray-600">Todos los estudiantes inscritos en este curso</p>
+            <p className="text-gray-600 text-sm md:text-base">Todos los estudiantes inscritos en este curso</p>
           </div>
 
           {estudiantes.length > 0 && (
             <button
               onClick={exportToCSV}
-              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-3 rounded-xl transition shadow-md"
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl transition shadow-md text-sm md:text-base"
             >
-              <FiDownload />
+              <FiDownload className="text-sm md:text-base" />
               Exportar CSV
             </button>
           )}
         </div>
 
         {estudiantes.length === 0 ? (
-          <div className="text-center py-16 bg-gray-50 rounded-2xl">
-            <div className="text-8xl mb-4">👨‍🎓</div>
-            <h3 className="text-2xl font-semibold text-gray-700 mb-3">No hay estudiantes inscritos</h3>
-            <p className="text-gray-500 mb-6">Aún no hay estudiantes registrados en este curso.</p>
+          <div className="text-center py-10 md:py-16 bg-gray-50 rounded-xl md:rounded-2xl">
+            <div className="text-6xl md:text-8xl mb-3 md:mb-4">👨‍🎓</div>
+            <h3 className="text-lg md:text-2xl font-semibold text-gray-700 mb-2 md:mb-3">No hay estudiantes inscritos</h3>
+            <p className="text-gray-500 mb-4 md:mb-6 text-sm md:text-base">Aún no hay estudiantes registrados en este curso.</p>
             <button
               onClick={() => navigate("/admin/ver-todo")}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transition shadow-md text-sm md:text-base"
             >
               Volver a cursos
             </button>
@@ -366,43 +366,45 @@ export default function EstudiantesCurso() {
         ) : (
           <>
             {/* Mobile Cards */}
-            <div className="block md:hidden space-y-4">
+            <div className="block md:hidden space-y-3">
               {estudiantes.map((est, i) => (
                 <div
                   key={est.id || i}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                        {est.nombres?.[0] || "?"}
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                        {est.nombres?.[0]?.toUpperCase() || "?"}
                       </div>
-                      <span className="text-xs text-blue-600 font-bold mt-2 bg-blue-100 px-3 py-1 rounded-full">
+                      <span className="text-xs text-blue-600 font-bold mt-1 bg-blue-100 px-2 py-0.5 rounded-full">
                         #{i + 1}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-800 text-lg">
+                      <h3 className="font-semibold text-gray-800 text-base">
                         {est.nombres} {est.apellidos}
                       </h3>
-                      <div className="flex items-center gap-2 mt-2 text-gray-600">
-                        <FaEnvelope className="text-blue-500" />
-                        <span className="text-sm">{est.correo}</span>
+                      <div className="flex items-center gap-1 mt-1 text-gray-600">
+                        <FaEnvelope className="text-blue-500 text-xs" />
+                        <span className="text-xs truncate">{est.correo}</span>
                       </div>
 
                       {/* Pago */}
-                      <div className="mt-3">
+                      <div className="mt-2">
                         {est.montoPagado > 0 ? (
-                          <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg">
-                            <FaDollarSign className="text-sm" />
-                            <span className="text-sm font-medium">Pagó: ${est.montoPagado.toFixed(2)}</span>
-                            <span className="text-xs bg-green-100 px-2 py-1 rounded-full">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 bg-green-50 text-green-700 px-2 py-1.5 rounded-lg text-xs">
+                            <div className="flex items-center gap-1">
+                              <FaDollarSign className="text-xs" />
+                              <span className="font-medium">Pagó: ${est.montoPagado.toFixed(2)}</span>
+                            </div>
+                            <span className="bg-green-100 px-1.5 py-0.5 rounded-full">
                               Pagado
                             </span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg">
-                            <span className="text-sm font-medium">Gratis</span>
+                          <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-2 py-1.5 rounded-lg text-xs">
+                            <span className="font-medium">Gratis</span>
                           </div>
                         )}
                       </div>
@@ -413,20 +415,20 @@ export default function EstudiantesCurso() {
             </div>
 
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
-              <table className="w-full">
+            <div className="hidden md:block overflow-auto rounded-xl md:rounded-2xl border border-gray-200 shadow-sm">
+              <table className="w-full min-w-[600px]">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider rounded-tl-2xl">
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider rounded-tl-xl md:rounded-tl-2xl">
                       #
                     </th>
-                    <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Estudiante
                     </th>
-                    <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Correo electrónico
                     </th>
-                    <th className="px-8 py-5 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider rounded-tr-2xl">
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider rounded-tr-xl md:rounded-tr-2xl">
                       Pago
                     </th>
                   </tr>
@@ -434,40 +436,40 @@ export default function EstudiantesCurso() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {estudiantes.map((est, i) => (
                     <tr key={est.id || i} className="hover:bg-blue-50 transition-colors">
-                      <td className="px-8 py-5 whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold text-lg">
+                      <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 text-blue-700 font-bold text-sm md:text-lg">
                           {i + 1}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                            {est.nombres?.[0] || "?"}
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-sm">
+                            {est.nombres?.[0]?.toUpperCase() || "?"}
                           </div>
                           <div>
-                            <div className="font-semibold text-gray-900 text-lg">
+                            <div className="font-semibold text-gray-900 text-sm md:text-base">
                               {est.nombres} {est.apellidos}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-3">
-                          <FiMail className="text-blue-500 text-lg" />
-                          <span className="text-gray-700 text-lg">{est.correo}</span>
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="flex items-center gap-2">
+                          <FiMail className="text-blue-500 text-sm md:text-lg" />
+                          <span className="text-gray-700 text-sm md:text-base">{est.correo}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-4 md:px-6 py-3 md:py-4">
                         {est.montoPagado > 0 ? (
-                          <div className="flex items-center gap-3 bg-green-50 text-green-700 px-4 py-3 rounded-xl">
-                            <FaDollarSign className="text-lg" />
+                          <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg md:rounded-xl text-sm md:text-base">
+                            <FaDollarSign className="text-sm md:text-lg" />
                             <span className="font-semibold">${est.montoPagado.toFixed(2)}</span>
-                            <span className="text-sm bg-green-100 px-3 py-1 rounded-full">
+                            <span className="text-xs bg-green-100 px-2 py-1 rounded-full">
                               Pagado
                             </span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-3 bg-blue-50 text-blue-700 px-4 py-3 rounded-xl">
+                          <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg md:rounded-xl text-sm md:text-base">
                             <span className="font-semibold">Gratis</span>
                           </div>
                         )}
@@ -479,26 +481,26 @@ export default function EstudiantesCurso() {
             </div>
 
             {/* Summary Footer */}
-            <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <FiUsers className="text-blue-600 text-xl" />
-                  <span className="text-lg text-gray-700">
-                    Total de estudiantes: <strong>{estudiantes.length}</strong>
+            <div className="mt-6 md:mt-8 p-4 md:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl md:rounded-2xl border border-blue-200">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+                <div className="flex items-center gap-2">
+                  <FiUsers className="text-blue-600 text-lg md:text-xl" />
+                  <span className="text-sm md:text-lg text-gray-700">
+                    Total: <strong>{estudiantes.length}</strong>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-lg text-green-600 bg-green-100 px-4 py-2 rounded-xl font-semibold">
+                <div className="flex items-center gap-3">
+                  <div className="text-sm md:text-lg text-green-600 bg-green-100 px-2 md:px-4 py-1 md:py-2 rounded-lg md:rounded-xl font-semibold">
                     <strong>{paymentData.estudiantesPagados}</strong> pagados
                   </div>
-                  <div className="text-lg text-blue-600 bg-blue-100 px-4 py-2 rounded-xl font-semibold">
+                  <div className="text-sm md:text-lg text-blue-600 bg-blue-100 px-2 md:px-4 py-1 md:py-2 rounded-lg md:rounded-xl font-semibold">
                     <strong>{paymentData.estudiantesGratis}</strong> gratis
                   </div>
                 </div>
 
-                <div className="text-sm text-gray-500">
-                  Curso ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{id}</span>
+                <div className="text-xs md:text-sm text-gray-500">
+                  Curso ID: <span className="font-mono bg-gray-100 px-1 md:px-2 py-0.5 md:py-1 rounded">{id}</span>
                 </div>
               </div>
             </div>
