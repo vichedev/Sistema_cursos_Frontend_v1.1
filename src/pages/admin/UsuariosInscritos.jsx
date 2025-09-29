@@ -223,14 +223,18 @@ export default function UsuariosInscritos() {
         (user.usuario && user.usuario.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (user.cedula && user.cedula.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchesCiudad = !filterCiudad || (user.ciudad && user.ciudad === filterCiudad);
-      const matchesEmpresa = !filterEmpresa || (user.empresa && user.empresa === filterEmpresa);
-      const matchesCurso =
-        !filterCurso ||
-        (user.cursos && user.cursos.some(curso => curso.titulo === filterCurso));
-      const matchesCedula = !filterCedula || (user.cedula && user.cedula.toLowerCase().includes(filterCedula.toLowerCase()));
+      // Solo aplicar filtros avanzados para estudiantes
+      if (activeTab === "estudiantes") {
+        const matchesCiudad = !filterCiudad || (user.ciudad && user.ciudad === filterCiudad);
+        const matchesEmpresa = !filterEmpresa || (user.empresa && user.empresa === filterEmpresa);
+        const matchesCurso = !filterCurso || (user.cursos && user.cursos.some(curso => curso.titulo === filterCurso));
+        const matchesCedula = !filterCedula || (user.cedula && user.cedula.toLowerCase().includes(filterCedula.toLowerCase()));
 
-      return matchesSearch && matchesCiudad && matchesEmpresa && matchesCurso && matchesCedula;
+        return matchesSearch && matchesCiudad && matchesEmpresa && matchesCurso && matchesCedula;
+      }
+
+      // Para administradores, solo aplicar búsqueda general
+      return matchesSearch;
     });
   };
 
@@ -301,6 +305,25 @@ export default function UsuariosInscritos() {
     setModalError(null);
   };
   // Implementa handleCreateUser, handleUpdateUser, handleDeleteUser según tu lógica
+
+  const handleCreateUser = async (newUser) => {
+    setModalLoading(true);
+    setModalError(null);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/users`, newUser, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      closeModal();
+      fetchUsuarios(); // Recargar la lista
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Error al crear usuario";
+      setModalError(errorMessage);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -384,22 +407,29 @@ export default function UsuariosInscritos() {
             </div>
 
             {/* Barra de búsqueda y filtros solo para estudiantes */}
-            {activeTab === "estudiantes" && (
-              <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaSearch className="text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar por nombre, email, cédula, ciudad..."
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
 
-                <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              {/* Barra de búsqueda - mostrar para ambas pestañas */}
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaSearch className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder={
+                    activeTab === "estudiantes"
+                      ? "Buscar por nombre, email, cédula, ciudad..."
+                      : "Buscar por nombre, email, usuario..."
+                  }
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                {/* Botón Filtros - solo para estudiantes */}
+                {activeTab === "estudiantes" && (
                   <button
                     className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -407,19 +437,40 @@ export default function UsuariosInscritos() {
                     <FaFilter className="text-gray-600" />
                     <span className="hidden sm:inline">Filtros</span>
                   </button>
+                )}
 
-                  {filteredUsers(data.estudiantes).length > 0 && (
-                    <button
-                      onClick={() => exportToExcel(data.estudiantes, "estudiantes")}
-                      className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-xl transition shadow-md"
-                    >
-                      <FaFileExcel className="flex-shrink-0" />
-                      <span className="hidden sm:inline">Exportar</span>
-                    </button>
-                  )}
-                </div>
+                {/* Botón Agregar Profesor - solo para administradores */}
+                {activeTab === "administradores" && (
+                  <button
+                    onClick={() => {
+                      setModalType("crear");
+                      setModalUser(null);
+                      setModalError(null);
+                    }}
+                    className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-xl transition shadow-md"
+                  >
+                    <FaPlus className="flex-shrink-0" />
+                    <span className="hidden sm:inline">Agregar Profesor</span>
+                    <span className="sm:hidden">Nuevo</span>
+                  </button>
+                )}
+
+                {/* Botón Exportar - para ambas pestañas */}
+                {filteredUsers(activeTab === "estudiantes" ? data.estudiantes : data.administradores).length > 0 && (
+                  <button
+                    onClick={() => exportToExcel(
+                      activeTab === "estudiantes" ? data.estudiantes : data.administradores,
+                      activeTab
+                    )}
+                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-xl transition shadow-md"
+                  >
+                    <FaFileExcel className="flex-shrink-0" />
+                    <span className="hidden sm:inline">Exportar</span>
+                  </button>
+                )}
               </div>
-            )}
+            </div>
+
 
             {/* Filtros avanzados solo para estudiantes */}
             {isFilterOpen && activeTab === "estudiantes" && (
@@ -735,11 +786,13 @@ export default function UsuariosInscritos() {
       {modalType === "crear" && (
         <ModalCrearUsuarioAdmin
           onClose={closeModal}
-          onCreate={() => {}}
+          onCreate={handleCreateUser}
           loading={modalLoading}
           error={modalError}
         />
       )}
+
+
       {modalType === "ver" &&
         (modalLoading ? (
           <ModalVerUsuario user={null} loading={modalLoading} error={modalError} onClose={closeModal} />
@@ -750,7 +803,7 @@ export default function UsuariosInscritos() {
         <ModalEditarUsuario
           user={modalUser}
           onClose={closeModal}
-          onUpdate={() => {}}
+          onUpdate={() => { }}
           loading={modalLoading}
           error={modalError}
         />
@@ -759,7 +812,7 @@ export default function UsuariosInscritos() {
         <ModalEliminarUsuario
           user={modalUser}
           onClose={closeModal}
-          onDelete={() => {}}
+          onDelete={() => { }}
           loading={modalLoading}
           error={modalError}
         />
