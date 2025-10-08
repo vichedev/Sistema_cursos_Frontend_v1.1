@@ -26,7 +26,7 @@ const Hero = () => {
         {/* Contenedor de texto a la izquierda */}
         <div className="text-white max-w-2xl flex flex-col gap-6">
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight mb-6 drop-shadow-lg">
-            <span className="block">Aprende con RNC</span>
+            <span className="block">Aprende con MAAT</span>
             <span className="block bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">
               Cursos Online de Calidad
             </span>
