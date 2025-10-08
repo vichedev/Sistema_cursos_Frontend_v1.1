@@ -210,6 +210,73 @@ export default function UsuariosInscritos() {
       .finally(() => setLoading(false));
   };
 
+  // ✅ FUNCIÓN CORREGIDA: handleUpdateUser implementada
+  const handleUpdateUser = async (updatedUser) => {
+    setModalLoading(true);
+    setModalError(null);
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Preparar datos para enviar (sin campos innecesarios)
+      const dataToSend = {
+        nombres: updatedUser.nombres,
+        apellidos: updatedUser.apellidos,
+        correo: updatedUser.correo,
+        usuario: updatedUser.usuario,
+        rol: updatedUser.rol,
+        ciudad: updatedUser.ciudad,
+        empresa: updatedUser.empresa,
+        cargo: updatedUser.cargo,
+        asignatura: updatedUser.asignatura,
+      };
+      
+      // Solo incluir password si no está vacío
+      if (updatedUser.password && updatedUser.password.trim() !== "") {
+        dataToSend.password = updatedUser.password;
+      }
+
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/users/${updatedUser.id}`,
+        dataToSend,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      closeModal();
+      fetchUsuarios(); // Recargar la lista
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Error al actualizar usuario";
+      setModalError(errorMessage);
+      throw err; // Importante para que SweetAlert detecte el error
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // ✅ FUNCIÓN CORREGIDA: handleDeleteUser implementada
+  const handleDeleteUser = async (userToDelete) => {
+    setModalLoading(true);
+    setModalError(null);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/users/${userToDelete.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      closeModal();
+      fetchUsuarios(); // Recargar la lista
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Error al eliminar usuario";
+      setModalError(errorMessage);
+      throw err;
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   const filteredUsers = (users) => {
     return users.filter(user => {
       const matchesSearch =
@@ -285,26 +352,26 @@ export default function UsuariosInscritos() {
     saveAs(blob, `${tipo}_usuarios_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  // Aquí deberías implementar las funciones para abrir y cerrar modales, crear, editar y eliminar usuarios
-  // Por ejemplo:
   const openViewModal = (user) => {
     setModalUser(user);
     setModalType("ver");
   };
+
   const openEditModal = (user) => {
     setModalUser(user);
     setModalType("editar");
   };
+
   const openDeleteModal = (user) => {
     setModalUser(user);
     setModalType("eliminar");
   };
+
   const closeModal = () => {
     setModalType(null);
     setModalUser(null);
     setModalError(null);
   };
-  // Implementa handleCreateUser, handleUpdateUser, handleDeleteUser según tu lógica
 
   const handleCreateUser = async (newUser) => {
     setModalLoading(true);
@@ -323,7 +390,6 @@ export default function UsuariosInscritos() {
       setModalLoading(false);
     }
   };
-
 
   if (loading) {
     return (
@@ -406,8 +472,7 @@ export default function UsuariosInscritos() {
               </button>
             </div>
 
-            {/* Barra de búsqueda y filtros solo para estudiantes */}
-
+            {/* Barra de búsqueda y filtros */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               {/* Barra de búsqueda - mostrar para ambas pestañas */}
               <div className="relative flex-1">
@@ -470,7 +535,6 @@ export default function UsuariosInscritos() {
                 )}
               </div>
             </div>
-
 
             {/* Filtros avanzados solo para estudiantes */}
             {isFilterOpen && activeTab === "estudiantes" && (
@@ -792,27 +856,30 @@ export default function UsuariosInscritos() {
         />
       )}
 
-
       {modalType === "ver" &&
         (modalLoading ? (
           <ModalVerUsuario user={null} loading={modalLoading} error={modalError} onClose={closeModal} />
         ) : (
           modalUser && <ModalVerUsuario user={modalUser} onClose={closeModal} />
         ))}
+
+      {/* ✅ MODAL EDITAR CORREGIDO - ahora usa handleUpdateUser */}
       {modalType === "editar" && modalUser && (
         <ModalEditarUsuario
           user={modalUser}
           onClose={closeModal}
-          onUpdate={() => { }}
+          onUpdate={handleUpdateUser} // ✅ Ahora está implementada
           loading={modalLoading}
           error={modalError}
         />
       )}
+
+      {/* ✅ MODAL ELIMINAR CORREGIDO - ahora usa handleDeleteUser */}
       {modalType === "eliminar" && modalUser && (
         <ModalEliminarUsuario
           user={modalUser}
           onClose={closeModal}
-          onDelete={() => { }}
+          onDelete={handleDeleteUser} // ✅ Ahora está implementada
           loading={modalLoading}
           error={modalError}
         />

@@ -38,6 +38,10 @@ export default function EditarCurso() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Estados temporales para manejar la visualización
+  const [tempCupos, setTempCupos] = useState("");
+  const [tempPrecio, setTempPrecio] = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -69,17 +73,24 @@ export default function EditarCurso() {
       })
       .then((res) => {
         const curso = res.data;
+        const cuposValue = curso.cupos || 0;
+        const precioValue = curso.precio || 0;
+
         setForm({
           titulo: curso.titulo || "",
           descripcion: curso.descripcion || "",
           profesorId: curso.profesorId || "",
           tipo: curso.tipo || "ONLINE_GRATIS",
-          cupos: curso.cupos || 1,
+          cupos: cuposValue,
           link: curso.link || "",
-          precio: curso.precio || 0,
+          precio: precioValue,
           fecha: curso.fecha || "",
           hora: curso.hora || "",
         });
+
+        // Inicializar estados temporales
+        setTempCupos(cuposValue === 0 ? "" : cuposValue.toString());
+        setTempPrecio(precioValue === 0 ? "" : precioValue.toString());
 
         if (curso.imagen) {
           const imagenUrl = curso.imagen.startsWith("http")
@@ -108,14 +119,11 @@ export default function EditarCurso() {
   };
 
   const handleChange = (e) => {
-    let value = e.target.value;
-    if (e.target.name === "cupos") value = Number(value);
-    if (e.target.name === "precio") value = value === "" ? "" : Number(value);
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
 
-    setForm({ ...form, [e.target.name]: value });
-
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: "" });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
     }
   };
 
@@ -127,13 +135,50 @@ export default function EditarCurso() {
     }
   };
 
+  // Manejo específico para cupos
+  const handleCuposChange = (e) => {
+    const value = e.target.value;
+    setTempCupos(value); // Guardar temporalmente como string
+
+    // Convertir a número para el form
+    if (value === "") {
+      setForm((prev) => ({ ...prev, cupos: 0 }));
+    } else {
+      const cuposValue = parseInt(value) || 0;
+      setForm((prev) => ({ ...prev, cupos: cuposValue }));
+    }
+
+    if (errors.cupos) {
+      setErrors({ ...errors, cupos: "" });
+    }
+  };
+
+  // Manejo específico para precio
+  const handlePrecioChange = (e) => {
+    const value = e.target.value;
+    setTempPrecio(value); // Guardar temporalmente como string
+
+    // Convertir a número para el form
+    if (value === "") {
+      setForm((prev) => ({ ...prev, precio: 0 }));
+    } else {
+      const precioValue = parseFloat(value) || 0;
+      setForm((prev) => ({ ...prev, precio: precioValue }));
+    }
+
+    if (errors.precio) {
+      setErrors({ ...errors, precio: "" });
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
-    // Validación para el campo 'Cupos'
     if (!form.titulo.trim()) newErrors.titulo = "El título es obligatorio";
-    if (!form.descripcion.trim()) newErrors.descripcion = "La descripción es obligatoria";
-    if (!form.profesorId) newErrors.profesorId = "Debes seleccionar un profesor";
+    if (!form.descripcion.trim())
+      newErrors.descripcion = "La descripción es obligatoria";
+    if (!form.profesorId)
+      newErrors.profesorId = "Debes seleccionar un profesor";
     if (!form.fecha) newErrors.fecha = "La fecha es obligatoria";
     if (!form.hora) newErrors.hora = "La hora es obligatoria";
     if (!form.link.trim())
@@ -148,15 +193,14 @@ export default function EditarCurso() {
       }
     }
 
-    // Permitir que 'Cupos' sea 0 o más
+    // ✅ CORREGIDO: Permitir que 'Cupos' sea 0 o más (no forzar mínimo 1)
     if (form.cupos < 0) {
-      newErrors.cupos = "Debe haber al menos 1 cupo disponible o puede ser 0";
+      newErrors.cupos = "Los cupos no pueden ser negativos";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -189,12 +233,16 @@ export default function EditarCurso() {
         data.append("imagen", imagenFile);
       }
 
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/courses/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/courses/${id}`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       Swal.fire({
         title: "¡Curso actualizado!",
@@ -207,7 +255,7 @@ export default function EditarCurso() {
       Swal.fire(
         "Error",
         err.response?.data?.message ||
-        "No se pudo editar el curso. Verifica la consola para más detalles.",
+          "No se pudo editar el curso. Verifica la consola para más detalles.",
         "error"
       );
     } finally {
@@ -270,15 +318,22 @@ export default function EditarCurso() {
                   Imagen de Portada
                 </h2>
                 <div className="flex flex-col items-center">
-                  <CursoImageUpload preview={preview} onImageChange={handleImage} />
-                  <p className="text-xs text-gray-500 text-center mt-2 md:mt-3">Tamaño recomendado: 400x400px</p>
+                  <CursoImageUpload
+                    preview={preview}
+                    onImageChange={handleImage}
+                  />
+                  <p className="text-xs text-gray-500 text-center mt-2 md:mt-3">
+                    Tamaño recomendado: 400x400px
+                  </p>
                 </div>
               </div>
 
               {/* Título */}
               <div>
                 <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-blue-600"><FaBook className="text-sm md:text-base" /></span>
+                  <span className="text-blue-600">
+                    <FaBook className="text-sm md:text-base" />
+                  </span>
                   Título del curso
                 </label>
                 <input
@@ -286,10 +341,16 @@ export default function EditarCurso() {
                   value={form.titulo}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${errors.titulo ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
+                    errors.titulo ? "border-red-500" : "border-gray-200"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
                   placeholder="Introducción a la Programación"
                 />
-                {errors.titulo && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.titulo}</p>}
+                {errors.titulo && (
+                  <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                    ⚠️ {errors.titulo}
+                  </p>
+                )}
               </div>
 
               {/* Descripción */}
@@ -303,17 +364,25 @@ export default function EditarCurso() {
                   value={form.descripcion}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${errors.descripcion ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm text-sm md:text-base`}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
+                    errors.descripcion ? "border-red-500" : "border-gray-200"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm text-sm md:text-base`}
                   rows={4}
                   placeholder="Describe los objetivos y contenido del curso..."
                 />
-                {errors.descripcion && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.descripcion}</p>}
+                {errors.descripcion && (
+                  <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                    ⚠️ {errors.descripcion}
+                  </p>
+                )}
               </div>
 
               {/* Profesor */}
               <div>
                 <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-purple-600"><FaChalkboardTeacher className="text-sm md:text-base" /></span>
+                  <span className="text-purple-600">
+                    <FaChalkboardTeacher className="text-sm md:text-base" />
+                  </span>
                   Profesor
                 </label>
                 <select
@@ -321,16 +390,23 @@ export default function EditarCurso() {
                   value={form.profesorId}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${errors.profesorId ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
+                    errors.profesorId ? "border-red-500" : "border-gray-200"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
                 >
                   <option value="">Seleccione un profesor</option>
-                  {Array.isArray(profesores) && profesores.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombres} {p.apellidos}
-                    </option>
-                  ))}
+                  {Array.isArray(profesores) &&
+                    profesores.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombres} {p.apellidos}
+                      </option>
+                    ))}
                 </select>
-                {errors.profesorId && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.profesorId}</p>}
+                {errors.profesorId && (
+                  <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                    ⚠️ {errors.profesorId}
+                  </p>
+                )}
 
                 {profesorSeleccionado && profesorSeleccionado.asignatura && (
                   <span className="inline-block mt-2 md:mt-3 px-3 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-blue-50 text-blue-700 font-medium text-xs md:text-sm border border-blue-100">
@@ -345,7 +421,9 @@ export default function EditarCurso() {
               {/* Tipo de curso y Fecha */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                 <div>
-                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 text-sm md:text-base">Tipo de curso</label>
+                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 text-sm md:text-base">
+                    Tipo de curso
+                  </label>
                   <select
                     name="tipo"
                     value={form.tipo}
@@ -361,7 +439,9 @@ export default function EditarCurso() {
 
                 <div>
                   <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                    <span className="text-orange-600"><FaCalendarAlt className="text-sm md:text-base" /></span>
+                    <span className="text-orange-600">
+                      <FaCalendarAlt className="text-sm md:text-base" />
+                    </span>
                     Fecha
                   </label>
                   <input
@@ -370,60 +450,105 @@ export default function EditarCurso() {
                     value={form.fecha || ""}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${errors.fecha ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
+                      errors.fecha ? "border-red-500" : "border-gray-200"
+                    } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
                   />
-                  {errors.fecha && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.fecha}</p>}
+                  {errors.fecha && (
+                    <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                      ⚠️ {errors.fecha}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Hora */}
               <div>
                 <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-orange-600"><FaClock className="text-sm md:text-base" /></span>
+                  <span className="text-orange-600">
+                    <FaClock className="text-sm md:text-base" />
+                  </span>
                   Hora
                 </label>
                 <div className="relative">
                   <div
-                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${errors.hora ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl text-gray-800 cursor-pointer flex items-center justify-between shadow-sm text-sm md:text-base`}
+                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
+                      errors.hora ? "border-red-500" : "border-gray-200"
+                    } rounded-lg md:rounded-xl text-gray-800 cursor-pointer flex items-center justify-between shadow-sm text-sm md:text-base`}
                     onClick={() => setShowHourDropdown(!showHourDropdown)}
                   >
                     <span>{form.hora || "Seleccionar hora"}</span>
-                    <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                    <svg
+                      className="w-4 h-4 md:w-5 md:h-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path>
                     </svg>
                   </div>
-                  {errors.hora && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.hora}</p>}
+                  {errors.hora && (
+                    <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                      ⚠️ {errors.hora}
+                    </p>
+                  )}
 
                   {showHourDropdown && (
                     <div className="absolute z-10 mt-1 md:mt-2 w-full bg-white border border-gray-200 rounded-lg md:rounded-xl shadow-xl p-3 md:p-5">
                       <div className="grid grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
                         <div>
-                          <label className="block text-xs md:text-sm text-gray-600 mb-1 md:mb-2">Horas</label>
+                          <label className="block text-xs md:text-sm text-gray-600 mb-1 md:mb-2">
+                            Horas
+                          </label>
                           <select
-                            value={form.hora ? form.hora.split(':')[0] : '00'}
+                            value={form.hora ? form.hora.split(":")[0] : "00"}
                             onChange={(e) => {
                               const hours = e.target.value;
-                              const minutes = form.hora ? form.hora.split(':')[1] : '00';
-                              handleChange({ target: { name: 'hora', value: `${hours}:${minutes}` } });
+                              const minutes = form.hora
+                                ? form.hora.split(":")[1]
+                                : "00";
+                              handleChange({
+                                target: {
+                                  name: "hora",
+                                  value: `${hours}:${minutes}`,
+                                },
+                              });
                             }}
                             className="w-full p-2 md:p-3 border border-gray-200 rounded-lg text-center shadow-sm text-sm md:text-base"
                           >
                             {Array.from({ length: 24 }, (_, i) => (
-                              <option key={i} value={i.toString().padStart(2, '0')}>
-                                {i.toString().padStart(2, '0')}
+                              <option
+                                key={i}
+                                value={i.toString().padStart(2, "0")}
+                              >
+                                {i.toString().padStart(2, "0")}
                               </option>
                             ))}
                           </select>
                         </div>
 
                         <div>
-                          <label className="block text-xs md:text-sm text-gray-600 mb-1 md:mb-2">Minutos</label>
+                          <label className="block text-xs md:text-sm text-gray-600 mb-1 md:mb-2">
+                            Minutos
+                          </label>
                           <select
-                            value={form.hora ? form.hora.split(':')[1] : '00'}
+                            value={form.hora ? form.hora.split(":")[1] : "00"}
                             onChange={(e) => {
-                              const hours = form.hora ? form.hora.split(':')[0] : '00';
+                              const hours = form.hora
+                                ? form.hora.split(":")[0]
+                                : "00";
                               const minutes = e.target.value;
-                              handleChange({ target: { name: 'hora', value: `${hours}:${minutes}` } });
+                              handleChange({
+                                target: {
+                                  name: "hora",
+                                  value: `${hours}:${minutes}`,
+                                },
+                              });
                             }}
                             className="w-full p-2 md:p-3 border border-gray-200 rounded-lg text-center shadow-sm text-sm md:text-base"
                           >
@@ -438,7 +563,11 @@ export default function EditarCurso() {
                       <div className="flex justify-between">
                         <button
                           type="button"
-                          onClick={() => handleChange({ target: { name: 'hora', value: '' } })}
+                          onClick={() =>
+                            handleChange({
+                              target: { name: "hora", value: "" },
+                            })
+                          }
                           className="px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-gray-600 hover:text-gray-800 transition"
                         >
                           Limpiar
@@ -459,60 +588,103 @@ export default function EditarCurso() {
               {/* Link/Ubicación */}
               <div>
                 <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-green-600"><FaLink className="text-sm md:text-base" /></span>
-                  {form.tipo.startsWith("ONLINE") ? "Link de la videollamada" : "Ubicación (Google Maps)"}
+                  <span className="text-green-600">
+                    <FaLink className="text-sm md:text-base" />
+                  </span>
+                  {form.tipo.startsWith("ONLINE")
+                    ? "Link de la videollamada"
+                    : "Ubicación (Google Maps)"}
                 </label>
                 <input
                   name="link"
                   value={form.link}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${errors.link ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
-                  placeholder={form.tipo.startsWith("ONLINE") ? "https://meet.google.com/..." : "https://goo.gl/maps/..."}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
+                    errors.link ? "border-red-500" : "border-gray-200"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                  placeholder={
+                    form.tipo.startsWith("ONLINE")
+                      ? "https://meet.google.com/..."
+                      : "https://goo.gl/maps/..."
+                  }
                 />
-                {errors.link && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.link}</p>}
+                {errors.link && (
+                  <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                    ⚠️ {errors.link}
+                  </p>
+                )}
               </div>
 
               {/* Cupos y Precio */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                 <div>
                   <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                    <span className="text-indigo-600"><FaUsers className="text-sm md:text-base" /></span>
+                    <span className="text-indigo-600">
+                      <FaUsers className="text-sm md:text-base" />
+                    </span>
                     Cupos disponibles
                   </label>
                   <input
                     name="cupos"
                     type="number"
-                    value={form.cupos}
-                    onChange={handleChange}
+                    value={tempCupos}
+                    onChange={handleCuposChange}
                     min={0}
                     required
-                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${errors.cupos ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                    placeholder="0 = sin cupos"
+                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
+                      errors.cupos ? "border-red-500" : "border-gray-200"
+                    } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
                   />
-                  {errors.cupos && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.cupos}</p>}
+                  {form.cupos === 0 && (
+                    <p className="mt-1 md:mt-2 text-xs md:text-sm text-amber-600 flex items-center gap-1">
+                      💡 El curso se guardará sin cupos disponibles
+                    </p>
+                  )}
+                  {errors.cupos && (
+                    <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                      ⚠️ {errors.cupos}
+                    </p>
+                  )}
                 </div>
 
                 {form.tipo.endsWith("PAGADO") && (
                   <div>
                     <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                      <span className="text-amber-600"><FaDollarSign className="text-sm md:text-base" /></span>
+                      <span className="text-amber-600">
+                        <FaDollarSign className="text-sm md:text-base" />
+                      </span>
                       Precio (USD)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-3 md:left-4 md:top-4 text-gray-500">$</span>
+                      <span className="absolute left-3 top-3 md:left-4 md:top-4 text-gray-500">
+                        $
+                      </span>
                       <input
                         name="precio"
                         type="number"
-                        value={form.precio === 0 ? '' : form.precio}
-                        onChange={handleChange}
-                        placeholder="0.00"
-                        className={`w-full pl-8 pr-4 py-3 md:pl-10 md:pr-5 md:py-4 bg-white border ${errors.precio ? 'border-red-500' : 'border-gray-200'} rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                        value={tempPrecio}
+                        onChange={handlePrecioChange}
+                        placeholder="0.00 = gratis"
+                        className={`w-full pl-8 pr-4 py-3 md:pl-10 md:pr-5 md:py-4 bg-white border ${
+                          errors.precio ? "border-red-500" : "border-gray-200"
+                        } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
                         inputMode="decimal"
                         step="0.01"
                         min="0"
                       />
                     </div>
-                    {errors.precio && <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">⚠️ {errors.precio}</p>}
+                    {form.precio === 0 && form.tipo.endsWith("PAGADO") && (
+                      <p className="mt-1 md:mt-2 text-xs md:text-sm text-amber-600 flex items-center gap-1">
+                        💡 El curso se guardará como gratuito
+                      </p>
+                    )}
+                    {errors.precio && (
+                      <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
+                        ⚠️ {errors.precio}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -526,16 +698,36 @@ export default function EditarCurso() {
                 >
                   {isSubmitting ? (
                     <>
-                      <svg className="animate-spin h-4 w-4 md:h-5 md:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin h-4 w-4 md:h-5 md:w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
-                      <span className="text-sm md:text-base">Guardando cambios...</span>
+                      <span className="text-sm md:text-base">
+                        Guardando cambios...
+                      </span>
                     </>
                   ) : (
                     <>
                       <FaSave className="text-sm md:text-base" />
-                      <span className="text-sm md:text-base">Guardar cambios</span>
+                      <span className="text-sm md:text-base">
+                        Guardar cambios
+                      </span>
                     </>
                   )}
                 </button>

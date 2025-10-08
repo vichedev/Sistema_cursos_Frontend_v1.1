@@ -33,7 +33,7 @@ export default function ModalEliminarUsuario({ user, onClose, onDelete, loading,
     });
 
     if (result.isConfirmed) {
-      await onDelete();
+      await onDelete(user); // ✅ CORREGIDO: pasar el usuario como parámetro
     }
   };
 
