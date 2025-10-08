@@ -18,9 +18,9 @@ export default function Login() {
     setIsLoading(true);
     setShowResendButton(false);
     try {
-      console.log('📤 Enviando al login:', form);
+      // console.log('📤 Enviando al login:', form);
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/login`, form);
-      console.log('✅ Respuesta del login:', res.data);
+      // console.log('✅ Respuesta del login:', res.data);
 
       // ✅ GUARDAR TODOS LOS DATOS IMPORTANTES
       localStorage.setItem('token', res.data.token);
