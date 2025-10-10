@@ -24,7 +24,7 @@ export default function VerifyEmail() {
     setMessage('');
 
     try {
-      const response = await axios.get(`${API_URL}/auth/verify-email?token=${token}`);
+      const response = await axios.get(`${API_URL}/api/auth/verify-email?token=${token}`);
       setStatus('success');
       setMessage(response.data.message || 'Correo verificado correctamente.');
     } catch (error) {
