@@ -1,3 +1,4 @@
+// LandingPage.jsx - Actualizado con IDs para las secciones
 import Navbar from "../components/landing/Navbar";
 import Hero from "../components/landing/Hero";
 import SobreNosotros from "../components/landing/SobreNosotros";
@@ -9,10 +10,24 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <Hero />
-      <SobreNosotros />
-      <CursosDisponibles />
-      <Contacto />
+      
+      {/* Secciones con IDs para navegación */}
+      <section id="hero">
+        <Hero />
+      </section>
+      
+      <section id="sobre-nosotros">
+        <SobreNosotros />
+      </section>
+      
+      <section id="cursos">
+        <CursosDisponibles />
+      </section>
+      
+      <section id="contacto">
+        <Contacto />
+      </section>
+      
       <Footer />
     </div>
   );

@@ -14,25 +14,25 @@ import {
   sanitizeNumber, 
   sanitizeName,
   sanitizeUsername 
-} from '../../../utils/sanitize'; // ✅ NUEVA IMPORTACIÓN
+} from '../../../utils/sanitize';
 
 function Modal({ children, onClose }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-gray-10 bg-opacity-70 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-gray-10 bg-opacity-70 dark:bg-gray dark:bg-opacity-80 backdrop-blur-md"
       onClick={onClose}
       aria-modal="true"
       role="dialog"
       tabIndex={-1}
     >
       <div
-        className="relative bg-white rounded-3xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-8"
+        className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
           aria-label="Cerrar modal"
-          className="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-blue-500 hover:text-white transition"
+          className="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-500 dark:hover:bg-blue-600 hover:text-white transition-colors duration-200"
           type="button"
         >
           ×
@@ -69,7 +69,6 @@ export default function ModalCrearUsuario({
     celular: "",
   });
 
-  // ✅ Resetear el estado cuando el modal se abre o cuando hay cambios en loading/error
   useEffect(() => {
     if (!loading && !error) {
       setForm({
@@ -93,7 +92,6 @@ export default function ModalCrearUsuario({
     }
   }, [loading, error]);
 
-  // ✅ Resetear también cuando el componente se monta
   useEffect(() => {
     setForm({
       nombres: "",
@@ -112,7 +110,6 @@ export default function ModalCrearUsuario({
     const { name, value } = e.target;
     let sanitizedValue = value;
 
-    // ✅ APLICAR SANITIZACIÓN ESPECÍFICA
     switch(name) {
       case 'nombres':
       case 'apellidos':
@@ -149,7 +146,6 @@ export default function ModalCrearUsuario({
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // ✅ NUEVA FUNCIÓN: Validación completa del formulario
   const validateForm = () => {
     if (!form.nombres.trim() || !form.apellidos.trim()) {
       return "Los nombres y apellidos son obligatorios.";
@@ -178,7 +174,6 @@ export default function ModalCrearUsuario({
     return null;
   };
 
-  // Manejo de errores del backend
   useEffect(() => {
     if (error) {
       if (error.includes("correo") || error.includes("Correo")) {
@@ -212,20 +207,16 @@ export default function ModalCrearUsuario({
     setValidationError("");
     setFieldErrors({ correo: "", usuario: "", cedula: "", celular: "" });
 
-    // ✅ VALIDACIÓN MEJORADA CON FUNCIÓN DEDICADA
     const validationError = validateForm();
     if (validationError) {
       setValidationError(validationError);
       return;
     }
 
-    // ✅ LOG PARA DEBUG (OPCIONAL)
     console.log('Datos sanitizados a enviar:', form);
-
     await onCreate(form);
   };
 
-  // ✅ Función para manejar el cierre con reset
   const handleClose = () => {
     setForm({
       nombres: "",
@@ -254,13 +245,13 @@ export default function ModalCrearUsuario({
         <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
           <FaUserPlus className="text-white w-8 h-8" />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900">
+        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
           Agregar Administrador/Docente
         </h2>
       </div>
 
       {validationError && (
-        <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-300 flex items-center gap-3">
+        <div className="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-lg border border-yellow-300 dark:border-yellow-700 flex items-center gap-3">
           <svg
             className="w-6 h-6 flex-shrink-0"
             fill="currentColor"
@@ -282,7 +273,7 @@ export default function ModalCrearUsuario({
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InputField
-            icon={<FaUser className="text-blue-600" />}
+            icon={<FaUser className="text-blue-600 dark:text-blue-400" />}
             label="Nombres"
             name="nombres"
             value={form.nombres}
@@ -291,7 +282,7 @@ export default function ModalCrearUsuario({
             required
           />
           <InputField
-            icon={<FaUser className="text-blue-600" />}
+            icon={<FaUser className="text-blue-600 dark:text-blue-400" />}
             label="Apellidos"
             name="apellidos"
             value={form.apellidos}
@@ -302,7 +293,7 @@ export default function ModalCrearUsuario({
         </div>
 
         <InputField
-          icon={<FaEnvelope className="text-blue-600" />}
+          icon={<FaEnvelope className="text-blue-600 dark:text-blue-400" />}
           label="Correo electrónico"
           name="correo"
           type="email"
@@ -315,7 +306,7 @@ export default function ModalCrearUsuario({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InputField
-            icon={<FaUser className="text-blue-600" />}
+            icon={<FaUser className="text-blue-600 dark:text-blue-400" />}
             label="Usuario"
             name="usuario"
             value={form.usuario}
@@ -325,7 +316,7 @@ export default function ModalCrearUsuario({
             error={fieldErrors.usuario}
           />
           <InputField
-            icon={<FaLock className="text-blue-600" />}
+            icon={<FaLock className="text-blue-600 dark:text-blue-400" />}
             label="Contraseña"
             name="password"
             type="password"
@@ -338,7 +329,7 @@ export default function ModalCrearUsuario({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InputField
-            icon={<FaIdCard className="text-blue-600" />}
+            icon={<FaIdCard className="text-blue-600 dark:text-blue-400" />}
             label="Cédula"
             name="cedula"
             value={form.cedula}
@@ -348,7 +339,7 @@ export default function ModalCrearUsuario({
             error={fieldErrors.cedula}
           />
           <InputField
-            icon={<FaPhone className="text-blue-600" />}
+            icon={<FaPhone className="text-blue-600 dark:text-blue-400" />}
             label="Celular"
             name="celular"
             value={form.celular}
@@ -360,7 +351,7 @@ export default function ModalCrearUsuario({
         </div>
 
         <InputField
-          icon={<FaBook className="text-blue-600" />}
+          icon={<FaBook className="text-blue-600 dark:text-blue-400" />}
           label="Asignatura que imparte"
           name="asignatura"
           value={form.asignatura}
@@ -375,7 +366,7 @@ export default function ModalCrearUsuario({
             ${
               loading
                 ? "bg-blue-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-blue-300"
+                : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-blue-300 dark:hover:shadow-blue-900"
             }`}
         >
           {loading ? (
@@ -427,7 +418,7 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="flex items-center gap-2 mb-2 font-semibold text-gray-700">
+      <label className="flex items-center gap-2 mb-2 font-semibold text-gray-700 dark:text-gray-300">
         {icon}
         {label}
       </label>
@@ -438,11 +429,13 @@ function InputField({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className={`w-full px-5 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm
-          ${error ? "border-red-500" : "border-gray-300"}`}
+        className={`w-full px-5 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white dark:bg-gray-700 shadow-sm
+          ${error 
+            ? "border-red-500 dark:border-red-400" 
+            : "border-gray-300 dark:border-gray-600"}`}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"

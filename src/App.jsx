@@ -26,53 +26,53 @@ import PaymentFailed from "./pages/estudiante/PaymentFailed";
 
 // CONTEXT
 import { NotificationProvider } from "./context/NotificationContext";
+import { ThemeProvider } from "./context/ThemeContext"; 
 
 function App() {
   return (
-    <NotificationProvider>
-      <Router>
-        <Routes>
-          {/* Landing */}
-          <Route path="/" element={<LandingPage />} />
+    <ThemeProvider>
+      <NotificationProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
 
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
+            {/* ADMIN */}
+            <Route path="/admin/*" element={<AdminLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardAdmin />} />
+              <Route path="crear-curso" element={<CrearCurso />} />
+              <Route path="ver-todo" element={<VerTodosLosCursos />} />
+              <Route path="editar-curso/:id" element={<EditarCurso />} />
+              <Route path="estudiantes-curso/:id" element={<EstudiantesCurso />} />
+              <Route path="usuarios-inscritos" element={<UsuariosInscritos />} />
+            </Route>
 
-          {/* ADMIN - Rutas protegidas con layout ANIDADO */}
-          <Route path="/admin/*" element={<AdminLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardAdmin />} />
-            <Route path="crear-curso" element={<CrearCurso />} />
-            <Route path="ver-todo" element={<VerTodosLosCursos />} />
-            <Route path="editar-curso/:id" element={<EditarCurso />} />
-            <Route path="estudiantes-curso/:id" element={<EstudiantesCurso />} />
-            <Route path="usuarios-inscritos" element={<UsuariosInscritos />} />
-          </Route>
+            {/* ESTUDIANTE */}
+            <Route path="/estudiante/*" element={<EstudianteLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardEstudiante />} />
+              <Route path="cursos" element={<CursosEstudiante />} />
+              <Route path="mis-cursos" element={<MisCursos />} />
+            </Route>
 
-          {/* ESTUDIANTE - Rutas protegidas con layout ANIDADO */}
-          <Route path="/estudiante/*" element={<EstudianteLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardEstudiante />} />
-            <Route path="cursos" element={<CursosEstudiante />} />
-            <Route path="mis-cursos" element={<MisCursos />} />
-          </Route>
+            {/* PAGOS */}
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/failed" element={<PaymentFailed />} />
+            <Route path="/payment/cancelled" element={<PaymentFailed />} />
 
-          {/* PAGOS */}
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-          <Route path="/payment/failed" element={<PaymentFailed />} />
-          <Route path="/payment/cancelled" element={<PaymentFailed />} />
+            {/* Legacy */}
+            <Route path="/pago-exitoso" element={<PaymentSuccess />} />
+            <Route path="/pago-fallido" element={<PaymentFailed />} />
 
-          {/* Legacy */}
-          <Route path="/pago-exitoso" element={<PaymentSuccess />} />
-          <Route path="/pago-fallido" element={<PaymentFailed />} />
-
-          {/* Fallback */}
-          <Route path="*" element={<LandingPage />} />
-        </Routes>
-      </Router>
-    </NotificationProvider>
+            {/* Fallback */}
+            <Route path="*" element={<LandingPage />} />
+          </Routes>
+        </Router>
+      </NotificationProvider>
+    </ThemeProvider>
   );
 }
 

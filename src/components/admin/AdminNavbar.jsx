@@ -1,5 +1,7 @@
+// src/components/admin/AdminNavbar.jsx
 import { useState, useEffect, useRef } from 'react';
 import { FaBell, FaTimes, FaEnvelope, FaWhatsapp, FaBook, FaUser, FaChevronDown, FaSignOutAlt } from 'react-icons/fa';
+import ThemeSelector from '../ThemeSelector';
 
 // Componente de Perfil Desplegable para Administrador
 function PerfilDesplegableAdmin({ userData }) {
@@ -27,52 +29,52 @@ function PerfilDesplegableAdmin({ userData }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setAbierto(!abierto)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-gray-700 rounded-xl hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors"
       >
-        <FaUser className="text-blue-600" />
-        <span className="hidden sm:block text-sm font-medium text-gray-700">
+        <FaUser className="text-blue-600 dark:text-blue-400" />
+        <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
           {userData?.nombres || 'Administrador'}
         </span>
-        <FaChevronDown className={`text-blue-600 transition-transform ${abierto ? 'rotate-180' : ''}`} />
+        <FaChevronDown className={`text-blue-600 dark:text-blue-400 transition-transform ${abierto ? 'rotate-180' : ''}`} />
       </button>
 
       {abierto && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
           {/* Header del perfil */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800">{userData?.nombres} {userData?.apellidos}</h3>
-            <p className="text-sm text-gray-600 truncate">{userData?.correo}</p>
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-800 dark:text-white">{userData?.nombres} {userData?.apellidos}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{userData?.correo}</p>
           </div>
 
           {/* Información del perfil */}
           <div className="px-4 py-3 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Usuario:</span>
-              <span className="font-medium">{userData?.usuario}</span>
+              <span className="text-gray-500 dark:text-gray-400">Usuario:</span>
+              <span className="font-medium text-gray-700 dark:text-gray-200">{userData?.usuario}</span>
             </div>
             {userData?.cedula && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Cédula:</span>
-                <span className="font-medium">{userData.cedula}</span>
+                <span className="text-gray-500 dark:text-gray-400">Cédula:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">{userData.cedula}</span>
               </div>
             )}
             {userData?.celular && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Celular:</span>
-                <span className="font-medium">{userData.celular}</span>
+                <span className="text-gray-500 dark:text-gray-400">Celular:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">{userData.celular}</span>
               </div>
             )}
             {userData?.ciudad && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Ciudad:</span>
-                <span className="font-medium">{userData.ciudad}</span>
+                <span className="text-gray-500 dark:text-gray-400">Ciudad:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">{userData.ciudad}</span>
               </div>
             )}
           </div>
 
           {/* Badge de Administrador */}
-          <div className="px-4 py-2 bg-blue-50 border-y border-gray-100">
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+          <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-y border-gray-100 dark:border-gray-700">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-full">
               👑 Administrador
             </span>
           </div>
@@ -81,7 +83,7 @@ function PerfilDesplegableAdmin({ userData }) {
           <div className="pt-2">
             <button
               onClick={handleCerrarSesion}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               <FaSignOutAlt />
               Cerrar sesión
@@ -97,10 +99,23 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userData, setUserData] = useState(null);
+  const notificationsRef = useRef(null);
 
   useEffect(() => {
     setUnreadCount(notifications.filter(n => !n.read).length);
   }, [notifications]);
+
+  // Cerrar notificaciones al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Obtener datos del administrador
   useEffect(() => {
@@ -137,12 +152,16 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
     onMarkAsRead?.(id);
   };
 
+  const clearAllNotifications = () => {
+    onClearNotification?.();
+  };
+
   return (
-    <nav className="relative z-10 bg-white shadow-md border-b border-gray-200 px-3 sm:px-4 py-3">
+    <nav className="relative z-40 bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3">
       <div className="flex items-center gap-3">
         <button 
           type="button" 
-          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200" 
+          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400" 
           onClick={onMenuClick} 
           aria-label="Abrir menú"
         >
@@ -153,37 +172,44 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
 
         <div className="ml-auto" />
 
+        {/* Selector de Tema */}
+        <ThemeSelector position="bottom" />
+
         {/* Notificaciones */}
-        <div className="relative">
+        <div className="relative" ref={notificationsRef}>
           <button
             onClick={() => setShowNotifications(v => !v)}
-            className="p-2 rounded-full hover:bg-gray-100 relative"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 relative transition-colors"
             aria-haspopup="true"
             aria-expanded={showNotifications}
             aria-label="Notificaciones"
           >
-            <FaBell className="text-gray-600 text-xl" />
+            <FaBell className="text-gray-600 dark:text-gray-400 text-xl" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {unreadCount}
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-              <div className="p-3 sm:p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Notificaciones de Cursos</h3>
-                <button onClick={() => setShowNotifications(false)} className="text-gray-400 hover:text-gray-600" aria-label="Cerrar notificaciones">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+              <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 className="font-semibold text-gray-800 dark:text-white text-sm sm:text-base">Notificaciones de Cursos</h3>
+                <button 
+                  onClick={() => setShowNotifications(false)} 
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" 
+                  aria-label="Cerrar notificaciones"
+                >
                   <FaTimes />
                 </button>
               </div>
 
               <div className="max-h-96 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">No hay notificaciones</div>
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">No hay notificaciones</div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
                     {notifications.map((n) => {
                       const completed = n.progress?.completed ?? 0;
                       const total = n.progress?.total ?? 0;
@@ -191,7 +217,9 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
                       return (
                         <div
                           key={n.id}
-                          className={`p-4 hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}`}
+                          className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
+                            !n.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                          }`}
                           onClick={() => markAsRead(n.id)}
                         >
                           <div className="flex items-start gap-3">
@@ -199,15 +227,19 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
                               {getNotificationIcon(n.type)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-900 truncate">{n.title}</h4>
-                              <p className="text-sm text-gray-600 mt-1">{n.message}</p>
+                              <h4 className="font-medium text-gray-900 dark:text-white truncate">{n.title}</h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{n.message}</p>
 
+                              {/* BARRA DE PROGRESO - RESTAURADA */}
                               {n.progress && (
                                 <div className="mt-2">
-                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                    <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                                    <div 
+                                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
+                                      style={{ width: `${pct}%` }} 
+                                    />
                                   </div>
-                                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                                     <span>
                                       {completed} de {total}
                                     </span>
@@ -216,7 +248,7 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
                                 </div>
                               )}
 
-                              <div className="text-xs text-gray-400 mt-2">
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                                 {new Date(n.timestamp || Date.now()).toLocaleString()}
                               </div>
                             </div>
@@ -229,8 +261,11 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
               </div>
 
               {notifications.length > 0 && (
-                <div className="p-2 border-t border-gray-200">
-                  <button onClick={onClearNotification} className="w-full text-center text-sm text-blue-600 hover:text-blue-800 py-2">
+                <div className="p-2 border-t border-gray-200 dark:border-gray-700">
+                  <button 
+                    onClick={clearAllNotifications} 
+                    className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 py-2 transition-colors"
+                  >
                     Limpiar todas las notificaciones
                   </button>
                 </div>

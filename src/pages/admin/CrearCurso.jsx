@@ -248,7 +248,7 @@ export default function CrearCurso() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 transition-colors duration-200">
       {/* Header */}
       <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
         <h1 className="text-2xl md:text-3xl font-bold">Crear Nuevo Curso</h1>
@@ -261,16 +261,16 @@ export default function CrearCurso() {
           {/* Columna Izquierda */}
           <div className="space-y-8">
             {/* Imagen */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="p-2 bg-blue-100 rounded-lg text-blue-600">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-800 transition-colors duration-200">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                <span className="p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-400">
                   <FaBook />
                 </span>
                 Imagen de Portada
               </h2>
               <div className="flex flex-col items-center">
                 <CursoImageUpload preview={preview} onImageChange={handleImage} />
-                <p className="text-xs text-gray-500 text-center mt-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
                   Tamaño recomendado: 400x400px
                 </p>
               </div>
@@ -278,8 +278,8 @@ export default function CrearCurso() {
 
             {/* Título */}
             <div>
-              <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                <span className="text-blue-600">
+              <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="text-blue-600 dark:text-blue-400">
                   <FaBook />
                 </span>
                 Título del curso
@@ -289,8 +289,8 @@ export default function CrearCurso() {
                 value={form.titulo}
                 onChange={handleChange}
                 required
-                className={`w-full px-5 py-4 bg-white border ${errors.titulo ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                className={`w-full px-5 py-4 bg-white dark:bg-gray-700 border ${errors.titulo ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm`}
                 placeholder="Introducción a la Programación"
               />
               {errors.titulo && (
@@ -303,8 +303,8 @@ export default function CrearCurso() {
             {/* Descripción con Botón de IA */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <label className="block font-medium text-gray-700 flex items-center gap-2">
-                  <span className="text-blue-600">📝</span>
+                <label className="block font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <span className="text-blue-600 dark:text-blue-400">📝</span>
                   Descripción
                 </label>
                 
@@ -338,8 +338,8 @@ export default function CrearCurso() {
                 value={form.descripcion}
                 onChange={handleChange}
                 required
-                className={`w-full px-5 py-4 bg-white border ${errors.descripcion ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm`}
+                className={`w-full px-5 py-4 bg-white dark:bg-gray-700 border ${errors.descripcion ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 dark:text-white shadow-sm`}
                 rows={4}
                 placeholder="Describe los objetivos y contenido del curso... o haz clic en 'Generar con IA'"
               />
@@ -352,8 +352,8 @@ export default function CrearCurso() {
 
             {/* Profesor */}
             <div>
-              <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                <span className="text-purple-600">
+              <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="text-purple-600 dark:text-purple-400">
                   <FaChalkboardTeacher />
                 </span>
                 Profesor
@@ -363,13 +363,13 @@ export default function CrearCurso() {
                 value={form.profesorId}
                 onChange={handleChange}
                 required
-                className={`w-full px-5 py-4 bg-white border ${errors.profesorId ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                className={`w-full px-5 py-4 bg-white dark:bg-gray-700 border ${errors.profesorId ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm`}
               >
-                <option value="">Seleccione un profesor</option>
+                <option value="" className="text-gray-500 dark:text-gray-400">Seleccione un profesor</option>
                 {Array.isArray(profesores) &&
                   profesores.map((p) => (
-                    <option key={p.id} value={p.id}>
+                    <option key={p.id} value={p.id} className="text-gray-800 dark:text-white">
                       {p.nombres} {p.apellidos}
                     </option>
                   ))}
@@ -387,23 +387,23 @@ export default function CrearCurso() {
             {/* Tipo & Fecha */}
             <div className="grid grid-cols-2 gap-5">
               <div>
-                <label className="block mb-3 font-medium text-gray-700">Tipo de curso</label>
+                <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300">Tipo de curso</label>
                 <select
                   name="tipo"
                   value={form.tipo}
                   onChange={handleTipoChange}
-                  className="w-full px-5 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm"
+                  className="w-full px-5 py-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm"
                 >
-                  <option value="ONLINE_GRATIS">Online Gratis</option>
-                  <option value="ONLINE_PAGADO">Online Pagado</option>
-                  <option value="PRESENCIAL_GRATIS">Presencial Gratis</option>
-                  <option value="PRESENCIAL_PAGADO">Presencial Pagado</option>
+                  <option value="ONLINE_GRATIS" className="text-gray-800 dark:text-white">Online Gratis</option>
+                  <option value="ONLINE_PAGADO" className="text-gray-800 dark:text-white">Online Pagado</option>
+                  <option value="PRESENCIAL_GRATIS" className="text-gray-800 dark:text-white">Presencial Gratis</option>
+                  <option value="PRESENCIAL_PAGADO" className="text-gray-800 dark:text-white">Presencial Pagado</option>
                 </select>
               </div>
 
               <div>
-                <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                  <span className="text-orange-600">
+                <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <span className="text-orange-600 dark:text-orange-400">
                     <FaCalendarAlt />
                   </span>
                   Fecha
@@ -414,8 +414,8 @@ export default function CrearCurso() {
                   value={form.fecha || ""}
                   onChange={handleChange}
                   required
-                  className={`w-full px-5 py-4 bg-white border ${errors.fecha ? "border-red-500" : "border-gray-200"
-                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                  className={`w-full px-5 py-4 bg-white dark:bg-gray-700 border ${errors.fecha ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm`}
                 />
                 {errors.fecha && (
                   <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
@@ -427,21 +427,21 @@ export default function CrearCurso() {
 
             {/* Hora */}
             <div>
-              <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                <span className="text-orange-600">
+              <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="text-orange-600 dark:text-orange-400">
                   <FaClock />
                 </span>
                 Hora
               </label>
               <div className="relative">
                 <div
-                  className={`w-full px-5 py-4 bg-white border ${errors.hora ? "border-red-500" : "border-gray-200"
-                    } rounded-xl text-gray-800 cursor-pointer flex items-center justify-between shadow-sm`}
+                  className={`w-full px-5 py-4 bg-white dark:bg-gray-700 border ${errors.hora ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    } rounded-xl text-gray-800 dark:text-white cursor-pointer flex items-center justify-between shadow-sm`}
                   onClick={() => setShowHourDropdown((s) => !s)}
                 >
                   <span>{form.hora || "Seleccionar hora"}</span>
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className="w-5 h-5 text-gray-400 dark:text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -461,10 +461,10 @@ export default function CrearCurso() {
                 )}
 
                 {showHourDropdown && (
-                  <div className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl p-5">
+                  <div className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl p-5">
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm text-gray-600 mb-2">Horas</label>
+                        <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Horas</label>
                         <select
                           value={form.hora ? form.hora.split(":")[0] : "00"}
                           onChange={(e) => {
@@ -472,7 +472,7 @@ export default function CrearCurso() {
                             const minutes = form.hora ? form.hora.split(":")[1] : "00";
                             handleChange({ target: { name: "hora", value: `${hours}:${minutes}` } });
                           }}
-                          className="w-full p-3 border border-gray-200 rounded-lg text-center shadow-sm"
+                          className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg text-center shadow-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
                         >
                           {Array.from({ length: 24 }, (_, i) => (
                             <option key={i} value={String(i).padStart(2, "0")}>
@@ -483,7 +483,7 @@ export default function CrearCurso() {
                       </div>
 
                       <div>
-                        <label className="block text-sm text-gray-600 mb-2">Minutos</label>
+                        <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Minutos</label>
                         <select
                           value={form.hora ? form.hora.split(":")[1] : "00"}
                           onChange={(e) => {
@@ -491,7 +491,7 @@ export default function CrearCurso() {
                             const minutes = e.target.value;
                             handleChange({ target: { name: "hora", value: `${hours}:${minutes}` } });
                           }}
-                          className="w-full p-3 border border-gray-200 rounded-lg text-center shadow-sm"
+                          className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg text-center shadow-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
                         >
                           <option value="00">00</option>
                           <option value="15">15</option>
@@ -505,7 +505,7 @@ export default function CrearCurso() {
                       <button
                         type="button"
                         onClick={() => handleChange({ target: { name: "hora", value: "" } })}
-                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition"
+                        className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 transition"
                       >
                         Limpiar
                       </button>
@@ -524,8 +524,8 @@ export default function CrearCurso() {
 
             {/* Link/Ubicación */}
             <div>
-              <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                <span className="text-green-600">
+              <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="text-green-600 dark:text-green-400">
                   <FaLink />
                 </span>
                 {form.tipo.startsWith("ONLINE") ? "Link de la videollamada" : "Ubicación (Google Maps)"}
@@ -535,8 +535,8 @@ export default function CrearCurso() {
                 value={form.link}
                 onChange={handleChange}
                 required
-                className={`w-full px-5 py-4 bg-white border ${errors.link ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                className={`w-full px-5 py-4 bg-white dark:bg-gray-700 border ${errors.link ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm`}
                 placeholder={
                   form.tipo.startsWith("ONLINE") ? "https://meet.google.com/..." : "https://goo.gl/maps/..."
                 }
@@ -549,8 +549,8 @@ export default function CrearCurso() {
             {/* Cupos & Precio */}
             <div className="grid grid-cols-2 gap-5">
               <div>
-                <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                  <span className="text-indigo-600">
+                <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <span className="text-indigo-600 dark:text-indigo-400">
                     <FaUsers />
                   </span>
                   Cupos disponibles
@@ -562,8 +562,8 @@ export default function CrearCurso() {
                   onChange={handleChange}
                   min={0}
                   required
-                  className={`w-full px-5 py-4 bg-white border ${errors.cupos ? "border-red-500" : "border-gray-200"
-                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                  className={`w-full px-5 py-4 bg-white dark:bg-gray-700 border ${errors.cupos ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm`}
                 />
                 {errors.cupos && (
                   <p className="mt-2 text-sm text-red-500 flex items-center gap-1">⚠️ {errors.cupos}</p>
@@ -572,22 +572,22 @@ export default function CrearCurso() {
 
               {form.tipo.endsWith("PAGADO") && (
                 <div>
-                  <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                    <span className="text-amber-600">
+                  <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <span className="text-amber-600 dark:text-amber-400">
                       <FaDollarSign />
                     </span>
                     Precio (USD)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-4 text-gray-500">$</span>
+                    <span className="absolute left-4 top-4 text-gray-500 dark:text-gray-400">$</span>
                     <input
                       name="precio"
                       type="number"
                       value={form.precio === 0 ? "" : form.precio}
                       onChange={handleChange}
                       placeholder="0.00"
-                      className={`w-full pl-10 pr-5 py-4 bg-white border ${errors.precio ? "border-red-500" : "border-gray-200"
-                        } rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 shadow-sm`}
+                      className={`w-full pl-10 pr-5 py-4 bg-white dark:bg-gray-700 border ${errors.precio ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                        } rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm`}
                       inputMode="decimal"
                       step="0.01"
                       min="0"
@@ -601,15 +601,15 @@ export default function CrearCurso() {
             </div>
 
             {/* Notificaciones */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="p-2 bg-purple-100 rounded-lg text-purple-600">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-2xl border border-purple-100 dark:border-purple-800 transition-colors duration-200">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                <span className="p-2 bg-purple-100 dark:bg-purple-800 rounded-lg text-purple-600 dark:text-purple-400">
                   <FaBell />
                 </span>
                 Opciones de Notificación
               </h2>
               <div className="flex flex-col gap-5">
-                <label className="flex items-center gap-4 cursor-pointer p-3 bg-white rounded-xl border border-gray-200 hover:border-purple-300 transition">
+                <label className="flex items-center gap-4 cursor-pointer p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-600 transition">
                   <div className="relative">
                     <input
                       type="checkbox"
@@ -617,16 +617,16 @@ export default function CrearCurso() {
                       onChange={(e) => setForm((prev) => ({ ...prev, notificarCorreo: e.target.checked }))}
                       className="sr-only"
                     />
-                    <div className={`w-12 h-6 rounded-full ${form.notificarCorreo ? "bg-blue-500" : "bg-gray-300"} transition`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${form.notificarCorreo ? "translate-x-6" : ""} shadow-md`}></div>
+                    <div className={`w-12 h-6 rounded-full ${form.notificarCorreo ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"} transition`}></div>
+                    <div className={`absolute left-1 top-1 bg-white dark:bg-gray-300 w-4 h-4 rounded-full transition transform ${form.notificarCorreo ? "translate-x-6" : ""} shadow-md`}></div>
                   </div>
                   <div>
-                    <span className="text-gray-700 font-medium">Notificar por correo electrónico</span>
-                    <p className="text-sm text-gray-500">Los estudiantes recibirán un email</p>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Notificar por correo electrónico</span>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Los estudiantes recibirán un email</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-4 cursor-pointer p-3 bg-white rounded-xl border border-gray-200 hover:border-green-300 transition">
+                <label className="flex items-center gap-4 cursor-pointer p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-600 transition">
                   <div className="relative">
                     <input
                       type="checkbox"
@@ -634,12 +634,12 @@ export default function CrearCurso() {
                       onChange={(e) => setForm((prev) => ({ ...prev, notificarWhatsapp: e.target.checked }))}
                       className="sr-only"
                     />
-                    <div className={`w-12 h-6 rounded-full ${form.notificarWhatsapp ? "bg-green-500" : "bg-gray-300"} transition`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${form.notificarWhatsapp ? "translate-x-6" : ""} shadow-md`}></div>
+                    <div className={`w-12 h-6 rounded-full ${form.notificarWhatsapp ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"} transition`}></div>
+                    <div className={`absolute left-1 top-1 bg-white dark:bg-gray-300 w-4 h-4 rounded-full transition transform ${form.notificarWhatsapp ? "translate-x-6" : ""} shadow-md`}></div>
                   </div>
                   <div>
-                    <span className="text-gray-700 font-medium">Notificar por WhatsApp</span>
-                    <p className="text-sm text-gray-500">Los estudiantes recibirán un mensaje</p>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Notificar por WhatsApp</span>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Los estudiantes recibirán un mensaje</p>
                   </div>
                 </label>
               </div>

@@ -1,11 +1,11 @@
 // src/layouts/EstudianteLayout.jsx
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom"; // ✅ IMPORTAR Outlet
+import { Outlet } from "react-router-dom";
 import SidebarEstudiante from "../components/estudiante/SidebarEstudiante";
 import EstudianteNavbar from "../components/estudiante/EstudianteNavbar";
 import { useAuth } from "../hooks/useAuth";
 
-export default function EstudianteLayout({ className = "" }) { // ✅ Quitar {children}
+export default function EstudianteLayout({ className = "" }) {
   useAuth(["ESTUDIANTE"]);
   const [open, setOpen] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -41,7 +41,7 @@ export default function EstudianteLayout({ className = "" }) { // ✅ Quitar {ch
   }, []);
 
   return (
-    <div className={`h-screen flex bg-gradient-to-tr from-gray-100 to-gray-300 ${className}`}>
+    <div className={`h-screen flex bg-gradient-to-tr from-gray-100 to-gray-300 dark:from-gray-800 dark:to-gray-900 min-h-0 transition-colors duration-200 ${className}`}>
       {/* Drawer/Sidebar */}
       <div
         className={`
@@ -58,7 +58,7 @@ export default function EstudianteLayout({ className = "" }) { // ✅ Quitar {ch
       {/* Overlay móvil */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40 md:hidden dark:bg-black/20"
           onClick={() => setOpen(false)}
         />
       )}
@@ -73,9 +73,9 @@ export default function EstudianteLayout({ className = "" }) { // ✅ Quitar {ch
           />
         </div>
 
-        {/* ✅ CAMBIAR children por Outlet */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <Outlet /> {/* ✅ ESTO ES LO MÁS IMPORTANTE */}
+        {/* Área de contenido principal */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+          <Outlet />
         </main>
       </div>
     </div>

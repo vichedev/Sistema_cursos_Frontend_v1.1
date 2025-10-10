@@ -154,7 +154,7 @@ export default function DashboardAdminCursos() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
       </div>
     );
@@ -207,16 +207,16 @@ export default function DashboardAdminCursos() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-200">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard Administrativo</h1>
-        <p className="text-gray-600">Resumen general del sistema de cursos</p>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dashboard Administrativo</h1>
+        <p className="text-gray-600 dark:text-gray-400">Resumen general del sistema de cursos</p>
       </header>
 
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
         {summaryCards.map((card, index) => (
-          <div key={index} className={`rounded-xl shadow-md p-5 ${card.color} ${card.textColor}`}>
+          <div key={index} className={`rounded-xl shadow-md p-5 ${card.color} ${card.textColor} transition-transform hover:scale-105 duration-200`}>
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium opacity-90">{card.title}</p>
@@ -230,17 +230,19 @@ export default function DashboardAdminCursos() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Distribución de cursos */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Distribución de Cursos</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors duration-200">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Distribución de Cursos</h2>
           
           <div className="space-y-4">
             {/* Barra de progreso para cursos gratuitos */}
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium text-blue-600">Gratuitos</span>
-                <span className="text-sm font-medium text-blue-600">{cursosGratis.length} ({calculatePercentage(cursosGratis.length, totalCursos)}%)</span>
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Gratuitos</span>
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  {cursosGratis.length} ({calculatePercentage(cursosGratis.length, totalCursos)}%)
+                </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                 <div 
                   className="bg-blue-600 h-2.5 rounded-full" 
                   style={{ width: `${calculatePercentage(cursosGratis.length, totalCursos)}%` }}
@@ -251,10 +253,12 @@ export default function DashboardAdminCursos() {
             {/* Barra de progreso para cursos pagados */}
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium text-green-600">Pagados</span>
-                <span className="text-sm font-medium text-green-600">{cursosPagados.length} ({calculatePercentage(cursosPagados.length, totalCursos)}%)</span>
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">Pagados</span>
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                  {cursosPagados.length} ({calculatePercentage(cursosPagados.length, totalCursos)}%)
+                </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                 <div 
                   className="bg-green-600 h-2.5 rounded-full" 
                   style={{ width: `${calculatePercentage(cursosPagados.length, totalCursos)}%` }}
@@ -265,10 +269,12 @@ export default function DashboardAdminCursos() {
             {/* Barra de progreso para cursos presenciales */}
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium text-purple-600">Presenciales</span>
-                <span className="text-sm font-medium text-purple-600">{cursosPresenciales.length} ({calculatePercentage(cursosPresenciales.length, totalCursos)}%)</span>
+                <span className="text-sm font-medium text-purple-600 dark:text-purple-400">Presenciales</span>
+                <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                  {cursosPresenciales.length} ({calculatePercentage(cursosPresenciales.length, totalCursos)}%)
+                </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                 <div 
                   className="bg-purple-600 h-2.5 rounded-full" 
                   style={{ width: `${calculatePercentage(cursosPresenciales.length, totalCursos)}%` }}
@@ -279,10 +285,12 @@ export default function DashboardAdminCursos() {
             {/* Barra de progreso para cursos online */}
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium text-orange-600">Online</span>
-                <span className="text-sm font-medium text-orange-600">{cursosOnline.length} ({calculatePercentage(cursosOnline.length, totalCursos)}%)</span>
+                <span className="text-sm font-medium text-orange-600 dark:text-orange-400">Online</span>
+                <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                  {cursosOnline.length} ({calculatePercentage(cursosOnline.length, totalCursos)}%)
+                </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                 <div 
                   className="bg-orange-600 h-2.5 rounded-full" 
                   style={{ width: `${calculatePercentage(cursosOnline.length, totalCursos)}%` }}
@@ -293,46 +301,46 @@ export default function DashboardAdminCursos() {
         </div>
 
         {/* Resumen de estadísticas */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Resumen por Tipo</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors duration-200">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Resumen por Tipo</h2>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 transition-colors duration-200">
               <div className="flex items-center">
-                <span className="text-blue-600 text-2xl mr-2">📘</span>
+                <span className="text-blue-600 dark:text-blue-400 text-2xl mr-2">📘</span>
                 <div>
-                  <h3 className="font-medium text-blue-800">Gratuitos</h3>
-                  <p className="text-xl font-bold text-blue-600">{cursosGratis.length}</p>
+                  <h3 className="font-medium text-blue-800 dark:text-blue-300">Gratuitos</h3>
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{cursosGratis.length}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800 transition-colors duration-200">
               <div className="flex items-center">
-                <span className="text-green-600 text-2xl mr-2">💰</span>
+                <span className="text-green-600 dark:text-green-400 text-2xl mr-2">💰</span>
                 <div>
-                  <h3 className="font-medium text-green-800">Pagados</h3>
-                  <p className="text-xl font-bold text-green-600">{cursosPagados.length}</p>
+                  <h3 className="font-medium text-green-800 dark:text-green-300">Pagados</h3>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">{cursosPagados.length}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors duration-200">
               <div className="flex items-center">
-                <span className="text-purple-600 text-2xl mr-2">🏢</span>
+                <span className="text-purple-600 dark:text-purple-400 text-2xl mr-2">🏢</span>
                 <div>
-                  <h3 className="font-medium text-purple-800">Presenciales</h3>
-                  <p className="text-xl font-bold text-purple-600">{cursosPresenciales.length}</p>
+                  <h3 className="font-medium text-purple-800 dark:text-purple-300">Presenciales</h3>
+                  <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{cursosPresenciales.length}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+            <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800 transition-colors duration-200">
               <div className="flex items-center">
-                <span className="text-orange-600 text-2xl mr-2">💻</span>
+                <span className="text-orange-600 dark:text-orange-400 text-2xl mr-2">💻</span>
                 <div>
-                  <h3 className="font-medium text-orange-800">Online</h3>
-                  <p className="text-xl font-bold text-orange-600">{cursosOnline.length}</p>
+                  <h3 className="font-medium text-orange-800 dark:text-orange-300">Online</h3>
+                  <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{cursosOnline.length}</p>
                 </div>
               </div>
             </div>
@@ -342,23 +350,23 @@ export default function DashboardAdminCursos() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Cursos más populares */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Cursos Más Populares</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors duration-200">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Cursos Más Populares</h2>
           {topCourses.length > 0 ? (
             <div className="space-y-4">
               {topCourses.map((course, index) => (
-                <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors duration-200">
                   <div className="flex items-center">
-                    <span className="text-lg font-bold text-gray-500 mr-3">{index + 1}</span>
+                    <span className="text-lg font-bold text-gray-500 dark:text-gray-400 mr-3">{index + 1}</span>
                     <div>
-                      <h3 className="font-medium text-gray-800">{course.titulo}</h3>
-                      <p className="text-sm text-gray-500">{course.totalEstudiantes} inscritos</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{course.titulo}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{course.totalEstudiantes} inscritos</p>
                     </div>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     course.tipo && course.tipo.includes('PAGADO') 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-blue-100 text-blue-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                   }`}>
                     {course.tipo && course.tipo.includes('PAGADO') ? 'Pagado' : 'Gratuito'}
                   </span>
@@ -366,31 +374,31 @@ export default function DashboardAdminCursos() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">No hay datos de cursos populares</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4">No hay datos de cursos populares</p>
           )}
         </div>
 
         {/* Pagos recientes REALES */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors duration-200">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <FaDollarSign className="text-green-500" />
             Pagos Recientes
           </h2>
           {recentPayments.length > 0 ? (
             <div className="space-y-4">
               {recentPayments.map((payment, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors duration-200">
                   <div>
-                    <h3 className="font-medium text-gray-800">
+                    <h3 className="font-medium text-gray-800 dark:text-white">
                       {payment.nombres} {payment.apellidos}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {payment.cursoTitulo} • {new Date(payment.fechaPago).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-green-600">${payment.montoPagado.toFixed(2)}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full bg-green-100 text-green-800`}>
+                    <p className="font-semibold text-green-600 dark:text-green-400">${payment.montoPagado.toFixed(2)}</p>
+                    <span className={`text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300`}>
                       Pagado
                     </span>
                   </div>
@@ -398,21 +406,21 @@ export default function DashboardAdminCursos() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">No hay pagos recientes</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4">No hay pagos recientes</p>
           )}
           
           {/* Resumen de ingresos */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-lg border border-green-200">
+          <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-lg border border-green-200 dark:border-green-800 transition-colors duration-200">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="font-medium text-green-800">Total Recaudado</h3>
-                <p className="text-2xl font-bold text-green-600">${paymentStats.totalRecaudado.toFixed(2)}</p>
+                <h3 className="font-medium text-green-800 dark:text-green-300">Total Recaudado</h3>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">${paymentStats.totalRecaudado.toFixed(2)}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-green-700">
+                <p className="text-sm text-green-700 dark:text-green-400">
                   <span className="font-semibold">{paymentStats.totalPagados}</span> pagos
                 </p>
-                <p className="text-sm text-blue-700">
+                <p className="text-sm text-blue-700 dark:text-blue-400">
                   <span className="font-semibold">{paymentStats.totalGratis}</span> gratuitos
                 </p>
               </div>

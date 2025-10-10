@@ -21,9 +21,7 @@ import { isCourseExpired } from "../../utils/dateUtils";
 
 // Función corregida para normalizar fechas
 function normalizeDate(date) {
-  // Crear fecha en formato UTC para evitar problemas de zona horaria
   const d = new Date(date);
-  // Ajustar a la medianoche UTC
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }
 
@@ -92,20 +90,20 @@ function CalendarioCompacto({ cursos }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 select-none">
-          <FaCalendarAlt className="text-blue-600" />
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2 select-none">
+          <FaCalendarAlt className="text-blue-600 dark:text-blue-400" />
           Próximas clases
         </h3>
         <div className="flex items-center gap-3">
           <button
             onClick={() => cambiarMes(-1)}
             aria-label="Mes anterior"
-            className="p-2 rounded-full bg-gray-200 hover:bg-blue-100 transition-colors text-blue-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-blue-600 dark:text-blue-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             type="button"
           >
             <FaChevronLeft />
           </button>
-          <span className="font-semibold text-gray-700 select-none min-w-[140px] text-center">
+          <span className="font-semibold text-gray-700 dark:text-gray-300 select-none min-w-[140px] text-center">
             {new Date(añoActual, mesActual).toLocaleDateString('es-ES', {
               month: 'long',
               year: 'numeric'
@@ -114,7 +112,7 @@ function CalendarioCompacto({ cursos }) {
           <button
             onClick={() => cambiarMes(1)}
             aria-label="Mes siguiente"
-            className="p-2 rounded-full bg-gray-200 hover:bg-blue-100 transition-colors text-blue-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-blue-600 dark:text-blue-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             type="button"
           >
             <FaChevronRight />
@@ -122,7 +120,7 @@ function CalendarioCompacto({ cursos }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-gray-500 select-none">
+      <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 select-none">
         {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(dia => (
           <div key={dia} className="py-1">{dia}</div>
         ))}
@@ -135,22 +133,25 @@ function CalendarioCompacto({ cursos }) {
             <button
               key={index}
               onClick={() => tieneCursos ? setDiaSeleccionado(dia) : null}
-              className={`min-h-[50px] p-1 rounded-md flex flex-col justify-start items-center cursor-pointer
-                ${dia.esDelMes ? 'bg-white border border-gray-200' : 'bg-gray-50 border border-gray-100 text-gray-400'}
-                ${esHoy(dia.fecha) ? 'border-2 border-blue-500' : ''}
-                hover:bg-blue-50
+              className={`min-h-[50px] p-1 rounded-md flex flex-col justify-start items-center cursor-pointer transition-colors duration-200
+                ${dia.esDelMes 
+                  ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600' 
+                  : 'bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-400 dark:text-gray-500'
+                }
+                ${esHoy(dia.fecha) ? 'border-2 border-blue-500 dark:border-blue-400' : ''}
+                hover:bg-blue-50 dark:hover:bg-blue-900/20
                 relative
               `}
               title={tieneCursos ? `${dia.cursos.length} clase(s) este día` : undefined}
               type="button"
             >
-              <div className="font-semibold mb-0.5">{dia.esDelMes ? dia.fecha.getDate() : ''}</div>
+              <div className="font-semibold mb-0.5 dark:text-gray-300">{dia.esDelMes ? dia.fecha.getDate() : ''}</div>
               {tieneCursos && dia.cursos.map((curso, i) => {
                 const isExpired = isCourseExpired(curso);
                 return (
                   <span
                     key={i}
-                    className={`w-3 h-3 rounded-full absolute top-1 right-${2 + i * 4} ${isExpired ? 'bg-red-500' : 'bg-green-500'}`}
+                    className={`w-3 h-3 rounded-full absolute top-1 ${isExpired ? 'bg-red-500' : 'bg-green-500'}`}
                     title={`${curso.titulo} - ${isExpired ? 'Inactivo' : 'Activo'}`}
                     style={{ right: `${6 + i * 10}px` }}
                   />
@@ -168,12 +169,12 @@ function CalendarioCompacto({ cursos }) {
           onClick={() => setDiaSeleccionado(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             {/* Encabezado del modal */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-              <h4 className="text-xl font-bold text-gray-800">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+              <h4 className="text-xl font-bold text-gray-800 dark:text-white">
                 Clases para el {diaSeleccionado.fecha.toLocaleDateString('es-ES', {
                   weekday: 'long',
                   year: 'numeric',
@@ -183,18 +184,18 @@ function CalendarioCompacto({ cursos }) {
               </h4>
               <button
                 onClick={() => setDiaSeleccionado(null)}
-                className="p-2 rounded-full hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-2 rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Cerrar modal"
                 type="button"
               >
-                <FaTimes size={18} className="text-gray-600" />
+                <FaTimes size={18} className="text-gray-600 dark:text-gray-400" />
               </button>
             </div>
 
             {/* Lista de cursos */}
             <div className="flex-1 overflow-y-auto p-5">
               {diaSeleccionado.cursos.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No hay clases programadas para este día
                 </div>
               ) : (
@@ -202,55 +203,55 @@ function CalendarioCompacto({ cursos }) {
                   {diaSeleccionado.cursos.map(curso => {
                     const isExpired = isCourseExpired(curso);
                     return (
-                      <div key={curso.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <h5 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                          <FaVideo className="text-blue-500" />
+                      <div key={curso.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-700">
+                        <h5 className="font-semibold text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
+                          <FaVideo className="text-blue-500 dark:text-blue-400" />
                           {curso.titulo}
                         </h5>
 
-                        <div className="space-y-2 text-sm text-gray-600">
+                        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                           <p className="flex items-center gap-2">
-                            <FaClock className="text-gray-400" />
+                            <FaClock className="text-gray-400 dark:text-gray-500" />
                             {curso.hora ? `Hora: ${curso.hora.substring(0, 5)}` : 'Hora no definida'}
                           </p>
 
                           <p className="flex items-center gap-2">
-                            <FaUser className="text-gray-400" />
+                            <FaUser className="text-gray-400 dark:text-gray-500" />
                             {curso.profesorNombre || curso.docente || 'Docente no especificado'}
                           </p>
 
                           {curso.modalidad && (
                             <p className="flex items-center gap-2">
-                              <FaMapMarkerAlt className="text-gray-400" />
+                              <FaMapMarkerAlt className="text-gray-400 dark:text-gray-500" />
                               Modalidad: {curso.modalidad}
                             </p>
                           )}
                         </div>
 
-                        <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">
                           {isExpired ? (
-                            <div className="flex items-center gap-2 text-red-600 font-medium">
-                              <FaTimes className="text-red-500" />
+                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium">
+                              <FaTimes className="text-red-500 dark:text-red-400" />
                               Curso finalizado
                             </div>
                           ) : curso.activo ? (
                             curso.link ? (
                               <button
                                 onClick={() => window.open(curso.link, '_blank', 'noopener,noreferrer')}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                               >
                                 <FaLink size={14} />
                                 Ir a la clase (nueva pestaña)
                               </button>
                             ) : (
-                              <div className="flex items-center gap-2 text-gray-500">
-                                <FaTimes className="text-gray-400" />
+                              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                <FaTimes className="text-gray-400 dark:text-gray-500" />
                                 Enlace no disponible
                               </div>
                             )
                           ) : (
-                            <div className="flex items-center gap-2 text-red-600 font-medium">
-                              <FaTimes className="text-red-500" />
+                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium">
+                              <FaTimes className="text-red-500 dark:text-red-400" />
                               Curso inactivo
                             </div>
                           )}
@@ -263,29 +264,27 @@ function CalendarioCompacto({ cursos }) {
             </div>
 
             {/* Pie del modal */}
-            <div className="p-3 border-t border-gray-200 bg-gray-50 text-center">
-              <p className="text-xs text-gray-500">
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {diaSeleccionado.cursos.length} clase(s) programada(s)
               </p>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
-
 function Kpi({ label, value, icon, color }) {
   return (
-    <div className="bg-white rounded-xl shadow-md p-4 flex items-center gap-4 hover:shadow-lg transition-shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex items-center gap-4 hover:shadow-lg transition-shadow duration-200">
       <div className={`p-3 rounded-full bg-gradient-to-r ${color} text-white`}>
         {icon}
       </div>
       <div>
-        <p className="text-sm font-medium text-gray-500">{label}</p>
-        <p className="text-xl font-bold text-gray-900">{value}</p>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
       </div>
     </div>
   );
@@ -351,17 +350,17 @@ export default function DataGeneralEstudiante() {
 
   if (loading) {
     return (
-      <section className="flex-1 flex items-center justify-center p-6">
+      <section className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 rounded-full border-b-4 border-blue-500 animate-spin" />
-          <div className="text-lg text-gray-700 font-medium">Cargando tu panel…</div>
+          <div className="text-lg text-gray-700 dark:text-gray-300 font-medium">Cargando tu panel…</div>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="flex-1 p-6 space-y-6">
+    <section className="flex-1 p-6 space-y-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       {/* Header con información del estudiante */}
       <div className="bg-gradient-to-r from-indigo-500 to-blue-500 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -369,7 +368,7 @@ export default function DataGeneralEstudiante() {
             <h1 className="text-2xl md:text-3xl font-bold">Bienvenido, {userData?.nombres || 'Estudiante'}</h1>
             <p className="text-blue-100 mt-1">Resumen de tu actividad académica</p>
           </div>
-          <div className="flex items-center gap-3 bg-white/20 p-3 rounded-lg">
+          <div className="flex items-center gap-3 bg-white/20 p-3 rounded-lg backdrop-blur-sm">
             <FaUser className="text-white" />
             <span className="text-sm">{userData?.correo || ''}</span>
           </div>
@@ -412,36 +411,40 @@ export default function DataGeneralEstudiante() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Calendario compacto con mini modal */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors duration-200">
           <CalendarioCompacto cursos={misCursos.filter(c => c.fecha)} />
         </div>
 
         {/* Cursos Recientes */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <FaClock className="text-blue-500" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors duration-200">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <FaClock className="text-blue-500 dark:text-blue-400" />
             Cursos recientes
           </h2>
           <div className="space-y-3">
             {cursosRecientes.length === 0 ? (
-              <div className="text-center text-gray-500 py-4">
+              <div className="text-center text-gray-500 dark:text-gray-400 py-4">
                 No tienes cursos inscritos
               </div>
             ) : (
               cursosRecientes.map((curso) => (
-                <div key={curso.id} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all">
-                  <h3 className="font-medium text-gray-800 truncate">{curso.titulo}</h3>
+                <div key={curso.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200">
+                  <h3 className="font-medium text-gray-800 dark:text-white truncate">{curso.titulo}</h3>
                   <div className="flex justify-between items-center mt-2">
-                    <span className={`text-xs px-2 py-1 rounded-full ${isCourseExpired(curso)
-                      ? 'bg-red-100 text-red-800'
-                      : curso.activo
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                      }`}>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      isCourseExpired(curso)
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                        : curso.activo
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                          : 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-300'
+                    }`}>
                       {isCourseExpired(curso) ? 'Finalizado' : curso.activo ? 'Activo' : 'Inactivo'}
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${curso.precio > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      curso.precio > 0 
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' 
+                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                    }`}>
                       {curso.precio > 0 ? 'Pagado' : 'Gratuito'}
                     </span>
                   </div>
@@ -453,30 +456,33 @@ export default function DataGeneralEstudiante() {
       </div>
 
       {/* Sugerencias de Cursos */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors duration-200">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Cursos disponibles que te pueden interesar
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {disponibles.length === 0 ? (
-            <div className="col-span-full text-center text-gray-500 py-8">
+            <div className="col-span-full text-center text-gray-500 dark:text-gray-400 py-8">
               No hay cursos disponibles en este momento
             </div>
           ) : (
             disponibles.slice(0, 6).map((curso) => (
-              <div key={curso.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow flex flex-col justify-between">
+              <div key={curso.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 flex flex-col justify-between bg-white dark:bg-gray-700">
                 <div>
-                  <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{curso.titulo}</h3>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{curso.descripcion}</p>
+                  <h3 className="font-semibold text-gray-800 dark:text-white mb-2 line-clamp-2">{curso.titulo}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">{curso.descripcion}</p>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className={`text-xs px-2 py-1 rounded ${curso.precio > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                    }`}>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    curso.precio > 0 
+                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' 
+                      : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                  }`}>
                     {curso.precio > 0 ? `$${curso.precio}` : 'Gratuito'}
                   </span>
                   <Link
                     to="/estudiante/cursos"
-                    className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+                    className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium transition-colors duration-200"
                   >
                     Ver más detalles →
                   </Link>

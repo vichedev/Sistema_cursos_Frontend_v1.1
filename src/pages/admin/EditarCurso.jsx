@@ -1,4 +1,3 @@
-// src/pages/admin/EditarCurso.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -265,10 +264,10 @@ export default function EditarCurso() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
-          <div className="text-blue-500 font-semibold text-lg">
+          <div className="text-blue-500 dark:text-blue-400 font-semibold text-lg">
             Cargando curso...
           </div>
         </div>
@@ -277,7 +276,7 @@ export default function EditarCurso() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 transition-colors duration-200">
       {/* Header */}
       <div className="mb-6 md:mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl md:rounded-2xl p-4 md:p-6 text-white shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -294,10 +293,10 @@ export default function EditarCurso() {
       </div>
 
       {/* Formulario */}
-      <div className="bg-white rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6 lg:p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-xl md:rounded-2xl shadow-lg p-4 md:p-6 lg:p-8 transition-colors duration-200">
         <div className="mb-4 md:mb-6">
           <button
-            className="flex items-center gap-2 text-blue-500 hover:text-blue-700 font-medium transition p-2 md:p-3 bg-blue-50 rounded-lg md:rounded-xl hover:bg-blue-100 text-sm md:text-base"
+            className="flex items-center gap-2 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition p-2 md:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg md:rounded-xl hover:bg-blue-100 dark:hover:bg-blue-800/30 text-sm md:text-base"
             onClick={() => navigate("/admin/ver-todo")}
             type="button"
           >
@@ -310,9 +309,9 @@ export default function EditarCurso() {
             {/* Columna Izquierda */}
             <div className="space-y-6 md:space-y-8">
               {/* Imagen de portada */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-blue-100">
-                <h2 className="text-base md:text-lg font-semibold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
-                  <span className="p-1 md:p-2 bg-blue-100 rounded-lg text-blue-600">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 md:p-6 rounded-xl md:rounded-2xl border border-blue-100 dark:border-blue-800 transition-colors duration-200">
+                <h2 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-3 md:mb-4 flex items-center gap-2">
+                  <span className="p-1 md:p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-400">
                     <FaBook className="text-sm md:text-base" />
                   </span>
                   Imagen de Portada
@@ -322,7 +321,7 @@ export default function EditarCurso() {
                     preview={preview}
                     onImageChange={handleImage}
                   />
-                  <p className="text-xs text-gray-500 text-center mt-2 md:mt-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2 md:mt-3">
                     Tamaño recomendado: 400x400px
                   </p>
                 </div>
@@ -330,8 +329,8 @@ export default function EditarCurso() {
 
               {/* Título */}
               <div>
-                <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-blue-600">
+                <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-blue-600 dark:text-blue-400">
                     <FaBook className="text-sm md:text-base" />
                   </span>
                   Título del curso
@@ -341,9 +340,9 @@ export default function EditarCurso() {
                   value={form.titulo}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
-                    errors.titulo ? "border-red-500" : "border-gray-200"
-                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                    errors.titulo ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   placeholder="Introducción a la Programación"
                 />
                 {errors.titulo && (
@@ -355,8 +354,8 @@ export default function EditarCurso() {
 
               {/* Descripción */}
               <div>
-                <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-blue-600">📝</span>
+                <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-blue-600 dark:text-blue-400">📝</span>
                   Descripción
                 </label>
                 <textarea
@@ -364,9 +363,9 @@ export default function EditarCurso() {
                   value={form.descripcion}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
-                    errors.descripcion ? "border-red-500" : "border-gray-200"
-                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm text-sm md:text-base`}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                    errors.descripcion ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   rows={4}
                   placeholder="Describe los objetivos y contenido del curso..."
                 />
@@ -379,8 +378,8 @@ export default function EditarCurso() {
 
               {/* Profesor */}
               <div>
-                <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-purple-600">
+                <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-purple-600 dark:text-purple-400">
                     <FaChalkboardTeacher className="text-sm md:text-base" />
                   </span>
                   Profesor
@@ -390,14 +389,14 @@ export default function EditarCurso() {
                   value={form.profesorId}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
-                    errors.profesorId ? "border-red-500" : "border-gray-200"
-                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                    errors.profesorId ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base`}
                 >
-                  <option value="">Seleccione un profesor</option>
+                  <option value="" className="text-gray-500 dark:text-gray-400">Seleccione un profesor</option>
                   {Array.isArray(profesores) &&
                     profesores.map((p) => (
-                      <option key={p.id} value={p.id}>
+                      <option key={p.id} value={p.id} className="text-gray-800 dark:text-white">
                         {p.nombres} {p.apellidos}
                       </option>
                     ))}
@@ -409,7 +408,7 @@ export default function EditarCurso() {
                 )}
 
                 {profesorSeleccionado && profesorSeleccionado.asignatura && (
-                  <span className="inline-block mt-2 md:mt-3 px-3 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-blue-50 text-blue-700 font-medium text-xs md:text-sm border border-blue-100">
+                  <span className="inline-block mt-2 md:mt-3 px-3 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium text-xs md:text-sm border border-blue-100 dark:border-blue-800 transition-colors duration-200">
                     📚 Docente de: {profesorSeleccionado.asignatura}
                   </span>
                 )}
@@ -421,25 +420,25 @@ export default function EditarCurso() {
               {/* Tipo de curso y Fecha */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                 <div>
-                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 text-sm md:text-base">
+                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 text-sm md:text-base">
                     Tipo de curso
                   </label>
                   <select
                     name="tipo"
                     value={form.tipo}
                     onChange={handleTipoChange}
-                    className="w-full px-4 py-3 md:px-5 md:py-4 bg-white border border-gray-200 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base"
+                    className="w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base"
                   >
-                    <option value="ONLINE_GRATIS">Online Gratis</option>
-                    <option value="ONLINE_PAGADO">Online Pagado</option>
-                    <option value="PRESENCIAL_GRATIS">Presencial Gratis</option>
-                    <option value="PRESENCIAL_PAGADO">Presencial Pagado</option>
+                    <option value="ONLINE_GRATIS" className="text-gray-800 dark:text-white">Online Gratis</option>
+                    <option value="ONLINE_PAGADO" className="text-gray-800 dark:text-white">Online Pagado</option>
+                    <option value="PRESENCIAL_GRATIS" className="text-gray-800 dark:text-white">Presencial Gratis</option>
+                    <option value="PRESENCIAL_PAGADO" className="text-gray-800 dark:text-white">Presencial Pagado</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                    <span className="text-orange-600">
+                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                    <span className="text-orange-600 dark:text-orange-400">
                       <FaCalendarAlt className="text-sm md:text-base" />
                     </span>
                     Fecha
@@ -450,9 +449,9 @@ export default function EditarCurso() {
                     value={form.fecha || ""}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
-                      errors.fecha ? "border-red-500" : "border-gray-200"
-                    } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                      errors.fecha ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base`}
                   />
                   {errors.fecha && (
                     <p className="mt-1 md:mt-2 text-xs md:text-sm text-red-500 flex items-center gap-1">
@@ -464,22 +463,22 @@ export default function EditarCurso() {
 
               {/* Hora */}
               <div>
-                <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-orange-600">
+                <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-orange-600 dark:text-orange-400">
                     <FaClock className="text-sm md:text-base" />
                   </span>
                   Hora
                 </label>
                 <div className="relative">
                   <div
-                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
-                      errors.hora ? "border-red-500" : "border-gray-200"
-                    } rounded-lg md:rounded-xl text-gray-800 cursor-pointer flex items-center justify-between shadow-sm text-sm md:text-base`}
+                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                      errors.hora ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    } rounded-lg md:rounded-xl text-gray-800 dark:text-white cursor-pointer flex items-center justify-between shadow-sm text-sm md:text-base`}
                     onClick={() => setShowHourDropdown(!showHourDropdown)}
                   >
                     <span>{form.hora || "Seleccionar hora"}</span>
                     <svg
-                      className="w-4 h-4 md:w-5 md:h-5 text-gray-400"
+                      className="w-4 h-4 md:w-5 md:h-5 text-gray-400 dark:text-gray-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -499,10 +498,10 @@ export default function EditarCurso() {
                   )}
 
                   {showHourDropdown && (
-                    <div className="absolute z-10 mt-1 md:mt-2 w-full bg-white border border-gray-200 rounded-lg md:rounded-xl shadow-xl p-3 md:p-5">
+                    <div className="absolute z-10 mt-1 md:mt-2 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg md:rounded-xl shadow-xl p-3 md:p-5 transition-colors duration-200">
                       <div className="grid grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
                         <div>
-                          <label className="block text-xs md:text-sm text-gray-600 mb-1 md:mb-2">
+                          <label className="block text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-1 md:mb-2">
                             Horas
                           </label>
                           <select
@@ -519,7 +518,7 @@ export default function EditarCurso() {
                                 },
                               });
                             }}
-                            className="w-full p-2 md:p-3 border border-gray-200 rounded-lg text-center shadow-sm text-sm md:text-base"
+                            className="w-full p-2 md:p-3 border border-gray-200 dark:border-gray-600 rounded-lg text-center shadow-sm text-sm md:text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
                           >
                             {Array.from({ length: 24 }, (_, i) => (
                               <option
@@ -533,7 +532,7 @@ export default function EditarCurso() {
                         </div>
 
                         <div>
-                          <label className="block text-xs md:text-sm text-gray-600 mb-1 md:mb-2">
+                          <label className="block text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-1 md:mb-2">
                             Minutos
                           </label>
                           <select
@@ -550,7 +549,7 @@ export default function EditarCurso() {
                                 },
                               });
                             }}
-                            className="w-full p-2 md:p-3 border border-gray-200 rounded-lg text-center shadow-sm text-sm md:text-base"
+                            className="w-full p-2 md:p-3 border border-gray-200 dark:border-gray-600 rounded-lg text-center shadow-sm text-sm md:text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
                           >
                             <option value="00">00</option>
                             <option value="15">15</option>
@@ -568,7 +567,7 @@ export default function EditarCurso() {
                               target: { name: "hora", value: "" },
                             })
                           }
-                          className="px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-gray-600 hover:text-gray-800 transition"
+                          className="px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 transition"
                         >
                           Limpiar
                         </button>
@@ -587,8 +586,8 @@ export default function EditarCurso() {
 
               {/* Link/Ubicación */}
               <div>
-                <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                  <span className="text-green-600">
+                <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-green-600 dark:text-green-400">
                     <FaLink className="text-sm md:text-base" />
                   </span>
                   {form.tipo.startsWith("ONLINE")
@@ -600,9 +599,9 @@ export default function EditarCurso() {
                   value={form.link}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
-                    errors.link ? "border-red-500" : "border-gray-200"
-                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                  className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                    errors.link ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                  } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   placeholder={
                     form.tipo.startsWith("ONLINE")
                       ? "https://meet.google.com/..."
@@ -619,8 +618,8 @@ export default function EditarCurso() {
               {/* Cupos y Precio */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                 <div>
-                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                    <span className="text-indigo-600">
+                  <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                    <span className="text-indigo-600 dark:text-indigo-400">
                       <FaUsers className="text-sm md:text-base" />
                     </span>
                     Cupos disponibles
@@ -633,12 +632,12 @@ export default function EditarCurso() {
                     min={0}
                     required
                     placeholder="0 = sin cupos"
-                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white border ${
-                      errors.cupos ? "border-red-500" : "border-gray-200"
-                    } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                    className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                      errors.cupos ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   />
                   {form.cupos === 0 && (
-                    <p className="mt-1 md:mt-2 text-xs md:text-sm text-amber-600 flex items-center gap-1">
+                    <p className="mt-1 md:mt-2 text-xs md:text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
                       💡 El curso se guardará sin cupos disponibles
                     </p>
                   )}
@@ -651,14 +650,14 @@ export default function EditarCurso() {
 
                 {form.tipo.endsWith("PAGADO") && (
                   <div>
-                    <label className="block mb-2 md:mb-3 font-medium text-gray-700 flex items-center gap-2 text-sm md:text-base">
-                      <span className="text-amber-600">
+                    <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                      <span className="text-amber-600 dark:text-amber-400">
                         <FaDollarSign className="text-sm md:text-base" />
                       </span>
                       Precio (USD)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-3 md:left-4 md:top-4 text-gray-500">
+                      <span className="absolute left-3 top-3 md:left-4 md:top-4 text-gray-500 dark:text-gray-400">
                         $
                       </span>
                       <input
@@ -667,16 +666,16 @@ export default function EditarCurso() {
                         value={tempPrecio}
                         onChange={handlePrecioChange}
                         placeholder="0.00 = gratis"
-                        className={`w-full pl-8 pr-4 py-3 md:pl-10 md:pr-5 md:py-4 bg-white border ${
-                          errors.precio ? "border-red-500" : "border-gray-200"
-                        } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 shadow-sm text-sm md:text-base`}
+                        className={`w-full pl-8 pr-4 py-3 md:pl-10 md:pr-5 md:py-4 bg-white dark:bg-gray-700 border ${
+                          errors.precio ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                        } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                         inputMode="decimal"
                         step="0.01"
                         min="0"
                       />
                     </div>
                     {form.precio === 0 && form.tipo.endsWith("PAGADO") && (
-                      <p className="mt-1 md:mt-2 text-xs md:text-sm text-amber-600 flex items-center gap-1">
+                      <p className="mt-1 md:mt-2 text-xs md:text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         💡 El curso se guardará como gratuito
                       </p>
                     )}

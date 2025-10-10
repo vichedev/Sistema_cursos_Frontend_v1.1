@@ -453,7 +453,7 @@ export default function Login() {
       </div>
 
       <footer className="absolute bottom-6 text-xs text-blue-400 text-center w-full z-10">
-        &copy; {new Date().getFullYear()} Sistema de Cursos RNC. Todos los
+        &copy; {new Date().getFullYear()} Sistema de Cursos MAAT ACADEMY. Todos los
         derechos reservados.
       </footer>
 

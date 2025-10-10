@@ -29,19 +29,19 @@ const CursosDesplegable = ({ cursos }) => {
   const [mostrarCursos, setMostrarCursos] = useState(false);
 
   if (!cursos || cursos.length === 0) {
-    return <span className="text-gray-400 text-xs sm:text-sm">Sin cursos</span>;
+    return <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm">Sin cursos</span>;
   }
 
   const colors = [
-    "bg-red-100 text-red-800 border border-red-200",
-    "bg-green-100 text-green-800 border border-green-200",
-    "bg-blue-100 text-blue-800 border border-blue-200",
-    "bg-yellow-100 text-yellow-800 border border-yellow-200",
-    "bg-purple-100 text-purple-800 border border-purple-200",
-    "bg-pink-100 text-pink-800 border border-pink-200",
-    "bg-indigo-100 text-indigo-800 border border-indigo-200",
-    "bg-teal-100 text-teal-800 border border-teal-200",
-    "bg-orange-100 text-orange-800 border border-orange-200",
+    "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
+    "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
+    "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
+    "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
+    "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
+    "bg-pink-100 text-pink-800 border border-pink-200 dark:bg-pink-900/20 dark:text-pink-300 dark:border-pink-800",
+    "bg-indigo-100 text-indigo-800 border border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800",
+    "bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-900/20 dark:text-teal-300 dark:border-teal-800",
+    "bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
   ];
 
   return (
@@ -51,11 +51,11 @@ const CursosDesplegable = ({ cursos }) => {
         className="flex items-center cursor-pointer group"
         onClick={() => setMostrarCursos((v) => !v)}
       >
-        <span className="text-xs sm:text-sm text-blue-600 font-medium group-hover:text-blue-700 mr-1 sm:mr-2">
+        <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-300 mr-1 sm:mr-2">
           {cursos.length} curso{cursos.length !== 1 ? "s" : ""}
         </span>
         <svg
-          className={`w-3 h-3 sm:w-4 sm:h-4 text-blue-500 transition-transform ${mostrarCursos ? "rotate-180" : ""}`}
+          className={`w-3 h-3 sm:w-4 sm:h-4 text-blue-500 dark:text-blue-400 transition-transform ${mostrarCursos ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -65,13 +65,13 @@ const CursosDesplegable = ({ cursos }) => {
       </button>
 
       {mostrarCursos && (
-        <div className="absolute z-20 mt-2 p-3 bg-white border border-gray-200 rounded-xl shadow-xl left-0 right-0 w-full min-w-[250px] sm:w-72 sm:right-0 sm:left-auto max-h-64 overflow-y-auto">
-          <div className="font-semibold text-xs sm:text-sm text-gray-700 mb-2">Cursos inscritos:</div>
+        <div className="absolute z-20 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl left-0 right-0 w-full min-w-[250px] sm:w-72 sm:right-0 sm:left-auto max-h-64 overflow-y-auto transition-colors duration-200">
+          <div className="font-semibold text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-2">Cursos inscritos:</div>
           <div className="space-y-2">
             {cursos.map((curso, index) => (
               <div
                 key={curso.id || index}
-                className={`${colors[index % colors.length]} px-2 py-1.5 rounded-lg text-xs font-medium`}
+                className={`${colors[index % colors.length]} px-2 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200`}
               >
                 {curso.titulo}
               </div>
@@ -85,47 +85,47 @@ const CursosDesplegable = ({ cursos }) => {
 
 const UserCard = ({ user, type, onView, onEdit, onDelete }) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-4 shadow-sm hover:shadow-md transition-all duration-200">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-semibold text-gray-900 text-lg">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
             {user.nombres} {user.apellidos}
           </h3>
-          <div className="flex items-center text-gray-600 text-sm mt-1">
+          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm mt-1">
             <FiMail className="mr-1" />
             <span className="truncate">{user.correo}</span>
           </div>
           {type === "estudiantes" && (
-            <div className="text-xs text-gray-500 mt-1">Cédula: {user.cedula || "No especificada"}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Cédula: {user.cedula || "No especificada"}</div>
           )}
         </div>
-        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
+        <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs font-semibold transition-colors duration-200">
           ID: {user.id}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3">
         {user.ciudad && (
-          <div className="flex items-center text-gray-600 text-sm">
-            <FaMapMarkerAlt className="mr-1 text-gray-400" />
+          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
+            <FaMapMarkerAlt className="mr-1 text-gray-400 dark:text-gray-500" />
             <span>{user.ciudad}</span>
           </div>
         )}
         {user.empresa && (
-          <div className="flex items-center text-gray-600 text-sm">
-            <FaBuilding className="mr-1 text-gray-400" />
+          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
+            <FaBuilding className="mr-1 text-gray-400 dark:text-gray-500" />
             <span>{user.empresa}</span>
           </div>
         )}
         {user.cargo && (
-          <div className="flex items-center text-gray-600 text-sm">
-            <FaBriefcase className="mr-1 text-gray-400" />
+          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
+            <FaBriefcase className="mr-1 text-gray-400 dark:text-gray-500" />
             <span>{user.cargo}</span>
           </div>
         )}
         {type === "administradores" && user.asignatura && (
-          <div className="flex items-center text-gray-600 text-sm">
-            <FaChalkboardTeacher className="mr-1 text-gray-400" />
+          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
+            <FaChalkboardTeacher className="mr-1 text-gray-400 dark:text-gray-500" />
             <span>{user.asignatura}</span>
           </div>
         )}
@@ -137,17 +137,17 @@ const UserCard = ({ user, type, onView, onEdit, onDelete }) => {
         </div>
       )}
 
-      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100 dark:border-gray-700">
         <button
           onClick={() => onView(user)}
-          className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+          className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
           title="Ver"
         >
           <FaEye />
         </button>
         <button
           onClick={() => onEdit(user)}
-          className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
+          className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
           title="Editar"
         >
           <FaEdit />
@@ -155,7 +155,7 @@ const UserCard = ({ user, type, onView, onEdit, onDelete }) => {
         {user.id !== 1 && (
           <button
             onClick={() => onDelete(user)}
-            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+            className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
             title="Eliminar"
           >
             <FaTrash />
@@ -393,17 +393,17 @@ export default function UsuariosInscritos() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen py-12 px-4">
+      <div className="flex items-center justify-center min-h-screen py-12 px-4 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
         <div className="flex flex-col items-center gap-3 sm:gap-4">
           <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-b-4 border-blue-500"></div>
-          <div className="text-base sm:text-lg md:text-xl font-semibold text-gray-700">Cargando usuarios...</div>
+          <div className="text-base sm:text-lg md:text-xl font-semibold text-gray-700 dark:text-gray-300">Cargando usuarios...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6 transition-colors duration-200">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg sm:rounded-xl md:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 text-white shadow-xl mb-4 sm:mb-6 md:mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 md:gap-6">
@@ -427,11 +427,11 @@ export default function UsuariosInscritos() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8">
+      <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 transition-colors duration-200">
         {error ? (
-          <div className="text-center p-4 sm:p-6 md:p-8 bg-red-50 rounded-lg sm:rounded-xl border border-red-200">
+          <div className="text-center p-4 sm:p-6 md:p-8 bg-red-50 dark:bg-red-900/20 rounded-lg sm:rounded-xl border border-red-200 dark:border-red-800 transition-colors duration-200">
             <div className="text-red-500 text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-2 sm:mb-3 md:mb-4">⚠️</div>
-            <div className="text-red-600 font-semibold text-sm sm:text-base md:text-lg mb-2 sm:mb-3">{error}</div>
+            <div className="text-red-600 dark:text-red-400 font-semibold text-sm sm:text-base md:text-lg mb-2 sm:mb-3">{error}</div>
             <button
               onClick={fetchUsuarios}
               className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 sm:px-5 md:px-6 rounded-lg md:rounded-xl transition text-sm sm:text-base"
@@ -442,31 +442,31 @@ export default function UsuariosInscritos() {
         ) : (
           <>
             {/* Tabs */}
-            <div className="flex border-b border-gray-200 mb-4 sm:mb-6 md:mb-8 overflow-x-auto scrollbar-thin -mx-1 px-1">
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4 sm:mb-6 md:mb-8 overflow-x-auto scrollbar-thin -mx-1 px-1">
               <button
                 className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 font-semibold transition whitespace-nowrap text-xs sm:text-sm md:text-base ${activeTab === "estudiantes"
-                  ? "border-b-4 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-blue-600"
+                  ? "border-b-4 border-blue-500 text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                   }`}
                 onClick={() => setActiveTab("estudiantes")}
               >
                 <FaGraduationCap className="text-xs sm:text-sm md:text-base flex-shrink-0" />
                 <span>Estudiantes</span>
-                <span className="ml-0.5 sm:ml-1 bg-blue-100 text-blue-700 px-1 sm:px-1.5 md:px-2 py-0.5 rounded-full text-xs">
+                <span className="ml-0.5 sm:ml-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-1 sm:px-1.5 md:px-2 py-0.5 rounded-full text-xs">
                   {data.estudiantes.length}
                 </span>
               </button>
 
               <button
                 className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 font-semibold transition whitespace-nowrap text-xs sm:text-sm md:text-base ${activeTab === "administradores"
-                  ? "border-b-4 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-blue-600"
+                  ? "border-b-4 border-blue-500 text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                   }`}
                 onClick={() => setActiveTab("administradores")}
               >
                 <FaChalkboardTeacher className="text-xs sm:text-sm md:text-base flex-shrink-0" />
                 <span>Profesores</span>
-                <span className="ml-0.5 sm:ml-1 bg-blue-100 text-blue-700 px-1 sm:px-1.5 md:px-2 py-0.5 rounded-full text-xs">
+                <span className="ml-0.5 sm:ml-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-1 sm:px-1.5 md:px-2 py-0.5 rounded-full text-xs">
                   {data.administradores.length}
                 </span>
               </button>
@@ -477,7 +477,7 @@ export default function UsuariosInscritos() {
               {/* Barra de búsqueda - mostrar para ambas pestañas */}
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="text-gray-400" />
+                  <FaSearch className="text-gray-400 dark:text-gray-500" />
                 </div>
                 <input
                   type="text"
@@ -486,7 +486,7 @@ export default function UsuariosInscritos() {
                       ? "Buscar por nombre, email, cédula, ciudad..."
                       : "Buscar por nombre, email, usuario..."
                   }
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -496,10 +496,10 @@ export default function UsuariosInscritos() {
                 {/* Botón Filtros - solo para estudiantes */}
                 {activeTab === "estudiantes" && (
                   <button
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors duration-200"
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
                   >
-                    <FaFilter className="text-gray-600" />
+                    <FaFilter className="text-gray-600 dark:text-gray-400" />
                     <span className="hidden sm:inline">Filtros</span>
                   </button>
                 )}
@@ -538,9 +538,9 @@ export default function UsuariosInscritos() {
 
             {/* Filtros avanzados solo para estudiantes */}
             {isFilterOpen && activeTab === "estudiantes" && (
-              <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl mb-6 border border-gray-200 dark:border-gray-600 transition-colors duration-200">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-medium text-gray-700">Filtros avanzados</h3>
+                  <h3 className="font-medium text-gray-700 dark:text-gray-300">Filtros avanzados</h3>
                   <button
                     onClick={() => {
                       setSearchTerm("");
@@ -549,16 +549,16 @@ export default function UsuariosInscritos() {
                       setFilterCurso("");
                       setFilterCedula("");
                     }}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                   >
                     Limpiar filtros
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad</label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200"
                       value={filterCiudad}
                       onChange={(e) => setFilterCiudad(e.target.value)}
                     >
@@ -569,9 +569,9 @@ export default function UsuariosInscritos() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Empresa</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200"
                       value={filterEmpresa}
                       onChange={(e) => setFilterEmpresa(e.target.value)}
                     >
@@ -582,9 +582,9 @@ export default function UsuariosInscritos() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cursos</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cursos</label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200"
                       value={filterCurso}
                       onChange={(e) => setFilterCurso(e.target.value)}
                     >
@@ -595,10 +595,10 @@ export default function UsuariosInscritos() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cédula</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula</label>
                     <input
                       type="text"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200"
                       placeholder="Filtrar por cédula"
                       value={filterCedula}
                       onChange={(e) => setFilterCedula(e.target.value)}
@@ -615,12 +615,12 @@ export default function UsuariosInscritos() {
                   {/* Vista móvil (tarjetas) */}
                   <div className="block md:hidden">
                     {filteredUsers(data.estudiantes).length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-xl">
+                      <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-xl transition-colors duration-200">
                         <div className="text-6xl mb-4">👨‍🎓</div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                           {searchTerm ? "No se encontraron estudiantes" : "No hay estudiantes inscritos"}
                         </h3>
-                        <p className="text-gray-500">
+                        <p className="text-gray-500 dark:text-gray-400">
                           {searchTerm ? "Intenta con otros términos de búsqueda" : "Aún no hay estudiantes registrados en el sistema."}
                         </p>
                       </div>
@@ -639,40 +639,40 @@ export default function UsuariosInscritos() {
                   </div>
 
                   {/* Vista desktop (tabla) */}
-                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cédula</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ciudad</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cursos</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Correo</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ciudad</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Empresa</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cargo</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cursos</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {filteredUsers(data.estudiantes).length === 0 ? (
                           <tr>
-                            <td colSpan="9" className="px-4 py-8 text-center text-gray-500">
+                            <td colSpan="9" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                               {searchTerm ? "No se encontraron estudiantes con esos criterios" : "No hay estudiantes registrados"}
                             </td>
                           </tr>
                         ) : (
                           filteredUsers(data.estudiantes).map((user) => (
-                            <tr key={user.id} className="hover:bg-blue-50 transition-colors">
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700">{user.id}</td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{user.cedula && user.cedula.trim() !== "" ? user.cedula : "No especificada"}</td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            <tr key={user.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200">
+                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">{user.id}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{user.cedula && user.cedula.trim() !== "" ? user.cedula : "No especificada"}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
                                 {user.nombres} {user.apellidos}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{user.correo}</td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{user.ciudad || "-"}</td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{user.empresa || "-"}</td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{user.cargo || "-"}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{user.correo}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{user.ciudad || "-"}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{user.empresa || "-"}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{user.cargo || "-"}</td>
                               <td className="px-4 py-4">
                                 <CursosDesplegable cursos={user.cursos} />
                               </td>
@@ -680,21 +680,21 @@ export default function UsuariosInscritos() {
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => openViewModal(user)}
-                                    className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+                                    className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
                                     title="Ver"
                                   >
                                     <FaEye />
                                   </button>
                                   <button
                                     onClick={() => openEditModal(user)}
-                                    className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
+                                    className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
                                     title="Editar"
                                   >
                                     <FaEdit />
                                   </button>
                                   <button
                                     onClick={() => openDeleteModal(user)}
-                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                                    className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
                                     title="Eliminar"
                                   >
                                     <FaTrash />
@@ -715,12 +715,12 @@ export default function UsuariosInscritos() {
                   {/* Vista móvil (tarjetas) */}
                   <div className="block md:hidden">
                     {filteredUsers(data.administradores).length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-xl">
+                      <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-xl transition-colors duration-200">
                         <div className="text-6xl mb-4">👨‍🏫</div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                           {searchTerm ? "No se encontraron profesores" : "No hay profesores registrados"}
                         </h3>
-                        <p className="text-gray-500">
+                        <p className="text-gray-500 dark:text-gray-400">
                           {searchTerm ? "Intenta con otros términos de búsqueda" : "Agrega el primer profesor al sistema."}
                         </p>
                       </div>
@@ -739,62 +739,62 @@ export default function UsuariosInscritos() {
                   </div>
 
                   {/* Vista desktop (tabla) */}
-                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                          <th className="px-4 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Correo</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Usuario</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Asignatura</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rol</th>
+                          <th className="px-4 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {filteredUsers(data.administradores).length === 0 ? (
                           <tr>
-                            <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                            <td colSpan="7" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                               {searchTerm ? "No se encontraron profesores con esos criterios" : "No hay profesores registrados"}
                             </td>
                           </tr>
                         ) : (
                           filteredUsers(data.administradores).map((admin, index) => {
                             const colors = [
-                              "bg-red-100 text-red-800 border border-red-200",
-                              "bg-green-100 text-green-800 border border-green-200",
-                              "bg-blue-100 text-blue-800 border border-blue-200",
-                              "bg-yellow-100 text-yellow-800 border border-yellow-200",
-                              "bg-purple-100 text-purple-800 border border-purple-200",
+                              "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
+                              "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
+                              "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
+                              "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
+                              "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
                             ];
                             const colorClass = colors[index % colors.length];
 
                             return (
-                              <tr key={admin.id} className="hover:bg-blue-50 transition-colors">
-                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700">{admin.id}</td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                              <tr key={admin.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200">
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">{admin.id}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
                                   <div className="flex flex-col">
                                     <span>
                                       {admin.nombres} {admin.apellidos}
                                       {admin.id === 1 && (
-                                        <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                        <span className="ml-2 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs font-semibold px-2 py-1 rounded-full">
                                           MASTER
                                         </span>
                                       )}
                                     </span>
                                     {admin.asignatura && (
-                                      <span className={`${colorClass} text-xs font-semibold px-2 py-1 rounded-full mt-1 inline-block`}>
+                                      <span className={`${colorClass} text-xs font-semibold px-2 py-1 rounded-full mt-1 inline-block transition-colors duration-200`}>
                                         📚 {admin.asignatura}
                                       </span>
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{admin.correo}</td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{admin.usuario}</td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{admin.asignatura || "-"}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{admin.correo}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{admin.usuario}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{admin.asignatura || "-"}</td>
                                 <td className="px-4 py-4 whitespace-nowrap">
-                                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                  <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold transition-colors duration-200">
                                     {admin.rol}
                                   </span>
                                 </td>
@@ -802,14 +802,14 @@ export default function UsuariosInscritos() {
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => openViewModal(admin)}
-                                      className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+                                      className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
                                       title="Ver"
                                     >
                                       <FaEye />
                                     </button>
                                     <button
                                       onClick={() => openEditModal(admin)}
-                                      className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
+                                      className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
                                       title="Editar"
                                     >
                                       <FaEdit />
@@ -817,14 +817,14 @@ export default function UsuariosInscritos() {
                                     {admin.id !== 1 ? (
                                       <button
                                         onClick={() => openDeleteModal(admin)}
-                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                                        className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
                                         title="Eliminar"
                                       >
                                         <FaTrash />
                                       </button>
                                     ) : (
                                       <span
-                                        className="p-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed text-sm"
+                                        className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed text-sm"
                                         title="El administrador principal no puede ser eliminado"
                                       >
                                         <FaTrash />

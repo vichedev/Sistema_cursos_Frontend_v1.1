@@ -7,7 +7,7 @@ import {
   sanitizeNumber, 
   sanitizeName,
   sanitizeUsername 
-} from '../../../utils/sanitize'; // ✅ NUEVA IMPORTACIÓN
+} from '../../../utils/sanitize';
 
 export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, error }) {
   const [form, setForm] = useState({
@@ -44,7 +44,6 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
     const { name, value } = e.target;
     let sanitizedValue = value;
 
-    // ✅ APLICAR SANITIZACIÓN ESPECÍFICA
     switch(name) {
       case 'nombres':
       case 'apellidos':
@@ -76,7 +75,6 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
     setForm((f) => ({ ...f, [name]: sanitizedValue }));
   };
 
-  // ✅ NUEVA FUNCIÓN: Validación del formulario
   const validateForm = () => {
     if (!form.nombres.trim() || !form.apellidos.trim()) {
       return "Los nombres y apellidos son obligatorios";
@@ -90,7 +88,6 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
       return "El usuario debe tener al menos 3 caracteres";
     }
 
-    // Si se está cambiando la contraseña, validar longitud
     if (form.password && form.password.length < 6) {
       return "La contraseña debe tener al menos 6 caracteres";
     }
@@ -101,14 +98,15 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ VALIDACIÓN ANTES DE ENVIAR
     const validationError = validateForm();
     if (validationError) {
       Swal.fire({
         title: "Error de validación",
         text: validationError,
         icon: "error",
-        confirmButtonText: "Entendido"
+        confirmButtonText: "Entendido",
+        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
       });
       return;
     }
@@ -116,6 +114,8 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
     Swal.fire({
       title: "Actualizando usuario...",
       allowOutsideClick: false,
+      background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+      color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
       didOpen: () => {
         Swal.showLoading();
       },
@@ -134,12 +134,16 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         text: "Usuario actualizado correctamente",
         timer: 2000,
         showConfirmButton: false,
+        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
       });
     } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Error",
         text: "No se pudo actualizar el usuario",
+        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
       });
     }
   };
@@ -149,7 +153,7 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
       <Modal onClose={onClose}>
         <div className="flex flex-col items-center justify-center py-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Cargando usuario...</p>
+          <p className="text-gray-600 dark:text-gray-300">Cargando usuario...</p>
         </div>
       </Modal>
     );
@@ -160,17 +164,17 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
   return (
     <Modal onClose={onClose}>
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4 shadow-md">
-          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4 shadow-md">
+          <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">Editar Usuario</h2>
-        <p className="text-gray-600 mt-1">Actualice la información del usuario</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Editar Usuario</h2>
+        <p className="text-gray-600 dark:text-gray-300 mt-1">Actualice la información del usuario</p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-start">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl border border-red-200 dark:border-red-700 flex items-start">
           <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
@@ -178,40 +182,40 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto px-1 py-2 bg-gray-50 rounded-2xl">
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto px-1 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres</label>
             <input
               name="nombres"
               value={form.nombres}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellidos</label>
             <input
               name="apellidos"
               value={form.apellidos}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo electrónico</label>
           <input
             name="correo"
             type="email"
             value={form.correo}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           />
         </div>
 
@@ -219,32 +223,32 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad</label>
                 <input
                   name="ciudad"
                   value={form.ciudad}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
                 <input
                   name="empresa"
                   value={form.empresa}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cargo</label>
                 <select
                   name="cargo"
                   value={form.cargo}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   <option value="">Seleccione un cargo</option>
                   <option value="Gerente">Gerente</option>
@@ -256,31 +260,31 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario</label>
           <input
             name="usuario"
             value={form.usuario}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           />
         </div>
 
         {isAdmin && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Asignatura</label>
             <input
               name="asignatura"
               value={form.asignatura}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               placeholder="Asignatura que imparte el profesor"
             />
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Cambiar contraseña (dejar vacío para no modificar)
           </label>
           <input
@@ -288,7 +292,7 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
             type="password"
             value={form.password}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             placeholder="Nueva contraseña"
           />
         </div>
@@ -297,7 +301,7 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition"
+            className="flex-1 py-3 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors duration-200"
           >
             Cancelar
           </button>
@@ -307,7 +311,7 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
             className={`flex-1 py-3 rounded-xl font-semibold text-white transition-all duration-300 flex items-center justify-center
               ${loading 
                 ? "bg-blue-400 cursor-not-allowed" 
-                : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-blue-300"}`}
+                : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-blue-300 dark:hover:shadow-blue-900"}`}
           >
             {loading ? (
               <>
