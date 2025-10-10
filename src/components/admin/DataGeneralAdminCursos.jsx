@@ -21,14 +21,14 @@ export default function DashboardAdminCursos() {
 
         // 1) Estadísticas resumen
         const statsResponse = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/stats/general`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/stats/general`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setStats(statsResponse.data);
 
         // 2) Todos los cursos
         const coursesResponse = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/courses/all`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/courses/all`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         
@@ -50,7 +50,7 @@ export default function DashboardAdminCursos() {
         for (const course of coursesData) {
           try {
             const paymentResponse = await axios.get(
-              `${import.meta.env.VITE_BACKEND_URL}/courses/${course.id}/estudiantes-con-pagos`,
+              `${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/estudiantes-con-pagos`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -93,7 +93,7 @@ export default function DashboardAdminCursos() {
           coursesData.map(async (course) => {
             try {
               const studentsResponse = await axios.get(
-                `${import.meta.env.VITE_BACKEND_URL}/courses/${course.id}/estudiantes`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/estudiantes`,
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               

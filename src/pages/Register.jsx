@@ -1,10 +1,16 @@
-// src/pages/Register.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import { FaUserPlus } from "react-icons/fa";
 import { City } from 'country-state-city';
+import { 
+  sanitizeInput, 
+  sanitizeEmail, 
+  sanitizeNumber, 
+  sanitizeName,
+  sanitizeUsername 
+} from '../utils/sanitize'; // ✅ NUEVAS IMPORTACIONES
 
 export default function Register() {
   const navigate = useNavigate();
@@ -32,7 +38,36 @@ export default function Register() {
 
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    let sanitizedValue = value;
+
+    // ✅ APLICAR SANITIZACIÓN ESPECÍFICA POR CAMPO
+    switch(name) {
+      case 'nombres':
+      case 'apellidos':
+        sanitizedValue = sanitizeName(value);
+        break;
+      case 'correo':
+        sanitizedValue = sanitizeEmail(value);
+        break;
+      case 'usuario':
+        sanitizedValue = sanitizeUsername(value);
+        break;
+      case 'cedula':
+      case 'celular':
+        sanitizedValue = sanitizeNumber(value);
+        break;
+      case 'password':
+        sanitizedValue = sanitizeInput(value);
+        break;
+      case 'ciudad':
+      case 'empresa':
+        sanitizedValue = sanitizeInput(value);
+        break;
+      default:
+        sanitizedValue = sanitizeInput(value);
+    }
+
+    setForm({ ...form, [name]: sanitizedValue });
     
     // Limpiar errores cuando el usuario empiece a escribir
     if (fieldErrors[name]) {
@@ -55,52 +90,50 @@ export default function Register() {
     return /^\d{10}$/.test(celular);
   };
 
+  // ✅ NUEVA FUNCIÓN: Validación completa del formulario
+  const validateForm = () => {
+    if (!form.nombres.trim() || !form.apellidos.trim()) {
+      return 'Los nombres y apellidos son obligatorios';
+    }
+
+    if (!form.correo.trim() || !isValidEmail(form.correo)) {
+      return 'Por favor, ingresa un correo electrónico válido';
+    }
+
+    if (!form.usuario.trim() || form.usuario.length < 3) {
+      return 'El usuario debe tener al menos 3 caracteres';
+    }
+
+    if (!form.cedula.trim() || !isValidCedula(form.cedula)) {
+      return 'La cédula debe tener 10 dígitos numéricos';
+    }
+
+    if (!form.celular.trim() || !isValidCelular(form.celular)) {
+      return 'El celular debe tener 10 dígitos numéricos';
+    }
+
+    if (!form.password.trim() || form.password.length < 6) {
+      return 'La contraseña debe tener al menos 6 caracteres';
+    }
+
+    if (!form.ciudad.trim()) {
+      return 'La ciudad es obligatoria';
+    }
+
+    return null;
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     setIsLoading(true);
     setFieldErrors({ correo: '', usuario: '', cedula: '', celular: '' });
 
-    // Validaciones frontend
-    if (!form.nombres.trim() || !form.apellidos.trim() || !form.correo.trim() || 
-        !form.cedula.trim() || !form.celular.trim() || !form.usuario.trim() || 
-        !form.password.trim() || !form.ciudad.trim()) {
+    // ✅ VALIDACIÓN MEJORADA CON FUNCIÓN DEDICADA
+    const validationError = validateForm();
+    if (validationError) {
       Swal.fire({
-        title: 'Error',
-        html: 'Por favor, completa todos los campos obligatorios.',
-        icon: 'error',
-        confirmButtonText: 'Aceptar',
-        customClass: {
-          popup: 'swal2-modern',
-          title: 'swal2-title-custom',
-          htmlContainer: 'swal2-html-container-custom'
-        }
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (!isValidEmail(form.correo)) {
-      setFieldErrors(prev => ({ ...prev, correo: 'Por favor, ingresa un correo electrónico válido.' }));
-      setIsLoading(false);
-      return;
-    }
-
-    if (!isValidCedula(form.cedula)) {
-      setFieldErrors(prev => ({ ...prev, cedula: 'La cédula debe tener 10 dígitos numéricos.' }));
-      setIsLoading(false);
-      return;
-    }
-
-    if (!isValidCelular(form.celular)) {
-      setFieldErrors(prev => ({ ...prev, celular: 'El celular debe tener 10 dígitos numéricos.' }));
-      setIsLoading(false);
-      return;
-    }
-
-    if (form.password.length < 6) {
-      Swal.fire({
-        title: 'Error',
-        html: 'La contraseña debe tener al menos 6 caracteres.',
+        title: 'Error de validación',
+        text: validationError,
         icon: 'error',
         confirmButtonText: 'Aceptar',
         customClass: {
@@ -114,7 +147,7 @@ export default function Register() {
     }
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/register`, form);
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`, form);
       Swal.fire({
         title: '¡Registro exitoso!',
         text: res.data.message || 'Ahora verifica tu correo electrónico para activar tu cuenta.',
@@ -379,7 +412,6 @@ export default function Register() {
           animation-delay: 2s;
         }
 
-        /* Estilos personalizados para SweetAlert2 */
         .swal2-modern {
           border-radius: 1.5rem !important;
           box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
@@ -393,7 +425,7 @@ export default function Register() {
         }
         .swal2-html-container-custom {
           font-size: 1.125rem !important;
-          color:极光#4a5568 !important;
+          color: #4a5568 !important;
           line-height: 1.5 !important;
         }
         .swal2-success .swal2-success-ring {

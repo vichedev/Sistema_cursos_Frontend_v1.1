@@ -6,7 +6,7 @@ const NotificationContext = createContext();
 // 🔑 storage + endpoint
 const STORAGE_KEY = 'admin_notifications_v1';
 const SSE_URL = (import.meta.env.VITE_BACKEND_URL || '')
-  .replace(/\/$/, '') + '/notifications/stream';
+  .replace(/\/$/, '') + '/api/notifications/stream';
 
 // ---------- Reducer helpers
 const normId = (v) => Number(v);

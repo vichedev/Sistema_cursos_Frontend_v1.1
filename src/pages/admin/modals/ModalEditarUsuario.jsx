@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 import Swal from "sweetalert2";
+import { 
+  sanitizeInput, 
+  sanitizeEmail, 
+  sanitizeNumber, 
+  sanitizeName,
+  sanitizeUsername 
+} from '../../../utils/sanitize'; // ✅ NUEVA IMPORTACIÓN
 
 export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, error }) {
   const [form, setForm] = useState({
@@ -35,11 +42,76 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    let sanitizedValue = value;
+
+    // ✅ APLICAR SANITIZACIÓN ESPECÍFICA
+    switch(name) {
+      case 'nombres':
+      case 'apellidos':
+        sanitizedValue = sanitizeName(value);
+        break;
+      case 'correo':
+        sanitizedValue = sanitizeEmail(value);
+        break;
+      case 'usuario':
+        sanitizedValue = sanitizeUsername(value);
+        break;
+      case 'cedula':
+      case 'celular':
+        sanitizedValue = sanitizeNumber(value);
+        break;
+      case 'password':
+        sanitizedValue = sanitizeInput(value);
+        break;
+      case 'ciudad':
+      case 'empresa':
+      case 'cargo':
+      case 'asignatura':
+        sanitizedValue = sanitizeInput(value);
+        break;
+      default:
+        sanitizedValue = sanitizeInput(value);
+    }
+
+    setForm((f) => ({ ...f, [name]: sanitizedValue }));
+  };
+
+  // ✅ NUEVA FUNCIÓN: Validación del formulario
+  const validateForm = () => {
+    if (!form.nombres.trim() || !form.apellidos.trim()) {
+      return "Los nombres y apellidos son obligatorios";
+    }
+
+    if (!form.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) {
+      return "Por favor, ingresa un correo electrónico válido";
+    }
+
+    if (!form.usuario.trim() || form.usuario.length < 3) {
+      return "El usuario debe tener al menos 3 caracteres";
+    }
+
+    // Si se está cambiando la contraseña, validar longitud
+    if (form.password && form.password.length < 6) {
+      return "La contraseña debe tener al menos 6 caracteres";
+    }
+
+    return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ VALIDACIÓN ANTES DE ENVIAR
+    const validationError = validateForm();
+    if (validationError) {
+      Swal.fire({
+        title: "Error de validación",
+        text: validationError,
+        icon: "error",
+        confirmButtonText: "Entendido"
+      });
+      return;
+    }
 
     Swal.fire({
       title: "Actualizando usuario...",

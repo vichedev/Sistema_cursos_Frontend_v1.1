@@ -38,7 +38,7 @@ export default function EstudiantesCurso() {
 
         // Curso
         const cursoResponse = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/courses/${id}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCurso(cursoResponse.data);
@@ -46,7 +46,7 @@ export default function EstudiantesCurso() {
         // Estudiantes (con pagos si existe)
         try {
           const estudiantesResponse = await axios.get(
-            `${import.meta.env.VITE_BACKEND_URL}/courses/${id}/estudiantes-con-pagos`,
+            `${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}/estudiantes-con-pagos`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
@@ -60,7 +60,7 @@ export default function EstudiantesCurso() {
         } catch {
           // Fallback sin pagos
           const estudiantesBasic = await axios.get(
-            `${import.meta.env.VITE_BACKEND_URL}/courses/${id}/estudiantes`,
+            `${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}/estudiantes`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 

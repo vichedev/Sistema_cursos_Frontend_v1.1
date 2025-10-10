@@ -306,21 +306,21 @@ export default function DataGeneralEstudiante() {
       try {
         // Obtener datos del usuario
         const userRes = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/users/${userId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setUserData(userRes.data);
 
         // Mis cursos
         const resMis = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/courses/mis-cursos?userId=${userId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/courses/mis-cursos?userId=${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setMisCursos(resMis.data?.data || resMis.data || []);
 
         // Cursos disponibles (sugerencias)
         const resDisp = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/courses/disponibles`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/courses/disponibles`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setDisponibles(resDisp.data?.data || resDisp.data || []);

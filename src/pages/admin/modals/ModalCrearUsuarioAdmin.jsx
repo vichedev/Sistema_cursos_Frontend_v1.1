@@ -8,6 +8,13 @@ import {
   FaLock,
   FaBook,
 } from "react-icons/fa";
+import { 
+  sanitizeInput, 
+  sanitizeEmail, 
+  sanitizeNumber, 
+  sanitizeName,
+  sanitizeUsername 
+} from '../../../utils/sanitize'; // ✅ NUEVA IMPORTACIÓN
 
 function Modal({ children, onClose }) {
   return (
@@ -62,9 +69,8 @@ export default function ModalCrearUsuario({
     celular: "",
   });
 
-  // ✅ SOLUCIÓN: Resetear el estado cuando el modal se abre o cuando hay cambios en loading/error
+  // ✅ Resetear el estado cuando el modal se abre o cuando hay cambios en loading/error
   useEffect(() => {
-    // Resetear el formulario cuando no está loading y no hay error
     if (!loading && !error) {
       setForm({
         nombres: "",
@@ -104,7 +110,35 @@ export default function ModalCrearUsuario({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    let sanitizedValue = value;
+
+    // ✅ APLICAR SANITIZACIÓN ESPECÍFICA
+    switch(name) {
+      case 'nombres':
+      case 'apellidos':
+        sanitizedValue = sanitizeName(value);
+        break;
+      case 'correo':
+        sanitizedValue = sanitizeEmail(value);
+        break;
+      case 'usuario':
+        sanitizedValue = sanitizeUsername(value);
+        break;
+      case 'cedula':
+      case 'celular':
+        sanitizedValue = sanitizeNumber(value);
+        break;
+      case 'password':
+        sanitizedValue = sanitizeInput(value);
+        break;
+      case 'asignatura':
+        sanitizedValue = sanitizeInput(value);
+        break;
+      default:
+        sanitizedValue = sanitizeInput(value);
+    }
+
+    setForm((f) => ({ ...f, [name]: sanitizedValue }));
     if (validationError) setValidationError("");
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: "" }));
@@ -113,6 +147,35 @@ export default function ModalCrearUsuario({
 
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // ✅ NUEVA FUNCIÓN: Validación completa del formulario
+  const validateForm = () => {
+    if (!form.nombres.trim() || !form.apellidos.trim()) {
+      return "Los nombres y apellidos son obligatorios.";
+    }
+
+    if (!form.correo.trim() || !isValidEmail(form.correo)) {
+      return "Por favor, ingresa un correo electrónico válido.";
+    }
+
+    if (!form.usuario.trim() || form.usuario.length < 3) {
+      return "El usuario debe tener al menos 3 caracteres.";
+    }
+
+    if (!form.cedula.trim() || form.cedula.length !== 10) {
+      return "La cédula debe tener 10 dígitos.";
+    }
+
+    if (!form.celular.trim() || form.celular.length !== 10) {
+      return "El celular debe tener 10 dígitos.";
+    }
+
+    if (!form.password.trim() || form.password.length < 6) {
+      return "La contraseña debe tener al menos 6 caracteres.";
+    }
+
+    return null;
   };
 
   // Manejo de errores del backend
@@ -149,32 +212,15 @@ export default function ModalCrearUsuario({
     setValidationError("");
     setFieldErrors({ correo: "", usuario: "", cedula: "", celular: "" });
 
-    // Validaciones básicas
-    if (
-      !form.nombres.trim() ||
-      !form.apellidos.trim() ||
-      !form.correo.trim() ||
-      !form.usuario.trim() ||
-      !form.cedula.trim() ||
-      !form.celular.trim() ||
-      !form.password.trim()
-    ) {
-      setValidationError("Por favor, completa todos los campos obligatorios.");
+    // ✅ VALIDACIÓN MEJORADA CON FUNCIÓN DEDICADA
+    const validationError = validateForm();
+    if (validationError) {
+      setValidationError(validationError);
       return;
     }
 
-    if (!isValidEmail(form.correo)) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        correo: "Por favor, ingresa un correo electrónico válido.",
-      }));
-      return;
-    }
-
-    if (form.password.length < 6) {
-      setValidationError("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
+    // ✅ LOG PARA DEBUG (OPCIONAL)
+    console.log('Datos sanitizados a enviar:', form);
 
     await onCreate(form);
   };

@@ -193,7 +193,7 @@ export default function UsuariosInscritos() {
     setError(null);
     const token = localStorage.getItem("token");
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/users/usuarios-por-rol`, {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/usuarios-por-rol`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -236,7 +236,7 @@ export default function UsuariosInscritos() {
       }
 
       await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/users/${updatedUser.id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/${updatedUser.id}`,
         dataToSend,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -261,7 +261,7 @@ export default function UsuariosInscritos() {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/users/${userToDelete.id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/${userToDelete.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -378,7 +378,7 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/users`, newUser, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users`, newUser, {
         headers: { Authorization: `Bearer ${token}` },
       });
       closeModal();

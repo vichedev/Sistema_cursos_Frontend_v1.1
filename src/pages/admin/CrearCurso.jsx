@@ -36,7 +36,7 @@ export default function CrearCurso() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/users/profesores`, {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/profesores`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then((res) => {
@@ -141,7 +141,7 @@ export default function CrearCurso() {
       });
       if (imagenFile) data.append("imagen", imagenFile);
 
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/courses/create`, data, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/courses/create`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data"

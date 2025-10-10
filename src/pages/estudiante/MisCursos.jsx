@@ -26,7 +26,7 @@ export default function MisCursos() { // ✅ Cambiado de MisCursosContent a MisC
       }
 
       try {
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/courses/mis-cursos?userId=${userId}`, {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/courses/mis-cursos?userId=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'ngrok-skip-browser-warning': 'true',

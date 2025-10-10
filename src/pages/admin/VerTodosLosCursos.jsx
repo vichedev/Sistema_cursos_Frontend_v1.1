@@ -23,7 +23,7 @@ export default function VerTodosLosCursos() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/courses/all`, {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/courses/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "ngrok-skip-browser-warning": "true",

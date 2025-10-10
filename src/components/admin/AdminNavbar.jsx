@@ -112,7 +112,7 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
 
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/users/${userId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

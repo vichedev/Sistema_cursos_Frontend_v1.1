@@ -9,7 +9,7 @@ const CursosDisponibles = () => {
   useEffect(() => {
     const fetchCursos = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/courses/all`);
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses/all`);
         const data = await res.json();
         setCursos(data);
       } catch (error) {

@@ -31,7 +31,7 @@ const PaymentSuccess = () => {
         // ✅ VERIFICAR CON TOKEN DE AUTENTICACIÓN
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/payments/check-payment-status?clientTransactionId=${clientTransactionId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/payments/check-payment-status?clientTransactionId=${clientTransactionId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`

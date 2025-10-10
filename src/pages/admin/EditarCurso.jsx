@@ -47,7 +47,7 @@ export default function EditarCurso() {
 
     // Cargar profesores
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/users/profesores`, {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/profesores`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -68,7 +68,7 @@ export default function EditarCurso() {
 
     // Cargar datos del curso
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/courses/${id}`, {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -234,7 +234,7 @@ export default function EditarCurso() {
       }
 
       await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/courses/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}`,
         data,
         {
           headers: {

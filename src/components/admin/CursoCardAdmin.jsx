@@ -18,7 +18,7 @@ export default function CursoCardAdmin({ curso, setCursos }) {
     });
     if (!confirm.isConfirmed) return;
 
-    await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/courses/${curso.id}`, {
+    await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/courses/${curso.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setCursos((prev) => prev.filter((c) => c.id !== curso.id));

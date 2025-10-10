@@ -3,8 +3,200 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import PayphoneButton from "../../components/PayphoneButton";
-import { FaSearch, FaMoneyBillWave, FaGraduationCap, FaFilter } from "react-icons/fa";
+import { 
+  FaSearch, 
+  FaMoneyBillWave, 
+  FaGraduationCap, 
+  FaFilter, 
+  FaFire, 
+  FaCalendarAlt, 
+  FaStar,
+  FaUsers,
+  FaRocket,
+  FaClock,
+  FaBolt,
+  FaCrown,
+  FaGem,
+  FaHourglassHalf,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaHistory
+} from "react-icons/fa";
 import { isCourseExpired } from '../../utils/dateUtils';
+
+// ✅ ORDENAMIENTO - CURSOS NUEVOS SIEMPRE PRIMERO
+const sortCoursesByRelevance = (cursos) => {
+  return cursos.sort((a, b) => {
+    const dateA = new Date(a.createdAt || 0);
+    const dateB = new Date(b.createdAt || 0);
+    return dateB - dateA;
+  });
+};
+
+// ✅ FUNCIONES MEJORADAS PARA DETECCIÓN DE CURSOS NUEVOS
+const getCourseLaunchInfo = (curso) => {
+  if (!curso.createdAt) return null;
+  
+  try {
+    const courseDate = new Date(curso.createdAt);
+    const now = new Date();
+    const hoursDiff = (now - courseDate) / (1000 * 60 * 60);
+    const daysDiff = Math.floor(hoursDiff / 24);
+    
+    // Menos de 6 horas
+    if (hoursDiff < 6) {
+      return {
+        type: 'just-launched',
+        label: '¡RECIÉN LANZADO!',
+        icon: FaBolt,
+        color: 'from-green-500 to-emerald-600',
+        borderColor: 'border-yellow-300',
+        animate: 'animate-pulse',
+        hours: Math.floor(hoursDiff)
+      };
+    }
+    
+    // Menos de 24 horas
+    if (hoursDiff < 24) {
+      return {
+        type: 'today',
+        label: `Lanzado hace ${Math.floor(hoursDiff)}h`,
+        icon: FaRocket,
+        color: 'from-blue-500 to-cyan-600',
+        borderColor: 'border-blue-300',
+        animate: '',
+        hours: Math.floor(hoursDiff)
+      };
+    }
+    
+    // 1 día
+    if (daysDiff === 1) {
+      return {
+        type: 'yesterday',
+        label: 'Lanzado hace 1 día',
+        icon: FaStar,
+        color: 'from-purple-500 to-indigo-600',
+        borderColor: 'border-purple-300',
+        animate: '',
+        days: 1
+      };
+    }
+    
+    // 2-3 días
+    if (daysDiff >= 2 && daysDiff <= 3) {
+      return {
+        type: 'recent',
+        label: `Lanzado hace ${daysDiff} días`,
+        icon: FaStar,
+        color: 'from-indigo-500 to-purple-600',
+        borderColor: 'border-indigo-300',
+        animate: '',
+        days: daysDiff
+      };
+    }
+    
+    // 4-7 días (una semana)
+    if (daysDiff >= 4 && daysDiff <= 7) {
+      return {
+        type: 'week',
+        label: `Lanzado hace ${daysDiff} días`,
+        icon: FaCalendarAlt,
+        color: 'from-orange-500 to-amber-600',
+        borderColor: 'border-orange-300',
+        animate: '',
+        days: daysDiff
+      };
+    }
+    
+    // 1-2 semanas
+    if (daysDiff >= 8 && daysDiff <= 14) {
+      const weeks = Math.floor(daysDiff / 7);
+      return {
+        type: 'weeks',
+        label: weeks === 1 ? 'Lanzado hace 1 semana' : `Lanzado hace ${weeks} semanas`,
+        icon: FaHistory,
+        color: 'from-gray-500 to-slate-600',
+        borderColor: 'border-gray-300',
+        animate: '',
+        days: daysDiff
+      };
+    }
+    
+    // Más de 2 semanas
+    if (daysDiff > 14) {
+      const weeks = Math.floor(daysDiff / 7);
+      return {
+        type: 'old',
+        label: `Lanzado hace ${weeks} semanas`,
+        icon: FaHistory,
+        color: 'from-gray-400 to-gray-500',
+        borderColor: 'border-gray-200',
+        animate: '',
+        days: daysDiff
+      };
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// ✅ FUNCIONES PARA FECHAS DEL CURSO (100% PRECISAS)
+const isTodayCourse = (curso) => {
+  if (!curso.fecha) return false;
+  try {
+    const fechaStr = curso.fecha.split("T")[0];
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return fechaStr === todayStr;
+  } catch {
+    return false;
+  }
+};
+
+const isTomorrowCourse = (curso) => {
+  if (!curso.fecha) return false;
+  try {
+    const fechaStr = curso.fecha.split("T")[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    return fechaStr === tomorrowStr;
+  } catch {
+    return false;
+  }
+};
+
+const isUpcomingCourse = (curso) => {
+  if (!curso.fecha) return false;
+  try {
+    const fechaStr = curso.fecha.split("T")[0];
+    const [year, month, day] = fechaStr.split("-").map(Number);
+    const courseDate = new Date(year, month - 1, day);
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const daysDiff = Math.round((courseDate - todayDate) / (1000 * 60 * 60 * 24));
+    return daysDiff >= 2 && daysDiff <= 7;
+  } catch {
+    return false;
+  }
+};
+
+const getDaysUntilCourse = (curso) => {
+  if (!curso.fecha) return null;
+  try {
+    const fechaStr = curso.fecha.split("T")[0];
+    const [year, month, day] = fechaStr.split("-").map(Number);
+    const courseDate = new Date(year, month - 1, day);
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const daysDiff = Math.round((courseDate - todayDate) / (1000 * 60 * 60 * 24));
+    return daysDiff >= 0 ? daysDiff : null;
+  } catch {
+    return null;
+  }
+};
 
 function ImageModal({ open, src, alt, onClose }) {
   if (!open) return null;
@@ -20,13 +212,13 @@ function ImageModal({ open, src, alt, onClose }) {
   );
 }
 
-export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudianteContent a CursosEstudiante
+export default function CursosEstudiante() {
   const [cursos, setCursos] = useState([]);
   const [filteredCursos, setFilteredCursos] = useState([]);
   const [userId, setUserId] = useState(null);
   const [modalImg, setModalImg] = useState({ open: false, src: "", alt: "" });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('TODOS');
+  const [activeTab, setActiveTab] = useState('RELEVANTES');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -35,7 +227,7 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
     setUserId(uid);
 
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/courses/disponibles`, {
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/courses/disponibles`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true',
@@ -45,9 +237,9 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
       })
       .then((res) => {
         if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE html>')) {
-          console.error("Se recibió HTML en lugar de JSON - problema con ngrok o servidor");
           throw new Error("El servidor está devolviendo HTML en lugar de JSON");
         }
+        
         let cursosData = [];
         if (res.data && Array.isArray(res.data.data)) cursosData = res.data.data;
         else if (Array.isArray(res.data)) cursosData = res.data;
@@ -55,8 +247,10 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
           const possibleArrays = Object.values(res.data).filter(item => Array.isArray(item));
           cursosData = possibleArrays.length > 0 ? possibleArrays[0] : [];
         }
-        setCursos(cursosData);
-        setFilteredCursos(cursosData);
+        
+        const cursosOrdenados = sortCoursesByRelevance(cursosData);
+        setCursos(cursosOrdenados);
+        setFilteredCursos(cursosOrdenados);
       })
       .catch((err) => {
         console.error("Error al obtener cursos:", err);
@@ -75,11 +269,17 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
 
   useEffect(() => {
     let filtered = cursos;
-    if (activeTab !== 'TODOS') {
-      filtered = filtered.filter(curso =>
-        activeTab === 'PAGADO' ? curso.precio > 0 : curso.precio === 0
-      );
+    
+    if (activeTab === 'RELEVANTES') {
+      filtered = filtered.filter(curso => !isCourseExpired(curso));
+    } else if (activeTab === 'PAGADO') {
+      filtered = filtered.filter(curso => curso.precio > 0 && !isCourseExpired(curso));
+    } else if (activeTab === 'GRATIS') {
+      filtered = filtered.filter(curso => curso.precio === 0 && !isCourseExpired(curso));
+    } else if (activeTab === 'FINALIZADOS') {
+      filtered = filtered.filter(curso => isCourseExpired(curso));
     }
+    
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(curso =>
@@ -89,6 +289,7 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
         (curso.asignatura && curso.asignatura.toLowerCase().includes(term))
       );
     }
+    
     setFilteredCursos(filtered);
   }, [cursos, activeTab, searchTerm]);
 
@@ -103,7 +304,7 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
       });
 
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/payments/inscribir-gratis`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/payments/inscribir-gratis`,
         { cursoId, userId },
         { headers: { Authorization: `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true', 'Content-Type': 'application/json' } }
       );
@@ -118,6 +319,22 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
     }
   };
 
+  // Contar cursos por categoría de lanzamiento
+  const justLaunchedCount = cursos.filter(c => {
+    const info = getCourseLaunchInfo(c);
+    return info && info.type === 'just-launched';
+  }).length;
+
+  const newCoursesCount = cursos.filter(c => {
+    const info = getCourseLaunchInfo(c);
+    return info && ['just-launched', 'today', 'yesterday', 'recent'].includes(info.type);
+  }).length;
+
+  const totalCoursesCount = cursos.length;
+  const paidCoursesCount = cursos.filter(c => c.precio > 0 && !isCourseExpired(c)).length;
+  const freeCoursesCount = cursos.filter(c => c.precio === 0 && !isCourseExpired(c)).length;
+  const expiredCoursesCount = cursos.filter(isCourseExpired).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -131,20 +348,57 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
 
   return (
     <>
-      {/* Header con gradiente - Oculto en móvil */}
-      <div className="hidden md:block bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">CURSOS DISPONIBLES</h1>
+      {/* HEADER */}
+      <div className="hidden md:block bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-400 rounded-full -translate-y-20 translate-x-20 opacity-20 blur-xl"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-500 rounded-full translate-y-16 -translate-x-16 opacity-20 blur-xl"></div>
+        
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+              <FaRocket className="text-yellow-300 animate-bounce" />
+              CURSOS DISPONIBLES
+            </h1>
+            <p className="text-blue-100 text-lg">
+              Los cursos <span className="text-yellow-300 font-bold">más nuevos</span> aparecen primero
+            </p>
+            
+            <div className="mt-3 flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 inline-flex">
+              <FaBolt className="text-yellow-300" />
+              <span className="text-sm">Ordenado por: <span className="font-bold">Más recientes primero</span></span>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            {justLaunchedCount > 0 && (
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-300 shadow-lg">
+                <div className="text-sm opacity-90 flex items-center gap-2 mb-1">
+                  <FaBolt className="text-yellow-300 animate-pulse" />
+                  <span>¡Recién Lanzados!</span>
+                </div>
+                <div className="text-3xl font-bold text-yellow-300 flex items-center gap-2">
+                  {justLaunchedCount}
+                  <FaGem className="text-white text-xl" />
+                </div>
+              </div>
+            )}
+            
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30 shadow-lg">
+              <div className="text-sm opacity-90 flex items-center gap-2 mb-1">
+                <FaCrown className="text-yellow-300" />
+                <span>Total Activos</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {totalCoursesCount - expiredCoursesCount}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filtros y búsqueda */}
       <div className="bg-white rounded-2xl shadow-lg p-4 md:p-5 mb-6">
-        {/* Contenedor principal: Búsqueda + Stats + Filtros */}
         <div className="flex flex-col lg:flex-row items-stretch gap-4">
-          {/* Barra de búsqueda */}
           <div className="relative flex-grow">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
@@ -156,80 +410,124 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
             />
           </div>
 
-          {/* Estadísticas - Ocultas en móvil */}
-          <div className="hidden md:flex items-center justify-center bg-blue-50 rounded-xl p-2 border border-blue-200 shadow-sm">
-            <div className="grid grid-cols-4 gap-2 w-full">
-              <div className="flex flex-col items-center justify-center p-1">
-                <div className="text-xs text-gray-500 mb-1">Total</div>
-                <div className="bg-white p-1 rounded-lg text-center w-full">
-                  <div className="font-bold text-blue-600">{cursos.length}</div>
+          <div className="hidden md:flex items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-3 border border-blue-200 shadow-sm">
+            <div className="grid grid-cols-4 gap-3 w-full">
+              <div className="flex flex-col items-center justify-center p-2">
+                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <FaRocket className="text-green-500" />
+                  Nuevos
+                </div>
+                <div className="bg-white p-2 rounded-lg text-center w-full shadow">
+                  <div className="font-bold text-green-600 text-lg">{newCoursesCount}</div>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center p-1">
-                <div className="text-xs text-gray-500 mb-1">Pagados</div>
-                <div className="bg-white p-1 rounded-lg text-center w-full">
-                  <div className="font-bold text-green-600">{cursos.filter(c => c.precio > 0).length}</div>
+              <div className="flex flex-col items-center justify-center p-2">
+                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <FaMoneyBillWave className="text-yellow-500" />
+                  Premium
+                </div>
+                <div className="bg-white p-2 rounded-lg text-center w-full shadow">
+                  <div className="font-bold text-yellow-600 text-lg">{paidCoursesCount}</div>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center p-1">
-                <div className="text-xs text-gray-500 mb-1">Gratuitos</div>
-                <div className="bg-white p-1 rounded-lg text-center w-full">
-                  <div className="font-bold text-blue-600">{cursos.filter(c => c.precio === 0).length}</div>
+              <div className="flex flex-col items-center justify-center p-2">
+                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <FaGraduationCap className="text-blue-500" />
+                  Gratuitos
+                </div>
+                <div className="bg-white p-2 rounded-lg text-center w-full shadow">
+                  <div className="font-bold text-blue-600 text-lg">{freeCoursesCount}</div>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center p-1">
-                <div className="text-xs text-gray-500 mb-1">Disponibles</div>
-                <div className="bg-white p-1 rounded-lg text-center w-full">
-                  <div className="font-bold text-purple-600">{cursos.filter(c => !c.inscrito).length}</div>
+              <div className="flex flex-col items-center justify-center p-2">
+                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                  <FaTimesCircle className="text-red-500" />
+                  Finalizados
+                </div>
+                <div className="bg-white p-2 rounded-lg text-center w-full shadow">
+                  <div className="font-bold text-red-600 text-lg">{expiredCoursesCount}</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Filtros */}
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          {/* Tabs de filtrado */}
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
             <button
+              onClick={() => setActiveTab('RELEVANTES')}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+                activeTab === 'RELEVANTES'
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg transform scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+              }`}
+            >
+              <FaFire className="text-orange-400" />
+              <span className="font-bold">Más Relevantes</span>
+              {justLaunchedCount > 0 && (
+                <span className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                  {justLaunchedCount} nuevo{justLaunchedCount > 1 ? 's' : ''}
+                </span>
+              )}
+            </button>
+
+            <button
               onClick={() => setActiveTab('PAGADO')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === 'PAGADO'
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+                activeTab === 'PAGADO'
+                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg transform scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+              }`}
             >
               <FaMoneyBillWave />
-              <span>Pagados</span>
-              <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
-                {cursos.filter(c => c.precio > 0).length}
+              <span>Premium</span>
+              <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
+                {paidCoursesCount}
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('GRATIS')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === 'GRATIS'
-                ? 'bg-green-500 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+                activeTab === 'GRATIS'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg transform scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+              }`}
             >
               <FaGraduationCap />
               <span>Gratuitos</span>
-              <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
-                {cursos.filter(c => c.precio === 0).length}
+              <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
+                {freeCoursesCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('FINALIZADOS')}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+                activeTab === 'FINALIZADOS'
+                  ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg transform scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+              }`}
+            >
+              <FaTimesCircle />
+              <span>Finalizados</span>
+              <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
+                {expiredCoursesCount}
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('TODOS')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition ${activeTab === 'TODOS'
-                ? 'bg-gray-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+                activeTab === 'TODOS'
+                  ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg transform scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+              }`}
             >
               <FaFilter />
-              <span>Todos</span>
-              <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
-                {cursos.length}
+              <span>Ver Todos</span>
+              <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
+                {totalCoursesCount}
               </span>
             </button>
           </div>
@@ -249,21 +547,43 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
                 {searchTerm
                   ? 'Intenta con otros términos de búsqueda'
                   : activeTab === 'PAGADO'
-                    ? 'No hay cursos pagados disponibles'
+                    ? 'No hay cursos premium disponibles'
                     : activeTab === 'GRATIS'
                       ? 'No hay cursos gratuitos disponibles'
+                      : activeTab === 'FINALIZADOS'
+                      ? 'No hay cursos finalizados'
                       : 'No hay cursos disponibles en este momento'}
               </p>
             </div>
           ) : (
             filteredCursos.map((curso) => {
               const isExpired = isCourseExpired(curso);
+              const launchInfo = getCourseLaunchInfo(curso);
+              const isToday = isTodayCourse(curso);
+              const isTomorrow = isTomorrowCourse(curso);
+              const isUpcoming = isUpcomingCourse(curso);
+              const daysUntil = getDaysUntilCourse(curso);
+              const hasFewSpots = curso.cupos > 0 && curso.cupos <= 3;
+              const hasLimitedSpots = curso.cupos > 0 && curso.cupos <= 5;
+
+              const LaunchIcon = launchInfo?.icon || FaStar;
 
               return (
                 <div
                   key={curso.id}
-                  className="group bg-white rounded-2xl shadow-xl border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col"
+                  className="group bg-white rounded-2xl shadow-xl border border-gray-200 hover:shadow-2xl transition-all duration-300 flex flex-col relative overflow-hidden"
                 >
+                  {/* ✅ ETIQUETA DINÁMICA DE LANZAMIENTO */}
+                  {launchInfo && (
+                    <div className={`absolute ${launchInfo.type === 'just-launched' ? '-top-2 -left-2' : 'top-2 right-2'} z-20`}>
+                      <div className={`bg-gradient-to-r ${launchInfo.color} text-white px-4 py-2 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2 ${launchInfo.animate} ${launchInfo.borderColor ? `border-2 ${launchInfo.borderColor}` : ''}`}>
+                        <LaunchIcon className={launchInfo.type === 'just-launched' ? 'text-yellow-300 animate-bounce' : ''} />
+                        {launchInfo.label}
+                        {launchInfo.type === 'just-launched' && <LaunchIcon className="text-yellow-300 animate-bounce" />}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="relative">
                     <img
                       src={
@@ -272,7 +592,7 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
                           : "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop"
                       }
                       alt={curso.titulo}
-                      className="w-full h-48 object-cover rounded-t-2xl cursor-pointer group-hover:brightness-90 transition"
+                      className="w-full h-48 object-cover rounded-t-2xl cursor-pointer group-hover:brightness-90 transition duration-300"
                       onError={(e) => {
                         e.target.src = "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop";
                       }}
@@ -287,76 +607,110 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
                       }
                     />
 
-                    {/* Etiquetas de estado */}
-                    <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    <div className="absolute top-12 left-2 flex flex-col gap-1">
                       <span
-                        className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md ${curso.precio > 0 ? "bg-yellow-100 text-yellow-800" : "bg-sky-100 text-sky-600"
-                          }`}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md ${
+                          curso.precio > 0 
+                            ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" 
+                            : "bg-gradient-to-r from-sky-400 to-blue-500 text-white"
+                        }`}
                       >
-                        {curso.precio > 0 ? 'PAGADO' : 'GRATIS'}
+                        {curso.precio > 0 ? '🔥 PREMIUM' : '🎓 GRATUITO'}
                       </span>
+
+                      {isToday && (
+                        <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-red-500 to-pink-600 text-white font-bold shadow-md flex items-center gap-1">
+                          <FaBolt className="text-yellow-300" />
+                          ¡COMIENZA HOY!
+                        </span>
+                      )}
+                      
+                      {isTomorrow && (
+                        <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold shadow-md flex items-center gap-1">
+                          <FaCalendarAlt />
+                          ¡COMIENZA MAÑANA!
+                        </span>
+                      )}
+                      
+                      {isUpcoming && daysUntil !== null && daysUntil >= 2 && daysUntil <= 7 && !isToday && !isTomorrow && (
+                        <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold shadow-md flex items-center gap-1">
+                          <FaCalendarAlt />
+                          EN {daysUntil} DÍA{daysUntil !== 1 ? 'S' : ''}
+                        </span>
+                      )}
+                      
+                      {hasFewSpots && !isExpired && (
+                        <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-purple-600 to-pink-700 text-white font-bold shadow-md flex items-center gap-1 animate-pulse">
+                          <FaHourglassHalf className="text-yellow-300" />
+                          ⚠️ ÚLTIMOS {curso.cupos} CUPOS!
+                        </span>
+                      )}
+                      
+                      {hasLimitedSpots && !hasFewSpots && !isExpired && (
+                        <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold shadow-md flex items-center gap-1">
+                          <FaUsers />
+                          🚀 CUPOS LIMITADOS
+                        </span>
+                      )}
+                      
                       {isExpired && (
-                        <span className="px-4 py-2 rounded-lg text-sm bg-red-100 text-red-600 font-bold shadow-md">
-                          FINALIZADO
+                        <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold shadow-md">
+                          ⏰ FINALIZADO
                         </span>
                       )}
                     </div>
 
-                    {/* Cupos disponibles */}
-                    <span className="absolute top-2 right-2 px-4 py-2 rounded-full text-xs bg-gray-200 text-gray-800 font-medium shadow-lg">
-                      {curso.cupos || 0} cupos
+                    <span className="absolute top-2 right-2 px-4 py-2 rounded-full text-xs bg-black/70 text-white font-bold shadow-lg backdrop-blur-sm">
+                      🎯 {curso.cupos || 0} CUPOS
                     </span>
                   </div>
 
                   <div className="flex-1 flex flex-col justify-between p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{curso.titulo || "Curso sin título"}</h3>
-                    <p className="text-gray-700 mb-4">{curso.descripcion || "Sin descripción"}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{curso.titulo || "Curso sin título"}</h3>
+                    <p className="text-gray-700 mb-4 line-clamp-2">{curso.descripcion || "Sin descripción"}</p>
 
-                    {/* Profesor y asignatura */}
                     {curso.profesorNombre && (
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
-                          Profesor: {curso.profesorNombre}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                          👨‍🏫 Profesor: {curso.profesorNombre}
                         </span>
 
                         {curso.asignatura && (
-                          <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-semibold">
-                            Asignatura: {curso.asignatura}
+                          <span className="inline-block px-3 py-1 rounded-full bg-purple-50 text-purple-800 text-xs font-semibold border border-purple-200">
+                            📚 {curso.asignatura}
                           </span>
                         )}
                       </div>
                     )}
 
-                    {/* Precio y fecha */}
                     <div className="flex justify-between items-center mb-5">
                       {curso.precio > 0 && (
-                        <span className="px-4 py-2 rounded-lg bg-yellow-50 text-yellow-800 text-base font-bold">
-                          ${curso.precio}
+                        <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 text-base font-bold border border-yellow-300">
+                          💰 ${curso.precio}
                         </span>
                       )}
                       <div className="text-xs text-gray-500">
-                        Fecha: <span className="font-medium">{curso.fecha || "Por definir"}</span>
+                        <span className="font-medium">📅 {curso.fecha || "Por definir"}</span>
                         {" | "}
-                        Hora: <span className="font-medium">{curso.hora || "Por definir"}</span>
+                        <span className="font-medium">⏰ {curso.hora || "Por definir"}</span>
                       </div>
                     </div>
 
-                    {/* Botones de acción */}
                     <div>
                       {isExpired ? (
-                        <div className="text-center bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold text-sm">
-                          Este curso ya ha finalizado
+                        <div className="text-center bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold text-sm border border-gray-300">
+                          ⏰ Este curso ya ha finalizado
                         </div>
                       ) : curso.inscrito ? (
                         <div className="text-green-600 font-semibold text-center">
-                          <span className="inline-block px-3 py-1 rounded-xl bg-green-100">
-                            Ya inscrito en este curso
+                          <span className="inline-block px-3 py-2 rounded-xl bg-green-100 border border-green-300">
+                            ✅ Ya estás inscrito en este curso
                           </span>
                         </div>
                       ) : curso.precio > 0 ? (
                         <>
                           <p className="text-xs text-orange-600 font-semibold mb-3 text-center">
-                            Curso de pago. Paga con Payphone y te inscribes automáticamente.
+                            💳 Curso premium. Paga con Payphone y accede inmediatamente.
                           </p>
                           <div className="flex justify-center">
                             <PayphoneButton
@@ -375,13 +729,13 @@ export default function CursosEstudiante() { // ✅ Cambiado de CursosEstudiante
                       ) : (
                         <>
                           <p className="text-xs text-green-700 font-semibold mb-3 text-center">
-                            Curso gratuito. Haz clic para inscribirte.
+                            🎓 Curso gratuito. ¡Inscríbete ahora!
                           </p>
                           <button
                             onClick={() => handleEnroll(curso.id)}
-                            className="w-full bg-gradient-to-r from-green-400 to-lime-400 text-white px-5 py-2 rounded-xl font-bold shadow-lg hover:scale-105 transition"
+                            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-5 py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition duration-300 transform hover:shadow-xl"
                           >
-                            Inscribirse gratis
+                            🚀 Inscribirse Gratis
                           </button>
                         </>
                       )}
