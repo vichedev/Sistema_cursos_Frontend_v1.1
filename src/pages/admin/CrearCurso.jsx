@@ -5,7 +5,7 @@ import axios from "axios";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
 import {
   FaBook, FaChalkboardTeacher, FaCalendarAlt, FaClock, FaLink,
-  FaUsers, FaDollarSign, FaBell, FaPaperPlane
+  FaUsers, FaDollarSign, FaBell, FaPaperPlane, FaRobot, FaMagic
 } from "react-icons/fa";
 
 import { useNotifications } from "../../context/NotificationContext";
@@ -31,6 +31,7 @@ export default function CrearCurso() {
   const [profesores, setProfesores] = useState([]);
   const [showHourDropdown, setShowHourDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -52,6 +53,59 @@ export default function CrearCurso() {
         setProfesores([]);
       });
   }, []);
+
+  // ✅ FUNCIÓN PARA GENERAR DESCRIPCIÓN CON IA
+  const generateDescription = async () => {
+    if (!form.titulo.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Título requerido',
+        text: 'Por favor, ingresa un título primero para generar la descripción',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/api/generate-description`,
+        {
+          params: { titulo: form.titulo },
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      if (response.data.success) {
+        setForm(prev => ({
+          ...prev,
+          descripcion: response.data.data.descripcion
+        }));
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Descripción generada',
+          text: 'Se ha generado una descripción automáticamente',
+          confirmButtonColor: '#3b82f6',
+          timer: 2000
+        });
+      } else {
+        throw new Error(response.data.message || 'Error al generar descripción');
+      }
+    } catch (error) {
+      console.error('Error al generar descripción:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.message || error.message || 'No se pudo generar la descripción automática',
+        confirmButtonColor: '#3b82f6'
+      });
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
 
   const handleImage = (e) => {
     const file = e.target.files[0];
@@ -194,7 +248,6 @@ export default function CrearCurso() {
   };
 
   return (
-    // ✅ SOLO EL CONTENIDO, SIN AdminLayout
     <div className="bg-white rounded-2xl shadow-lg p-8">
       {/* Header */}
       <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
@@ -247,12 +300,39 @@ export default function CrearCurso() {
               )}
             </div>
 
-            {/* Descripción */}
+            {/* Descripción con Botón de IA */}
             <div>
-              <label className="block mb-3 font-medium text-gray-700 flex items-center gap-2">
-                <span className="text-blue-600">📝</span>
-                Descripción
-              </label>
+              <div className="flex justify-between items-center mb-3">
+                <label className="block font-medium text-gray-700 flex items-center gap-2">
+                  <span className="text-blue-600">📝</span>
+                  Descripción
+                </label>
+                
+                <button
+                  type="button"
+                  onClick={generateDescription}
+                  disabled={isGeneratingDescription || !form.titulo.trim()}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium shadow-md"
+                  title="Generar descripción con IA"
+                >
+                  {isGeneratingDescription ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <FaRobot className="text-sm" />
+                      <FaMagic className="text-xs" />
+                      Generar con IA
+                    </>
+                  )}
+                </button>
+              </div>
+              
               <textarea
                 name="descripcion"
                 value={form.descripcion}
@@ -261,7 +341,7 @@ export default function CrearCurso() {
                 className={`w-full px-5 py-4 bg-white border ${errors.descripcion ? "border-red-500" : "border-gray-200"
                   } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 shadow-sm`}
                 rows={4}
-                placeholder="Describe los objetivos y contenido del curso..."
+                placeholder="Describe los objetivos y contenido del curso... o haz clic en 'Generar con IA'"
               />
               {errors.descripcion && (
                 <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
@@ -519,7 +599,6 @@ export default function CrearCurso() {
                 </div>
               )}
             </div>
-
 
             {/* Notificaciones */}
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">

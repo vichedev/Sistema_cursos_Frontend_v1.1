@@ -20,7 +20,9 @@ import {
   FaHourglassHalf,
   FaCheckCircle,
   FaTimesCircle,
-  FaHistory
+  FaHistory,
+  FaEye,
+  FaTimes
 } from "react-icons/fa";
 import { isCourseExpired } from '../../utils/dateUtils';
 
@@ -198,6 +200,7 @@ const getDaysUntilCourse = (curso) => {
   }
 };
 
+// ✅ MODAL PARA IMAGEN
 function ImageModal({ open, src, alt, onClose }) {
   if (!open) return null;
   return (
@@ -212,11 +215,96 @@ function ImageModal({ open, src, alt, onClose }) {
   );
 }
 
+// ✅ NUEVO MODAL PARA DESCRIPCIÓN COMPLETA
+function DescriptionModal({ open, curso, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header del Modal */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors"
+          >
+            <FaTimes className="text-xl" />
+          </button>
+          <h2 className="text-2xl font-bold mb-2 pr-8">{curso.titulo || "Curso sin título"}</h2>
+          <div className="flex flex-wrap gap-2">
+            {curso.profesorNombre && (
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                👨‍🏫 {curso.profesorNombre}
+              </span>
+            )}
+            {curso.asignatura && (
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                📚 {curso.asignatura}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Contenido del Modal */}
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <FaEye className="text-blue-500" />
+              Descripción Completa del Curso
+            </h3>
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {curso.descripcion || "Este curso no tiene descripción disponible."}
+              </p>
+            </div>
+          </div>
+
+          {/* Información adicional */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <div className="font-semibold text-blue-800 mb-1">📅 Fecha del Curso</div>
+              <div className="text-blue-700">{curso.fecha || "Por definir"}</div>
+            </div>
+            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+              <div className="font-semibold text-green-800 mb-1">⏰ Horario</div>
+              <div className="text-green-700">{curso.hora || "Por definir"}</div>
+            </div>
+            <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+              <div className="font-semibold text-purple-800 mb-1">🎯 Cupos Disponibles</div>
+              <div className="text-purple-700">{curso.cupos || 0} cupos</div>
+            </div>
+            <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+              <div className="font-semibold text-orange-800 mb-1">💰 Precio</div>
+              <div className="text-orange-700">
+                {curso.precio > 0 ? `$${curso.precio} USD` : "Gratuito"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer del Modal */}
+        <div className="border-t border-gray-200 p-4 bg-gray-50">
+          <button
+            onClick={onClose}
+            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-3 rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all"
+          >
+            Cerrar Descripción
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CursosEstudiante() {
   const [cursos, setCursos] = useState([]);
   const [filteredCursos, setFilteredCursos] = useState([]);
   const [userId, setUserId] = useState(null);
   const [modalImg, setModalImg] = useState({ open: false, src: "", alt: "" });
+  const [modalDesc, setModalDesc] = useState({ open: false, curso: null });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('RELEVANTES');
   const [searchTerm, setSearchTerm] = useState('');
@@ -317,6 +405,11 @@ export default function CursosEstudiante() {
       Swal.close();
       Swal.fire("Error", err.response?.data?.message || "No se pudo inscribir al curso", "error");
     }
+  };
+
+  // ✅ FUNCIÓN PARA ABRIR MODAL DE DESCRIPCIÓN
+  const openDescriptionModal = (curso) => {
+    setModalDesc({ open: true, curso });
   };
 
   // Contar cursos por categoría de lanzamiento
@@ -647,7 +740,7 @@ export default function CursosEstudiante() {
                       )}
                       
                       {hasLimitedSpots && !hasFewSpots && !isExpired && (
-                        <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold shadow-md flex items-center gap-1">
+                        <span className="px-4py-2 rounded-lg text-sm bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold shadow-md flex items-center gap-1">
                           <FaUsers />
                           🚀 CUPOS LIMITADOS
                         </span>
@@ -667,7 +760,20 @@ export default function CursosEstudiante() {
 
                   <div className="flex-1 flex flex-col justify-between p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-3">{curso.titulo || "Curso sin título"}</h3>
-                    <p className="text-gray-700 mb-4 line-clamp-2">{curso.descripcion || "Sin descripción"}</p>
+                    
+                    {/* ✅ DESCRIPCIÓN CON BOTÓN "VER MÁS" */}
+                    <div className="mb-4">
+                      <p className="text-gray-700 line-clamp-3 mb-3">
+                        {curso.descripcion || "Sin descripción disponible."}
+                      </p>
+                      <button
+                        onClick={() => openDescriptionModal(curso)}
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors group"
+                      >
+                        <FaEye className="text-blue-500 group-hover:scale-110 transition-transform" />
+                        <span>Ver descripción completa</span>
+                      </button>
+                    </div>
 
                     {curso.profesorNombre && (
                       <div className="flex flex-wrap gap-2 mb-4">
@@ -753,6 +859,13 @@ export default function CursosEstudiante() {
         src={modalImg.src}
         alt={modalImg.alt}
         onClose={() => setModalImg({ open: false, src: "", alt: "" })}
+      />
+
+      {/* ✅ NUEVO MODAL PARA DESCRIPCIÓN COMPLETA */}
+      <DescriptionModal
+        open={modalDesc.open}
+        curso={modalDesc.curso}
+        onClose={() => setModalDesc({ open: false, curso: null })}
       />
     </>
   );
