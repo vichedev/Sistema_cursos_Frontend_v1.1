@@ -107,7 +107,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
       {/* Cerrar sesión */}
       <div className="mt-auto px-6 py-6 border-t border-gray-200">
         <div className="mb-4 text-center">
-          <p className="text-xs text-gray-400 select-none">Versión 1.0.0</p>
+          <p className="text-xs text-gray-400 select-none">Versión 1.2.0</p>
         </div>
         <button
           onClick={logout}
