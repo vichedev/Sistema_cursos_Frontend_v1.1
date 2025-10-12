@@ -1,9 +1,20 @@
-// src/components/admin/AdminNavbar.jsx
+// src/components/admin/AdminNavbar.jsx - VERSIÓN CORREGIDA
 import { useState, useEffect, useRef } from 'react';
-import { FaBell, FaTimes, FaEnvelope, FaWhatsapp, FaBook, FaUser, FaChevronDown, FaSignOutAlt } from 'react-icons/fa';
+import { 
+  FaBell, 
+  FaTimes, 
+  FaEnvelope, 
+  FaWhatsapp, 
+  FaBook, 
+  FaUser, 
+  FaChevronDown, 
+  FaSignOutAlt, 
+  FaGraduationCap,
+  FaUserShield // ✅ Usar FaUserShield en lugar de FaShield
+} from 'react-icons/fa';
 import ThemeSelector from '../ThemeSelector';
 
-// Componente de Perfil Desplegable para Administrador
+// Componente de Perfil Desplegable para Administrador - CORREGIDO
 function PerfilDesplegableAdmin({ userData }) {
   const [abierto, setAbierto] = useState(false);
   const dropdownRef = useRef(null);
@@ -22,18 +33,33 @@ function PerfilDesplegableAdmin({ userData }) {
   const handleCerrarSesion = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
+    localStorage.removeItem("userRol");
     window.location.href = "/login";
   };
+
+  // ✅ DATOS SEGUROS - Solo mostrar información necesaria
+  const safeUserData = userData ? {
+    nombres: userData.nombres,
+    apellidos: userData.apellidos,
+    correo: userData.correo,
+    rol: userData.rol,
+    asignatura: userData.asignatura,
+    ciudad: userData.ciudad,
+    empresa: userData.empresa,
+    cargo: userData.cargo
+    // ❌ NO incluir: cedula, celular, usuario, password, etc.
+  } : null;
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setAbierto(!abierto)}
         className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-gray-700 rounded-xl hover:bg-blue-100 dark:hover:bg-gray-600 transition-colors"
+        aria-label="Menú de perfil"
       >
         <FaUser className="text-blue-600 dark:text-blue-400" />
         <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-          {userData?.nombres || 'Administrador'}
+          {safeUserData?.nombres || 'Administrador'}
         </span>
         <FaChevronDown className={`text-blue-600 dark:text-blue-400 transition-transform ${abierto ? 'rotate-180' : ''}`} />
       </button>
@@ -42,41 +68,53 @@ function PerfilDesplegableAdmin({ userData }) {
         <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
           {/* Header del perfil */}
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-800 dark:text-white">{userData?.nombres} {userData?.apellidos}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{userData?.correo}</p>
+            <h3 className="font-semibold text-gray-800 dark:text-white">
+              {safeUserData?.nombres} {safeUserData?.apellidos}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+              {safeUserData?.correo}
+            </p>
           </div>
 
-          {/* Información del perfil */}
+          {/* Información del perfil SEGURA */}
           <div className="px-4 py-3 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Usuario:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-200">{userData?.usuario}</span>
-            </div>
-            {userData?.cedula && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Cédula:</span>
-                <span className="font-medium text-gray-700 dark:text-gray-200">{userData.cedula}</span>
+            {safeUserData?.asignatura && (
+              <div className="flex items-center gap-2 text-sm">
+                <FaGraduationCap className="text-gray-400 dark:text-gray-500" />
+                <span className="text-gray-700 dark:text-gray-200">{safeUserData.asignatura}</span>
               </div>
             )}
-            {userData?.celular && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Celular:</span>
-                <span className="font-medium text-gray-700 dark:text-gray-200">{userData.celular}</span>
-              </div>
-            )}
-            {userData?.ciudad && (
+            
+            {safeUserData?.ciudad && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">Ciudad:</span>
-                <span className="font-medium text-gray-700 dark:text-gray-200">{userData.ciudad}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">{safeUserData.ciudad}</span>
+              </div>
+            )}
+            
+            {safeUserData?.empresa && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Empresa:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">{safeUserData.empresa}</span>
+              </div>
+            )}
+            
+            {safeUserData?.cargo && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Cargo:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-200">{safeUserData.cargo}</span>
               </div>
             )}
           </div>
 
-          {/* Badge de Administrador */}
+          {/* Badge de Administrador - CORREGIDO */}
           <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-y border-gray-100 dark:border-gray-700">
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-full">
-              👑 Administrador
-            </span>
+            <div className="flex items-center gap-2">
+              <FaUserShield className="text-blue-600 dark:text-blue-400" /> {/* ✅ Cambiado a FaUserShield */}
+              <span className="text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                {safeUserData?.rol === 'ADMIN' ? '👑 Administrador' : '🎓 Profesor'}
+              </span>
+            </div>
           </div>
 
           {/* Acciones */}
@@ -95,6 +133,7 @@ function PerfilDesplegableAdmin({ userData }) {
   );
 }
 
+// El resto del código se mantiene igual...
 export default function AdminNavbar({ notifications = [], onClearNotification, onMenuClick, onMarkAsRead }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -105,7 +144,6 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
     setUnreadCount(notifications.filter(n => !n.read).length);
   }, [notifications]);
 
-  // Cerrar notificaciones al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
@@ -230,7 +268,6 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
                               <h4 className="font-medium text-gray-900 dark:text-white truncate">{n.title}</h4>
                               <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{n.message}</p>
 
-                              {/* BARRA DE PROGRESO - RESTAURADA */}
                               {n.progress && (
                                 <div className="mt-2">
                                   <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
@@ -274,7 +311,7 @@ export default function AdminNavbar({ notifications = [], onClearNotification, o
           )}
         </div>
 
-        {/* Perfil del Administrador */}
+        {/* Perfil del Administrador SEGURO */}
         <PerfilDesplegableAdmin userData={userData} />
       </div>
     </nav>

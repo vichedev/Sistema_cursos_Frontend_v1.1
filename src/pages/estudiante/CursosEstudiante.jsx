@@ -680,58 +680,65 @@ export default function CursosEstudiante() {
         <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-400 rounded-full -translate-y-20 translate-x-20 opacity-20 blur-xl"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-500 rounded-full translate-y-16 -translate-x-16 opacity-20 blur-xl"></div>
 
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 relative z-10">
-          <div className="flex-1">
-            <div className="flex items-center gap-4 mb-3">
-              <FaRocket className="text-yellow-300 text-3xl animate-bounce" />
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">
-                  CURSOS DISPONIBLES
-                </h1>
-                <p className="text-blue-100 text-sm md:text-base mt-1">
-                  Los cursos{" "}
-                  <span className="text-yellow-300 font-bold">más nuevos</span>{" "}
-                  aparecen primero
-                </p>
+        {/* CONTENEDOR QUE SE OCULTA COMPLETAMENTE EN MÓVIL */}
+        <div className="hidden md:block">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 relative z-10">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-3">
+                <FaRocket className="text-yellow-300 text-3xl animate-bounce" />
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">
+                    CURSOS DISPONIBLES
+                  </h1>
+                  <p className="text-blue-100 text-sm md:text-base mt-1">
+                    Los cursos{" "}
+                    <span className="text-yellow-300 font-bold">
+                      más nuevos
+                    </span>{" "}
+                    aparecen primero
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
+                  <FaBolt className="text-yellow-300" />
+                  <span className="text-sm">
+                    Ordenado por:{" "}
+                    <span className="font-bold">Más recientes primero</span>
+                  </span>
+                </div>
+
+                {/* Estadísticas rápidas */}
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1">
+                    <FaRocket className="text-green-400" />
+                    <span>{newCoursesCount} nuevos</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <FaCrown className="text-yellow-300" />
+                    <span>
+                      {totalCoursesCount - expiredCoursesCount} activos
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
-                <FaBolt className="text-yellow-300" />
-                <span className="text-sm">
-                  Ordenado por:{" "}
-                  <span className="font-bold">Más recientes primero</span>
-                </span>
-              </div>
-
-              {/* Estadísticas rápidas */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <FaRocket className="text-green-400" />
-                  <span>{newCoursesCount} nuevos</span>
+            {/* Contador destacado */}
+            {justLaunchedCount > 0 && (
+              <div className="hidden lg:block bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-300 shadow-lg">
+                <div className="text-sm opacity-90 flex items-center gap-2 mb-1">
+                  <FaBolt className="text-yellow-300 animate-pulse" />
+                  <span>¡Recién Lanzados!</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <FaCrown className="text-yellow-300" />
-                  <span>{totalCoursesCount - expiredCoursesCount} activos</span>
+                <div className="text-2xl md:text-3xl font-bold text-yellow-300 flex items-center gap-2">
+                  {justLaunchedCount}
+                  <FaGem className="text-white text-lg md:text-xl" />
                 </div>
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Contador destacado */}
-          {justLaunchedCount > 0 && (
-            <div className="hidden lg:block bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-300 shadow-lg">
-              <div className="text-sm opacity-90 flex items-center gap-2 mb-1">
-                <FaBolt className="text-yellow-300 animate-pulse" />
-                <span>¡Recién Lanzados!</span>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold text-yellow-300 flex items-center gap-2">
-                {justLaunchedCount}
-                <FaGem className="text-white text-lg md:text-xl" />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -925,8 +932,7 @@ export default function CursosEstudiante() {
                           </span>
                         )}
                       </div>
-
-                      <span className="absolute top-2 right-2 px-4 py-2 rounded-full text-xs bg-black/70 text-white font-bold shadow-lg backdrop-blur-sm">
+                      <span className="absolute bottom-2 right-2 px-3 py-2 rounded-full text-xs bg-black/80 text-white font-bold shadow-lg backdrop-blur-sm z-10">
                         🎯 {curso.cupos || 0} CUPOS
                       </span>
                     </div>
