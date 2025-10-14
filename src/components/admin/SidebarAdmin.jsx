@@ -151,6 +151,19 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
           }
           onNavigate={onNavigate}
         />
+        <SidebarLink
+          to="/admin/gestionar-cupones"
+          label="Gestión de Cupones"
+          active={location.pathname === "/admin/gestionar-cupones"}
+          icon={
+            <img
+              src="https://img.icons8.com/?size=100&id=59878&format=png&color=0077B6"
+              className="w-6 h-6"
+              alt="Cupones"
+            />
+          }
+          onNavigate={onNavigate}
+        />
       </nav>
 
       {/* Cerrar sesión */}

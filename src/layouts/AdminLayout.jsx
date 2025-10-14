@@ -8,14 +8,19 @@ import { useNotifications } from "../context/NotificationContext";
 
 export default function AdminLayout() {
   useAuth(["ADMIN"]);
-  const { notifications, clearAllNotifications, markAsRead } = useNotifications();
+  const { notifications, clearAllNotifications, markAsRead } =
+    useNotifications();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="h-screen flex bg-gradient-to-tr from-gray-100 to-gray-300 dark:from-gray-800 dark:to-gray-900 min-h-0 transition-colors duration-200">
+    <div className="h-screen flex bg-gradient-to-tr from-gray-100 to-gray-300 dark:from-gray-800 dark:to-gray-900 min-h-0 transition-colors duration-200 overflow-x-hidden">
       {/* drawer móvil */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 md:hidden
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`} role="dialog" aria-modal="true">
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 md:hidden
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="h-full shadow-xl bg-white dark:bg-gray-800 transition-colors duration-200">
           <SidebarAdmin onNavigate={() => setSidebarOpen(false)} />
         </div>
@@ -23,7 +28,10 @@ export default function AdminLayout() {
 
       {/* Overlay móvil */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar desktop */}
@@ -31,7 +39,7 @@ export default function AdminLayout() {
         <SidebarAdmin />
       </aside>
 
-      <div className="flex-1 flex flex-col md:ml-72 min-h-0">
+      <div className="flex-1 flex flex-col md:ml-72 min-h-0 overflow-x-hidden min-w-0">
         {/* Navbar */}
         <div className="sticky top-0 z-30">
           <AdminNavbar

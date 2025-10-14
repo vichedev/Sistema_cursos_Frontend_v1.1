@@ -42,7 +42,7 @@ export default function EstudianteLayout({ className = "" }) {
 
   return (
     <div className={`h-screen flex bg-gradient-to-tr from-gray-100 to-gray-300 dark:from-gray-800 dark:to-gray-900 min-h-0 transition-colors duration-200 ${className}`}>
-      {/* Drawer/Sidebar */}
+      {/* Drawer/Sidebar - SIN aria-hidden y SIN inert */}
       <div
         className={`
           fixed z-50 top-0 left-0 h-screen w-72
@@ -50,7 +50,7 @@ export default function EstudianteLayout({ className = "" }) {
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
         `}
-        aria-hidden={!open}
+        // ← Aquí NO hay aria-hidden ni inert
       >
         <SidebarEstudiante onNavigate={() => setOpen(false)} />
       </div>

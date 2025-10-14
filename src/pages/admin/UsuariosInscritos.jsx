@@ -1,9 +1,32 @@
-import { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  lazy,
+  Suspense,
+} from "react";
 import axios from "axios";
-import ModalVerUsuario from "./modals/ModalVerUsuario";
-import ModalEditarUsuario from "./modals/ModalEditarUsuario";
-import ModalEliminarUsuario from "./modals/ModalEliminarUsuario";
-import ModalCrearUsuarioAdmin from "./modals/ModalCrearUsuarioAdmin";
+import { useDebounce } from "use-debounce";
+
+// Lazy loading de modales
+const ModalVerUsuario = lazy(() => import("./modals/ModalVerUsuario"));
+const ModalEditarUsuario = lazy(() => import("./modals/ModalEditarUsuario"));
+const ModalEliminarUsuario = lazy(() =>
+  import("./modals/ModalEliminarUsuario")
+);
+const ModalCrearUsuarioAdmin = lazy(() =>
+  import("./modals/ModalCrearUsuarioAdmin")
+);
+
+// Importar componentes y hooks modularizados
+import { useUsuarios } from "./utils/usuarios-inscritos/useUsuarios";
+import { exportToExcel } from "./utils/usuarios-inscritos/exportHelpers";
+import CursosDesplegable from "./utils/usuarios-inscritos/components/CursosDesplegable";
+import UserCard from "./utils/usuarios-inscritos/components/UserCard";
+import VirtualizedTable from "./utils/usuarios-inscritos/components/VirtualizedTable";
+
 import {
   FaArrowLeft,
   FaUsers,
@@ -20,292 +43,89 @@ import {
   FaFilter,
   FaSearch,
 } from "react-icons/fa";
-import { FiMail } from "react-icons/fi";
-
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-
-const CursosDesplegable = ({ cursos }) => {
-  const [mostrarCursos, setMostrarCursos] = useState(false);
-
-  // ✅ CORRECCIÓN: Asegurar que cursos sea siempre un array
-  const cursosArray = Array.isArray(cursos) ? cursos : [];
-
-  if (!cursosArray || cursosArray.length === 0) {
-    return (
-      <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm">
-        Sin cursos
-      </span>
-    );
-  }
-
-  const colors = [
-    "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
-    "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
-    "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
-    "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
-    "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
-    "bg-pink-100 text-pink-800 border border-pink-200 dark:bg-pink-900/20 dark:text-pink-300 dark:border-pink-800",
-    "bg-indigo-100 text-indigo-800 border border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800",
-    "bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-900/20 dark:text-teal-300 dark:border-teal-800",
-    "bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800",
-  ];
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        className="flex items-center cursor-pointer group"
-        onClick={() => setMostrarCursos((v) => !v)}
-      >
-        <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-300 mr-1 sm:mr-2">
-          {cursosArray.length} curso{cursosArray.length !== 1 ? "s" : ""}
-        </span>
-        <svg
-          className={`w-3 h-3 sm:w-4 sm:h-4 text-blue-500 dark:text-blue-400 transition-transform ${
-            mostrarCursos ? "rotate-180" : ""
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-
-      {mostrarCursos && (
-        <div className="absolute z-20 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl left-0 right-0 w-full min-w-[250px] sm:w-72 sm:right-0 sm:left-auto max-h-64 overflow-y-auto transition-colors duration-200">
-          <div className="font-semibold text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-2">
-            Cursos inscritos:
-          </div>
-          <div className="space-y-2">
-            {/* ✅ CORRECCIÓN: Usar cursosArray en lugar de cursos */}
-            {cursosArray.map((curso, index) => (
-              <div
-                key={curso.id || index}
-                className={`${
-                  colors[index % colors.length]
-                } px-2 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200`}
-              >
-                {curso.titulo}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const UserCard = ({ user, type, onView, onEdit, onDelete }) => {
-  // ✅ Asegurar que cursos sea un array
-  const userCursos = Array.isArray(user.cursos) ? user.cursos : [];
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-4 shadow-sm hover:shadow-md transition-all duration-200">
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-            {user.nombres} {user.apellidos}
-          </h3>
-          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm mt-1">
-            <FiMail className="mr-1" />
-            <span className="truncate">{user.correo}</span>
-          </div>
-          {type === "estudiantes" && (
-            <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-              {/* ✅ CÉDULA AHORA SÍ SE MUESTRA - Solo para admin logueado */}
-              Cédula: {user.cedula || "No especificada"}
-            </div>
-          )}
-        </div>
-        <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs font-semibold transition-colors duration-200">
-          ID: {user.id}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        {user.ciudad && (
-          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-            <FaMapMarkerAlt className="mr-1 text-gray-400 dark:text-gray-500" />
-            <span>{user.ciudad}</span>
-          </div>
-        )}
-        {user.empresa && (
-          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-            <FaBuilding className="mr-1 text-gray-400 dark:text-gray-500" />
-            <span>{user.empresa}</span>
-          </div>
-        )}
-        {user.cargo && (
-          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-            <FaBriefcase className="mr-1 text-gray-400 dark:text-gray-500" />
-            <span>{user.cargo}</span>
-          </div>
-        )}
-        {type === "administradores" && user.asignatura && (
-          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-            <FaChalkboardTeacher className="mr-1 text-gray-400 dark:text-gray-500" />
-            <span>{user.asignatura}</span>
-          </div>
-        )}
-      </div>
-
-      {/* ✅ CORRECCIÓN: Usar userCursos en lugar de user.cursos directamente */}
-      {type === "estudiantes" && userCursos.length > 0 && (
-        <div className="mb-3">
-          <CursosDesplegable cursos={userCursos} />
-        </div>
-      )}
-
-      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-        <button
-          onClick={() => onView(user)}
-          className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
-          title="Ver"
-        >
-          <FaEye />
-        </button>
-        <button
-          onClick={() => onEdit(user)}
-          className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
-          title="Editar"
-        >
-          <FaEdit />
-        </button>
-        {user.id !== 1 && (
-          <button
-            onClick={() => onDelete(user)}
-            className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
-            title="Eliminar"
-          >
-            <FaTrash />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export default function UsuariosInscritos() {
-  const [data, setData] = useState({ estudiantes: [], administradores: [] });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("estudiantes");
-  const [searchTerm, setSearchTerm] = useState("");
+  // Usar el hook personalizado para la gestión de usuarios
+  const {
+    data,
+    loading,
+    error,
+    activeTab,
+    setActiveTab,
+    searchTerm,
+    setSearchTerm,
+    filterCiudad,
+    setFilterCiudad,
+    filterEmpresa,
+    setFilterEmpresa,
+    filterCurso,
+    setFilterCurso,
+    filterCedula,
+    setFilterCedula,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    fetchUsuarios,
+    filterOptions,
+    paginatedUsers,
+    totalItems,
+    filteredUsers,
+  } = useUsuarios();
+
+  // Estados locales específicos del componente
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const [filterCiudad, setFilterCiudad] = useState("");
-  const [filterEmpresa, setFilterEmpresa] = useState("");
-  const [filterCurso, setFilterCurso] = useState("");
-  const [filterCedula, setFilterCedula] = useState("");
-
+  // Estados para modales
   const [modalType, setModalType] = useState(null);
   const [modalUser, setModalUser] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
 
-  useEffect(() => {
-    fetchUsuarios();
+  // Funciones para manejar modales
+  const handleView = useCallback((user) => {
+    setModalUser(user);
+    setModalType("ver");
   }, []);
 
-  const fetchUsuarios = () => {
-    setLoading(true);
-    setError(null);
-    const token = localStorage.getItem("token");
+  const handleEdit = useCallback((user) => {
+    setModalUser(user);
+    setModalType("editar");
+  }, []);
 
-    if (!token) {
-      setError("No hay token de autenticación");
-      setLoading(false);
-      return;
-    }
+  const handleDelete = useCallback((user) => {
+    setModalUser(user);
+    setModalType("eliminar");
+  }, []);
 
-    axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/usuarios-por-rol`, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000,
-      })
-      .then((res) => {
-        // ✅ CORRECCIÓN: Convertir objetos a arrays si es necesario
-        const convertirAArray = (data) => {
-          if (Array.isArray(data)) {
-            return data;
-          }
-          if (data && typeof data === "object") {
-            // Si es un objeto, convertirlo a array
-            return Object.values(data);
-          }
-          return [];
-        };
+  // Reset paginación cuando cambian filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchTerm,
+    filterCiudad,
+    filterEmpresa,
+    filterCurso,
+    filterCedula,
+    activeTab,
+  ]);
 
-        const estudiantes = convertirAArray(res.data.estudiantes);
-        const administradores = convertirAArray(res.data.administradores);
-
-        const processedData = {
-          estudiantes: estudiantes.map((user) => ({
-            ...user,
-            cursos: user.cursos || [],
-          })),
-          administradores: administradores,
-        };
-
-        setData(processedData);
-      })
-      .catch((error) => {
-        console.error("❌ Error completo:", error);
-
-        if (error.code === "ECONNABORTED") {
-          setError("Timeout - El servidor tardó demasiado en responder");
-        } else if (error.response) {
-          console.error("📞 Status:", error.response.status);
-          console.error("📞 Data:", error.response.data);
-
-          if (error.response.status === 401) {
-            setError("No autorizado - Tu sesión ha expirado");
-          } else if (error.response.status === 403) {
-            setError("Acceso denegado - No tienes permisos para ver usuarios");
-          } else if (error.response.status === 404) {
-            setError("Endpoint no encontrado");
-          } else if (error.response.data?.message) {
-            setError(`Error del servidor: ${error.response.data.message}`);
-          } else {
-            setError(`Error del servidor (${error.response.status})`);
-          }
-        } else if (error.request) {
-          setError("No se pudo conectar con el servidor");
-        } else {
-          setError("Error de configuración: " + error.message);
-        }
-      })
-      .finally(() => setLoading(false));
-  };
-
-  // ✅ FUNCIÓN CORREGIDA: handleUpdateUser implementada
   const handleUpdateUser = async (updatedUser) => {
     setModalLoading(true);
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-
-      // Preparar datos para enviar (sin campos innecesarios)
       const dataToSend = {
         nombres: updatedUser.nombres,
         apellidos: updatedUser.apellidos,
         correo: updatedUser.correo,
         usuario: updatedUser.usuario,
-        rol: updatedUser.rol,
         ciudad: updatedUser.ciudad,
         empresa: updatedUser.empresa,
         cargo: updatedUser.cargo,
         asignatura: updatedUser.asignatura,
       };
 
-      // Solo incluir password si no está vacío
       if (updatedUser.password && updatedUser.password.trim() !== "") {
         dataToSend.password = updatedUser.password;
       }
@@ -319,18 +139,17 @@ export default function UsuariosInscritos() {
       );
 
       closeModal();
-      fetchUsuarios(); // Recargar la lista
+      fetchUsuarios();
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Error al actualizar usuario";
       setModalError(errorMessage);
-      throw err; // Importante para que SweetAlert detecte el error
+      throw err;
     } finally {
       setModalLoading(false);
     }
   };
 
-  // ✅ FUNCIÓN CORREGIDA: handleDeleteUser implementada
   const handleDeleteUser = async (userToDelete) => {
     setModalLoading(true);
     setModalError(null);
@@ -343,7 +162,7 @@ export default function UsuariosInscritos() {
         }
       );
       closeModal();
-      fetchUsuarios(); // Recargar la lista
+      fetchUsuarios();
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Error al eliminar usuario";
@@ -352,127 +171,6 @@ export default function UsuariosInscritos() {
     } finally {
       setModalLoading(false);
     }
-  };
-
-  const filteredUsers = (users) => {
-    return users.filter((user) => {
-      const matchesSearch =
-        !searchTerm ||
-        user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.ciudad &&
-          user.ciudad.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.empresa &&
-          user.empresa.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.cargo &&
-          user.cargo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.usuario &&
-          user.usuario.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.cedula &&
-          user.cedula.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      // Solo aplicar filtros avanzados para estudiantes
-      if (activeTab === "estudiantes") {
-        const matchesCiudad =
-          !filterCiudad || (user.ciudad && user.ciudad === filterCiudad);
-        const matchesEmpresa =
-          !filterEmpresa || (user.empresa && user.empresa === filterEmpresa);
-        const matchesCurso =
-          !filterCurso ||
-          (user.cursos &&
-            user.cursos.some((curso) => curso.titulo === filterCurso));
-        const matchesCedula =
-          !filterCedula ||
-          (user.cedula &&
-            user.cedula.toLowerCase().includes(filterCedula.toLowerCase()));
-
-        return (
-          matchesSearch &&
-          matchesCiudad &&
-          matchesEmpresa &&
-          matchesCurso &&
-          matchesCedula
-        );
-      }
-
-      // Para administradores, solo aplicar búsqueda general
-      return matchesSearch;
-    });
-  };
-
-  const exportToExcel = (usuarios, tipo) => {
-    const dataExcel = usuarios.map((user) => ({
-      ID: user.id,
-      Cédula: user.cedula || "No especificada",
-      Nombres: user.nombres,
-      Apellidos: user.apellidos,
-      Correo: user.correo,
-      Ciudad: user.ciudad || "No especificado",
-      Empresa: user.empresa || "No especificado",
-      Cargo: user.cargo || "No especificado",
-      ...(tipo === "estudiantes"
-        ? {
-            "Cursos Inscritos": user.cursos
-              ? user.cursos.map((c) => c.titulo).join("; ")
-              : "Ninguno",
-          }
-        : {
-            Usuario: user.usuario || "No especificado",
-            Asignatura: user.asignatura || "No especificado",
-            Rol: user.rol || "No especificado",
-          }),
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataExcel);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
-
-    const wscols = [
-      { wch: 5 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 20 },
-      { wch: 30 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 20 },
-      ...(tipo === "estudiantes"
-        ? [{ wch: 40 }]
-        : [{ wch: 20 }, { wch: 20 }, { wch: 15 }]),
-    ];
-    worksheet["!cols"] = wscols;
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(
-      blob,
-      `${tipo}_usuarios_${new Date().toISOString().split("T")[0]}.xlsx`
-    );
-  };
-
-  const openViewModal = (user) => {
-    setModalUser(user);
-    setModalType("ver");
-  };
-
-  const openEditModal = (user) => {
-    setModalUser(user);
-    setModalType("editar");
-  };
-
-  const openDeleteModal = (user) => {
-    setModalUser(user);
-    setModalType("eliminar");
-  };
-
-  const closeModal = () => {
-    setModalType(null);
-    setModalUser(null);
-    setModalError(null);
   };
 
   const handleCreateUser = async (newUser) => {
@@ -487,15 +185,38 @@ export default function UsuariosInscritos() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      closeModal();
-      fetchUsuarios(); // Recargar la lista
+
+      // No cierres aquí: el hijo cierra el modal al éxito.
+      // Refresca la lista
+      setTimeout(() => {
+        fetchUsuarios();
+      }, 200);
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || "Error al crear usuario";
-      setModalError(errorMessage);
+      const backendMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Error al crear usuario";
+      // Pasa el error al hijo para que lo convierta en fieldErrors (correo/usuario/cedula/celular)
+      setModalError(backendMsg);
+      // Importante: relanza para que el hijo entre al catch sin SweetAlert
+      throw err;
     } finally {
       setModalLoading(false);
     }
+  };
+
+  const closeModal = () => {
+    setModalType(null);
+    setModalUser(null);
+    setModalError(null);
+  };
+
+  // Función para exportar a Excel
+  const handleExportToExcel = () => {
+    exportToExcel(
+      activeTab === "estudiantes" ? data.estudiantes : data.administradores,
+      activeTab
+    );
   };
 
   if (loading) {
@@ -540,7 +261,7 @@ export default function UsuariosInscritos() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 transition-colors duration-200 min-h-[800px] sm:min-h-[900px] md:min-h-[700px]">
         {error ? (
           <div className="text-center p-4 sm:p-6 md:p-8 bg-red-50 dark:bg-red-900/20 rounded-lg sm:rounded-xl border border-red-200 dark:border-red-800 transition-colors duration-200">
             <div className="text-red-500 text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-2 sm:mb-3 md:mb-4">
@@ -593,7 +314,6 @@ export default function UsuariosInscritos() {
 
             {/* Barra de búsqueda y filtros */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              {/* Barra de búsqueda - mostrar para ambas pestañas */}
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaSearch className="text-gray-400 dark:text-gray-500" />
@@ -612,7 +332,6 @@ export default function UsuariosInscritos() {
               </div>
 
               <div className="flex gap-2">
-                {/* Botón Filtros - solo para estudiantes */}
                 {activeTab === "estudiantes" && (
                   <button
                     className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors duration-200"
@@ -623,7 +342,6 @@ export default function UsuariosInscritos() {
                   </button>
                 )}
 
-                {/* Botón Agregar Profesor - solo para administradores */}
                 {activeTab === "administradores" && (
                   <button
                     onClick={() => {
@@ -639,21 +357,9 @@ export default function UsuariosInscritos() {
                   </button>
                 )}
 
-                {/* Botón Exportar - para ambas pestañas */}
-                {filteredUsers(
-                  activeTab === "estudiantes"
-                    ? data.estudiantes
-                    : data.administradores
-                ).length > 0 && (
+                {paginatedUsers.length > 0 && (
                   <button
-                    onClick={() =>
-                      exportToExcel(
-                        activeTab === "estudiantes"
-                          ? data.estudiantes
-                          : data.administradores,
-                        activeTab
-                      )
-                    }
+                    onClick={handleExportToExcel}
                     className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-xl transition shadow-md"
                   >
                     <FaFileExcel className="flex-shrink-0" />
@@ -663,7 +369,51 @@ export default function UsuariosInscritos() {
               </div>
             </div>
 
-            {/* Filtros avanzados solo para estudiantes */}
+            {/* Controles de paginación */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-4">
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value={10}>10 por página</option>
+                  <option value={20}>20 por página</option>
+                  <option value={50}>50 por página</option>
+                  <option value={100}>100 por página</option>
+                </select>
+
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                  {Math.min(currentPage * itemsPerPage, totalItems)} de{" "}
+                  {totalItems}
+                </span>
+              </div>
+
+              <div className="flex gap-1">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300"
+                >
+                  Anterior
+                </button>
+                <button
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  disabled={currentPage * itemsPerPage >= totalItems}
+                  className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+
+            {/* Filtros avanzados */}
             {isFilterOpen && activeTab === "estudiantes" && (
               <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl mb-6 border border-gray-200 dark:border-gray-600 transition-colors duration-200">
                 <div className="flex justify-between items-center mb-3">
@@ -694,11 +444,7 @@ export default function UsuariosInscritos() {
                       onChange={(e) => setFilterCiudad(e.target.value)}
                     >
                       <option value="">Todas las ciudades</option>
-                      {Array.from(
-                        new Set(
-                          data.estudiantes.map((u) => u.ciudad).filter(Boolean)
-                        )
-                      ).map((ciudad) => (
+                      {filterOptions?.ciudades.map((ciudad) => (
                         <option key={ciudad} value={ciudad}>
                           {ciudad}
                         </option>
@@ -715,11 +461,7 @@ export default function UsuariosInscritos() {
                       onChange={(e) => setFilterEmpresa(e.target.value)}
                     >
                       <option value="">Todas las empresas</option>
-                      {Array.from(
-                        new Set(
-                          data.estudiantes.map((u) => u.empresa).filter(Boolean)
-                        )
-                      ).map((empresa) => (
+                      {filterOptions?.empresas.map((empresa) => (
                         <option key={empresa} value={empresa}>
                           {empresa}
                         </option>
@@ -736,13 +478,7 @@ export default function UsuariosInscritos() {
                       onChange={(e) => setFilterCurso(e.target.value)}
                     >
                       <option value="">Todos los cursos</option>
-                      {Array.from(
-                        new Set(
-                          data.estudiantes.flatMap((u) =>
-                            u.cursos.map((c) => c.titulo)
-                          )
-                        )
-                      ).map((titulo) => (
+                      {filterOptions?.cursos.map((titulo) => (
                         <option key={titulo} value={titulo}>
                           {titulo}
                         </option>
@@ -765,13 +501,13 @@ export default function UsuariosInscritos() {
               </div>
             )}
 
-            {/* Contenido */}
+            {/* Contenido con virtualización */}
             <div className="w-full">
               {activeTab === "estudiantes" && (
                 <section>
                   {/* Vista móvil (tarjetas) */}
                   <div className="block md:hidden">
-                    {filteredUsers(data.estudiantes).length === 0 ? (
+                    {paginatedUsers.length === 0 ? (
                       <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-xl transition-colors duration-200">
                         <div className="text-6xl mb-4">👨‍🎓</div>
                         <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -786,135 +522,148 @@ export default function UsuariosInscritos() {
                         </p>
                       </div>
                     ) : (
-                      filteredUsers(data.estudiantes).map((user) => (
+                      paginatedUsers.map((user) => (
                         <UserCard
                           key={user.id}
                           user={user}
                           type="estudiantes"
-                          onView={openViewModal}
-                          onEdit={openEditModal}
-                          onDelete={openDeleteModal}
+                          onView={handleView}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
                         />
                       ))
                     )}
                   </div>
 
-                  {/* Vista desktop (tabla) */}
-                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200 min-h-[500px]">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            ID
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Cédula
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Nombre
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Correo
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Ciudad
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Empresa
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Cargo
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Cursos
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Acciones
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {filteredUsers(data.estudiantes).length === 0 ? (
+                  {/* Vista desktop con virtualización para muchos datos */}
+                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
+                    {totalItems > 50 ? (
+                      <VirtualizedTable
+                        users={paginatedUsers}
+                        rowHeight={80}
+                        onView={handleView}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    ) : (
+                      /* Tabla normal para pocos datos */
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
                           <tr>
-                            <td
-                              colSpan="9"
-                              className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                            >
-                              {searchTerm
-                                ? "No se encontraron estudiantes con esos criterios"
-                                : "No hay estudiantes registrados"}
-                            </td>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              ID
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Cédula
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Nombre
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Correo
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Ciudad
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Empresa
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Cargo
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Cursos
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Acciones
+                            </th>
                           </tr>
-                        ) : (
-                          filteredUsers(data.estudiantes).map((user) => (
-                            <tr
-                              key={user.id}
-                              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
-                            >
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">
-                                {user.id}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                {user.cedula && user.cedula.trim() !== ""
-                                  ? user.cedula
-                                  : "No especificada"}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                                {user.nombres} {user.apellidos}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                {user.correo}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                {user.ciudad || "-"}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                {user.empresa || "-"}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                {user.cargo || "-"}
-                              </td>
-
-                              <td className="px-4 py-4">
-                                {/* ✅ CORRECCIÓN: Pasar cursos como array */}
-                                <CursosDesplegable
-                                  cursos={
-                                    Array.isArray(user.cursos)
-                                      ? user.cursos
-                                      : []
-                                  }
-                                />
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => openViewModal(user)}
-                                    className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
-                                    title="Ver"
-                                  >
-                                    <FaEye />
-                                  </button>
-                                  <button
-                                    onClick={() => openEditModal(user)}
-                                    className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
-                                    title="Editar"
-                                  >
-                                    <FaEdit />
-                                  </button>
-                                  <button
-                                    onClick={() => openDeleteModal(user)}
-                                    className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
-                                    title="Eliminar"
-                                  >
-                                    <FaTrash />
-                                  </button>
-                                </div>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                          {paginatedUsers.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan="9"
+                                className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                              >
+                                {searchTerm
+                                  ? "No se encontraron estudiantes con esos criterios"
+                                  : "No hay estudiantes registrados"}
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ) : (
+                            paginatedUsers.map((user) => (
+                              <tr
+                                key={user.id}
+                                className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
+                              >
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">
+                                  {user.id}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                  {user.cedula && user.cedula.trim() !== ""
+                                    ? user.cedula
+                                    : "No especificada"}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                                  {user.nombres} {user.apellidos}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                  {user.correo}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                  {user.ciudad || "-"}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                  {user.empresa || "-"}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                  {user.cargo || "-"}
+                                </td>
+
+                                {/* Celda de cursos */}
+                                <td className="px-4 py-4">
+                                  <CursosDesplegable
+                                    cursos={
+                                      Array.isArray(user.cursos)
+                                        ? user.cursos
+                                        : []
+                                    }
+                                  />
+                                </td>
+
+                                {/* Celda de acciones */}
+                                <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => handleView(user)}
+                                      className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
+                                      title="Ver"
+                                    >
+                                      <FaEye />
+                                    </button>
+                                    <button
+                                      onClick={() => handleEdit(user)}
+                                      className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
+                                      title="Editar"
+                                    >
+                                      <FaEdit />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(user)}
+                                      className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
+                                      title="Eliminar"
+                                    >
+                                      <FaTrash />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
                 </section>
               )}
@@ -923,7 +672,7 @@ export default function UsuariosInscritos() {
                 <section>
                   {/* Vista móvil (tarjetas) */}
                   <div className="block md:hidden">
-                    {filteredUsers(data.administradores).length === 0 ? (
+                    {paginatedUsers.length === 0 ? (
                       <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-xl transition-colors duration-200">
                         <div className="text-6xl mb-4">👨‍🏫</div>
                         <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -938,21 +687,21 @@ export default function UsuariosInscritos() {
                         </p>
                       </div>
                     ) : (
-                      filteredUsers(data.administradores).map((user) => (
+                      paginatedUsers.map((user) => (
                         <UserCard
                           key={user.id}
                           user={user}
                           type="administradores"
-                          onView={openViewModal}
-                          onEdit={openEditModal}
-                          onDelete={openDeleteModal}
+                          onView={handleView}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
                         />
                       ))
                     )}
                   </div>
 
-                  {/* Vista desktop (tabla) */}
-                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200 min-h-[500px]">
+                  {/* Vista desktop */}
+                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
@@ -971,7 +720,7 @@ export default function UsuariosInscritos() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Asignatura
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <th className="px-4 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Rol
                           </th>
                           <th className="px-4 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -980,7 +729,7 @@ export default function UsuariosInscritos() {
                         </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {filteredUsers(data.administradores).length === 0 ? (
+                        {paginatedUsers.length === 0 ? (
                           <tr>
                             <td
                               colSpan="7"
@@ -992,96 +741,94 @@ export default function UsuariosInscritos() {
                             </td>
                           </tr>
                         ) : (
-                          filteredUsers(data.administradores).map(
-                            (admin, index) => {
-                              const colors = [
-                                "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
-                                "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
-                                "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
-                                "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
-                                "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
-                              ];
-                              const colorClass = colors[index % colors.length];
+                          paginatedUsers.map((admin, index) => {
+                            const colors = [
+                              "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
+                              "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
+                              "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
+                              "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
+                              "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
+                            ];
+                            const colorClass = colors[index % colors.length];
 
-                              return (
-                                <tr
-                                  key={admin.id}
-                                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
-                                >
-                                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">
-                                    {admin.id}
-                                  </td>
-                                  <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                                    <div className="flex flex-col">
-                                      <span>
-                                        {admin.nombres} {admin.apellidos}
-                                        {admin.id === 1 && (
-                                          <span className="ml-2 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs font-semibold px-2 py-1 rounded-full">
-                                            MASTER
-                                          </span>
-                                        )}
-                                      </span>
-                                      {admin.asignatura && (
-                                        <span
-                                          className={`${colorClass} text-xs font-semibold px-2 py-1 rounded-full mt-1 inline-block transition-colors duration-200`}
-                                        >
-                                          📚 {admin.asignatura}
+                            return (
+                              <tr
+                                key={admin.id}
+                                className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
+                              >
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">
+                                  {admin.id}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                                  <div className="flex flex-col">
+                                    <span>
+                                      {admin.nombres} {admin.apellidos}
+                                      {admin.id === 1 && (
+                                        <span className="ml-2 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs font-semibold px-2 py-1 rounded-full">
+                                          MASTER
                                         </span>
                                       )}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                    {admin.correo}
-                                  </td>
-                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                    {admin.usuario}
-                                  </td>
-                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                    {admin.asignatura || "-"}
-                                  </td>
-                                  <td className="px-4 py-4 whitespace-nowrap">
-                                    <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold transition-colors duration-200">
-                                      {admin.rol}
                                     </span>
-                                  </td>
-                                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={() => openViewModal(admin)}
-                                        className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
-                                        title="Ver"
+                                    {admin.asignatura && (
+                                      <span
+                                        className={`${colorClass} text-xs font-semibold px-2 py-1 rounded-full mt-1 inline-block transition-colors duration-200`}
                                       >
-                                        <FaEye />
-                                      </button>
+                                        📚 {admin.asignatura}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                  {admin.correo}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                  {admin.usuario}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                  {admin.asignatura || "-"}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold transition-colors duration-200">
+                                    {admin.rol}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => handleView(admin)}
+                                      className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
+                                      title="Ver"
+                                    >
+                                      <FaEye />
+                                    </button>
+                                    <button
+                                      onClick={() => handleEdit(admin)}
+                                      className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
+                                      title="Editar"
+                                    >
+                                      <FaEdit />
+                                    </button>
+                                    {admin.id !== 1 ? (
                                       <button
-                                        onClick={() => openEditModal(admin)}
-                                        className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
-                                        title="Editar"
+                                        onClick={() => handleDelete(admin)}
+                                        className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
+                                        title="Eliminar"
                                       >
-                                        <FaEdit />
+                                        <FaTrash />
                                       </button>
-                                      {admin.id !== 1 ? (
-                                        <button
-                                          onClick={() => openDeleteModal(admin)}
-                                          className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
-                                          title="Eliminar"
-                                        >
-                                          <FaTrash />
-                                        </button>
-                                      ) : (
-                                        <span
-                                          className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed text-sm"
-                                          title="El administrador principal no puede ser eliminado"
-                                        >
-                                          <FaTrash />
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            }
-                          )
+                                    ) : (
+                                      <span
+                                        className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed text-sm"
+                                        title="El administrador principal no puede ser eliminado"
+                                      >
+                                        <FaTrash />
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -1093,49 +840,54 @@ export default function UsuariosInscritos() {
         )}
       </div>
 
-      {/* MODALES */}
-      {modalType === "crear" && (
-        <ModalCrearUsuarioAdmin
-          onClose={closeModal}
-          onCreate={handleCreateUser}
-          loading={modalLoading}
-          error={modalError}
-        />
-      )}
-
-      {modalType === "ver" &&
-        (modalLoading ? (
+      {/* Modales con lazy loading */}
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+            </div>
+          </div>
+        }
+      >
+        {modalType === "ver" && modalUser && (
           <ModalVerUsuario
-            user={null}
+            user={modalUser}
+            onClose={closeModal}
             loading={modalLoading}
             error={modalError}
-            onClose={closeModal}
           />
-        ) : (
-          modalUser && <ModalVerUsuario user={modalUser} onClose={closeModal} />
-        ))}
+        )}
 
-      {/* ✅ MODAL EDITAR CORREGIDO - ahora usa handleUpdateUser */}
-      {modalType === "editar" && modalUser && (
-        <ModalEditarUsuario
-          user={modalUser}
-          onClose={closeModal}
-          onUpdate={handleUpdateUser} // ✅ Ahora está implementada
-          loading={modalLoading}
-          error={modalError}
-        />
-      )}
+        {modalType === "editar" && modalUser && (
+          <ModalEditarUsuario
+            user={modalUser}
+            onClose={closeModal}
+            onUpdate={handleUpdateUser}
+            loading={modalLoading}
+            error={modalError}
+          />
+        )}
 
-      {/* ✅ MODAL ELIMINAR CORREGIDO - ahora usa handleDeleteUser */}
-      {modalType === "eliminar" && modalUser && (
-        <ModalEliminarUsuario
-          user={modalUser}
-          onClose={closeModal}
-          onDelete={handleDeleteUser} // ✅ Ahora está implementada
-          loading={modalLoading}
-          error={modalError}
-        />
-      )}
+        {modalType === "eliminar" && modalUser && (
+          <ModalEliminarUsuario
+            user={modalUser}
+            onClose={closeModal}
+            onDelete={handleDeleteUser}
+            loading={modalLoading}
+            error={modalError}
+          />
+        )}
+
+        {modalType === "crear" && (
+          <ModalCrearUsuarioAdmin
+            onClose={closeModal}
+            onCreate={handleCreateUser}
+            loading={modalLoading}
+            error={modalError}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

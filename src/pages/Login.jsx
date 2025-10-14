@@ -109,69 +109,72 @@ export default function Login() {
 
       // ✅ CORREGIDO: Manejo robusto de errores
       let errorMessage = "Credenciales incorrectas";
-      
+
       if (err.response?.data) {
         const errorData = err.response.data;
-        
-        console.log('🔍 Estructura completa del error:', errorData);
-        
+
         // Si es un array de errores de validación
         if (Array.isArray(errorData)) {
-          errorMessage = errorData.map(error => 
-            typeof error === 'object' ? error.message : String(error)
-          ).join(', ');
+          errorMessage = errorData
+            .map((error) =>
+              typeof error === "object" ? error.message : String(error)
+            )
+            .join(", ");
         }
         // Si es un objeto con propiedad "message" que es array
         else if (Array.isArray(errorData.message)) {
-          errorMessage = errorData.message.map(item => 
-            typeof item === 'object' ? item.message : String(item)
-          ).join(', ');
+          errorMessage = errorData.message
+            .map((item) =>
+              typeof item === "object" ? item.message : String(item)
+            )
+            .join(", ");
         }
         // Si es un objeto con propiedad "message" que es string
-        else if (errorData.message && typeof errorData.message === 'string') {
+        else if (errorData.message && typeof errorData.message === "string") {
           errorMessage = errorData.message;
         }
         // Si es un objeto con propiedades de error individuales
-        else if (typeof errorData === 'object') {
+        else if (typeof errorData === "object") {
           // Buscar cualquier propiedad que contenga el mensaje de error
           const messages = [];
           for (const key in errorData) {
-            if (typeof errorData[key] === 'string') {
+            if (typeof errorData[key] === "string") {
               messages.push(errorData[key]);
             } else if (Array.isArray(errorData[key])) {
-              messages.push(...errorData[key].map(msg => 
-                typeof msg === 'object' ? msg.message : String(msg)
-              ));
+              messages.push(
+                ...errorData[key].map((msg) =>
+                  typeof msg === "object" ? msg.message : String(msg)
+                )
+              );
             }
           }
-          errorMessage = messages.length > 0 ? messages.join(', ') : 'Error de validación';
+          errorMessage =
+            messages.length > 0 ? messages.join(", ") : "Error de validación";
         }
         // Si es un string directo
-        else if (typeof errorData === 'string') {
+        else if (typeof errorData === "string") {
           errorMessage = errorData;
         }
       }
 
-      console.log('🔍 Mensaje de error final:', errorMessage);
-
       // ✅ CORREGIDO: Convertir a string si es un array
-      const errorMessageString = Array.isArray(errorMessage) 
-        ? errorMessage.map(item => item.message || item).join(', ')
+      const errorMessageString = Array.isArray(errorMessage)
+        ? errorMessage.map((item) => item.message || item).join(", ")
         : String(errorMessage);
 
-      if (errorMessageString.toLowerCase().includes('verificada')) {
+      if (errorMessageString.toLowerCase().includes("verificada")) {
         setShowResendButton(true);
-        setEmailToResend(form.usuario.includes('@') ? form.usuario : '');
+        setEmailToResend(form.usuario.includes("@") ? form.usuario : "");
         Swal.fire({
-          title: '¡Cuenta no verificada!',
+          title: "¡Cuenta no verificada!",
           html: `Tu cuenta no ha sido verificada. Por favor, revisa tu correo electrónico para activar tu cuenta.`,
-          icon: 'warning',
-          confirmButtonText: 'Entendido',
+          icon: "warning",
+          confirmButtonText: "Entendido",
           customClass: {
-            popup: 'swal2-modern',
-            title: 'swal2-title-custom',
-            htmlContainer: 'swal2-html-container-custom'
-          }
+            popup: "swal2-modern",
+            title: "swal2-title-custom",
+            htmlContainer: "swal2-html-container-custom",
+          },
         });
       } else {
         Swal.fire({
@@ -262,10 +265,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-blue-950 flex items-center justify-center p-6 relative">
       <button
         onClick={() => navigate("/")}
-        className="absolute top-6 left-6 flex items-center text-blue-600 hover:text-blue-900 transition-colors duration-200 z-10"
+        className="absolute top-6 left-6 flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 transition-colors duration-200 z-10"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -282,7 +285,7 @@ export default function Login() {
         <span className="font-medium">Volver al sitio</span>
       </button>
 
-      <div className="relative w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row z-10">
+      <div className="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row z-10">
         <div className="hidden md:flex md:w-1/2 bg-gradient-to-tr from-blue-600 to-blue-800 p-12 flex-col justify-center rounded-l-3xl">
           <img
             src="/logo_render.png"
@@ -300,17 +303,19 @@ export default function Login() {
 
         <div className="w-full md:w-1/2 p-10">
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold text-blue-900 mb-2">
+            <h1 className="text-3xl font-bold text-blue-900 dark:text-white mb-2">
               Inicia sesión
             </h1>
-            <p className="text-blue-700">Ingresa a tu cuenta para continuar</p>
+            <p className="text-blue-700 dark:text-blue-300">
+              Ingresa a tu cuenta para continuar
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
                 htmlFor="usuario"
-                className="block text-sm font-medium text-blue-800 mb-1"
+                className="block text-sm font-medium text-blue-800 dark:text-blue-200 mb-1"
               >
                 Usuario o Correo electrónico
               </label>
@@ -320,7 +325,7 @@ export default function Login() {
                 placeholder="usuario o email@ejemplo.com"
                 autoComplete="username"
                 required
-                className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900"
+                className="w-full px-4 py-3 border border-blue-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400"
                 onChange={handleChange}
                 value={form.usuario}
               />
@@ -329,7 +334,7 @@ export default function Login() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-blue-800 mb-1"
+                className="block text-sm font-medium text-blue-800 dark:text-blue-200 mb-1"
               >
                 Contraseña
               </label>
@@ -340,7 +345,7 @@ export default function Login() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 required
-                className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900"
+                className="w-full px-4 py-3 border border-blue-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400"
                 onChange={handleChange}
                 value={form.password}
               />
@@ -386,8 +391,8 @@ export default function Login() {
           </form>
 
           {showResendButton && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-blue-800 text-sm mb-3">
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+              <p className="text-blue-800 dark:text-blue-200 text-sm mb-3">
                 ¿No recibiste el correo de verificación?
               </p>
               <div className="flex gap-2">
@@ -396,7 +401,7 @@ export default function Login() {
                   placeholder="tu@email.com"
                   value={emailToResend}
                   onChange={(e) => setEmailToResend(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-blue-300 rounded text-sm"
+                  className="flex-1 px-3 py-2 border border-blue-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white placeholder-gray-400"
                   disabled={isResending}
                 />
                 <button
@@ -440,11 +445,11 @@ export default function Login() {
             </div>
           )}
 
-          <div className="mt-8 text-center text-sm text-blue-600">
+          <div className="mt-8 text-center text-sm text-blue-600 dark:text-blue-400">
             ¿No tienes una cuenta?{" "}
             <a
               href="/register"
-              className="font-medium text-blue-700 hover:text-blue-800"
+              className="font-medium text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
             >
               Regístrate
             </a>
@@ -452,9 +457,9 @@ export default function Login() {
         </div>
       </div>
 
-      <footer className="absolute bottom-6 text-xs text-blue-400 text-center w-full z-10">
-        &copy; {new Date().getFullYear()} Sistema de Cursos MAAT ACADEMY. Todos los
-        derechos reservados.
+      <footer className="absolute bottom-6 text-xs text-blue-400 dark:text-blue-500 text-center w-full z-10">
+        &copy; {new Date().getFullYear()} Sistema de Cursos MAAT ACADEMY. Todos
+        los derechos reservados.
       </footer>
 
       <style>{`
@@ -475,18 +480,41 @@ export default function Login() {
           border-radius: 1.5rem !important;
           box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
           padding: 2rem !important;
+          background: white !important;
         }
+        
+        @media (prefers-color-scheme: dark) {
+          .swal2-modern {
+            background: #1f2937 !important;
+            color: white !important;
+          }
+        }
+        
         .swal2-title-custom {
           font-size: 1.875rem !important;
           font-weight: 700 !important;
           color: #1a202c !important;
           margin-bottom: 0.5rem !important;
         }
+        
+        @media (prefers-color-scheme: dark) {
+          .swal2-title-custom {
+            color: white !important;
+          }
+        }
+        
         .swal2-html-container-custom {
           font-size: 1.125rem !important;
           color: #4a5568 !important;
           line-height: 1.5 !important;
         }
+        
+        @media (prefers-color-scheme: dark) {
+          .swal2-html-container-custom {
+            color: #d1d5db !important;
+          }
+        }
+        
         .swal2-success .swal2-success-ring {
           border-color: #3b82f6 !important;
         }

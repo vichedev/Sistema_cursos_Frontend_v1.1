@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 import Swal from "sweetalert2";
-import { 
-  sanitizeInput, 
-  sanitizeEmail, 
-  sanitizeNumber, 
+import {
+  sanitizeInput,
+  sanitizeEmail,
+  sanitizeNumber,
   sanitizeName,
-  sanitizeUsername 
-} from '../../../utils/sanitize';
+  sanitizeUsername,
+} from "../../../utils/sanitize";
 
-export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, error }) {
+export default function ModalEditarUsuario({
+  user,
+  onClose,
+  onUpdate,
+  loading,
+  error,
+}) {
   const [form, setForm] = useState({
     nombres: "",
     apellidos: "",
@@ -33,7 +39,7 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         empresa: user.empresa || "",
         cargo: user.cargo || "",
         usuario: user.usuario || "",
-        rol: user.rol || "",
+        rol: user.rol || "", // Asegúrate que esto esté
         asignatura: user.asignatura || "",
         password: "", // Vacío para no mostrar hash
       });
@@ -44,28 +50,28 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
     const { name, value } = e.target;
     let sanitizedValue = value;
 
-    switch(name) {
-      case 'nombres':
-      case 'apellidos':
+    switch (name) {
+      case "nombres":
+      case "apellidos":
         sanitizedValue = sanitizeName(value);
         break;
-      case 'correo':
+      case "correo":
         sanitizedValue = sanitizeEmail(value);
         break;
-      case 'usuario':
+      case "usuario":
         sanitizedValue = sanitizeUsername(value);
         break;
-      case 'cedula':
-      case 'celular':
+      case "cedula":
+      case "celular":
         sanitizedValue = sanitizeNumber(value);
         break;
-      case 'password':
+      case "password":
         sanitizedValue = sanitizeInput(value);
         break;
-      case 'ciudad':
-      case 'empresa':
-      case 'cargo':
-      case 'asignatura':
+      case "ciudad":
+      case "empresa":
+      case "cargo":
+      case "asignatura":
         sanitizedValue = sanitizeInput(value);
         break;
       default:
@@ -80,7 +86,10 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
       return "Los nombres y apellidos son obligatorios";
     }
 
-    if (!form.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) {
+    if (
+      !form.correo.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)
+    ) {
       return "Por favor, ingresa un correo electrónico válido";
     }
 
@@ -105,8 +114,12 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         text: validationError,
         icon: "error",
         confirmButtonText: "Entendido",
-        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-        color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
       });
       return;
     }
@@ -114,8 +127,12 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
     Swal.fire({
       title: "Actualizando usuario...",
       allowOutsideClick: false,
-      background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-      color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+      background: document.documentElement.classList.contains("dark")
+        ? "#1f2937"
+        : "#ffffff",
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#000000",
       didOpen: () => {
         Swal.showLoading();
       },
@@ -134,16 +151,24 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         text: "Usuario actualizado correctamente",
         timer: 2000,
         showConfirmButton: false,
-        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-        color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
       });
     } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Error",
         text: "No se pudo actualizar el usuario",
-        background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-        color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000',
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
       });
     }
   };
@@ -153,7 +178,9 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
       <Modal onClose={onClose}>
         <div className="flex flex-col items-center justify-center py-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Cargando usuario...</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            Cargando usuario...
+          </p>
         </div>
       </Modal>
     );
@@ -165,27 +192,54 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
     <Modal onClose={onClose}>
       <div className="text-center mb-6">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4 shadow-md">
-          <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <svg
+            className="w-8 h-8 text-blue-600 dark:text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Editar Usuario</h2>
-        <p className="text-gray-600 dark:text-gray-300 mt-1">Actualice la información del usuario</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Editar Usuario
+        </h2>
+        <p className="text-gray-600 dark:text-gray-300 mt-1">
+          Actualice la información del usuario
+        </p>
       </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl border border-red-200 dark:border-red-700 flex items-start">
-          <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          <svg
+            className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
           </svg>
           <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto px-1 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 max-h-[60vh] overflow-y-auto px-1 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Nombres
+            </label>
             <input
               name="nombres"
               value={form.nombres}
@@ -194,9 +248,11 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellidos</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Apellidos
+            </label>
             <input
               name="apellidos"
               value={form.apellidos}
@@ -208,7 +264,9 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo electrónico</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Correo electrónico
+          </label>
           <input
             name="correo"
             type="email"
@@ -223,7 +281,9 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Ciudad
+                </label>
                 <input
                   name="ciudad"
                   value={form.ciudad}
@@ -231,9 +291,11 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Empresa
+                </label>
                 <input
                   name="empresa"
                   value={form.empresa}
@@ -241,9 +303,11 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cargo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Cargo
+                </label>
                 <select
                   name="cargo"
                   value={form.cargo}
@@ -260,7 +324,9 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Usuario
+          </label>
           <input
             name="usuario"
             value={form.usuario}
@@ -272,7 +338,9 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
 
         {isAdmin && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Asignatura</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Asignatura
+            </label>
             <input
               name="asignatura"
               value={form.asignatura}
@@ -309,15 +377,33 @@ export default function ModalEditarUsuario({ user, onClose, onUpdate, loading, e
             type="submit"
             disabled={loading}
             className={`flex-1 py-3 rounded-xl font-semibold text-white transition-all duration-300 flex items-center justify-center
-              ${loading 
-                ? "bg-blue-400 cursor-not-allowed" 
-                : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-blue-300 dark:hover:shadow-blue-900"}`}
+              ${
+                loading
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-blue-300 dark:hover:shadow-blue-900"
+              }`}
           >
             {loading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Guardando...
               </>

@@ -1,5 +1,10 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -13,6 +18,7 @@ import EditarCurso from "./pages/admin/EditarCurso";
 import EstudiantesCurso from "./pages/admin/EstudiantesCurso";
 import UsuariosInscritos from "./pages/admin/UsuariosInscritos";
 import VerTodosLosCursos from "./pages/admin/VerTodosLosCursos";
+import GestionarCupones from "./pages/admin/GestionarCupones";
 
 // ESTUDIANTE - Importa el layout y las páginas
 import EstudianteLayout from "./layouts/EstudianteLayout";
@@ -26,7 +32,7 @@ import PaymentFailed from "./pages/estudiante/PaymentFailed";
 
 // CONTEXT
 import { NotificationProvider } from "./context/NotificationContext";
-import { ThemeProvider } from "./context/ThemeContext"; 
+import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
   return (
@@ -46,8 +52,16 @@ function App() {
               <Route path="crear-curso" element={<CrearCurso />} />
               <Route path="ver-todo" element={<VerTodosLosCursos />} />
               <Route path="editar-curso/:id" element={<EditarCurso />} />
-              <Route path="estudiantes-curso/:id" element={<EstudiantesCurso />} />
-              <Route path="usuarios-inscritos" element={<UsuariosInscritos />} />
+              <Route
+                path="estudiantes-curso/:id"
+                element={<EstudiantesCurso />}
+              />
+              <Route
+                path="usuarios-inscritos"
+                element={<UsuariosInscritos />}
+              />
+              <Route path="gestionar-cupones" element={<GestionarCupones />} />{" "}
+              {/* ✅ NUEVA RUTA */}
             </Route>
 
             {/* ESTUDIANTE */}

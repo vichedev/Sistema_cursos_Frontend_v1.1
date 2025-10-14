@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import {
   FaUserPlus,
   FaEnvelope,
@@ -8,13 +9,13 @@ import {
   FaLock,
   FaBook,
 } from "react-icons/fa";
-import { 
-  sanitizeInput, 
-  sanitizeEmail, 
-  sanitizeNumber, 
+import {
+  sanitizeInput,
+  sanitizeEmail,
+  sanitizeNumber,
   sanitizeName,
-  sanitizeUsername 
-} from '../../../utils/sanitize';
+  sanitizeUsername,
+} from "../../../utils/sanitize";
 
 function Modal({ children, onClose }) {
   return (
@@ -69,66 +70,29 @@ export default function ModalCrearUsuario({
     celular: "",
   });
 
-  useEffect(() => {
-    if (!loading && !error) {
-      setForm({
-        nombres: "",
-        apellidos: "",
-        correo: "",
-        usuario: "",
-        cedula: "",
-        celular: "",
-        password: "",
-        rol: "ADMIN",
-        asignatura: "",
-      });
-      setValidationError("");
-      setFieldErrors({
-        correo: "",
-        usuario: "",
-        cedula: "",
-        celular: "",
-      });
-    }
-  }, [loading, error]);
-
-  useEffect(() => {
-    setForm({
-      nombres: "",
-      apellidos: "",
-      correo: "",
-      usuario: "",
-      cedula: "",
-      celular: "",
-      password: "",
-      rol: "ADMIN",
-      asignatura: "",
-    });
-  }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     let sanitizedValue = value;
 
-    switch(name) {
-      case 'nombres':
-      case 'apellidos':
+    switch (name) {
+      case "nombres":
+      case "apellidos":
         sanitizedValue = sanitizeName(value);
         break;
-      case 'correo':
+      case "correo":
         sanitizedValue = sanitizeEmail(value);
         break;
-      case 'usuario':
+      case "usuario":
         sanitizedValue = sanitizeUsername(value);
         break;
-      case 'cedula':
-      case 'celular':
+      case "cedula":
+      case "celular":
         sanitizedValue = sanitizeNumber(value);
         break;
-      case 'password':
+      case "password":
         sanitizedValue = sanitizeInput(value);
         break;
-      case 'asignatura':
+      case "asignatura":
         sanitizedValue = sanitizeInput(value);
         break;
       default:
@@ -207,16 +171,54 @@ export default function ModalCrearUsuario({
     setValidationError("");
     setFieldErrors({ correo: "", usuario: "", cedula: "", celular: "" });
 
-    const validationError = validateForm();
-    if (validationError) {
-      setValidationError(validationError);
+    const validationErrorMsg = validateForm();
+    if (validationErrorMsg) {
+      // Solo validación local: no mostrar Swal aquí
+      setValidationError(validationErrorMsg);
       return;
     }
 
-    console.log('Datos sanitizados a enviar:', form);
-    await onCreate(form);
-  };
+    try {
+      // NO muestres "Creando usuario..." aquí.
+      // Deja que el botón muestre su spinner usando `loading` del padre.
+      await onCreate(form);
 
+      // Éxito: cierra el modal primero
+      onClose();
+
+      // Luego muestra confirmación
+      await Swal.fire({
+        icon: "success",
+        title: "¡Éxito!",
+        text: `El usuario ${form.nombres} ${form.apellidos} ha sido creado correctamente`,
+        timer: 1800,
+        showConfirmButton: false,
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+      });
+
+      // Limpia estado local (opcional)
+      setForm({
+        nombres: "",
+        apellidos: "",
+        correo: "",
+        usuario: "",
+        cedula: "",
+        celular: "",
+        password: "",
+        rol: "ADMIN",
+        asignatura: "",
+      });
+    } catch (err) {
+      // No muestres Swal de error.
+      // El padre setea modalError y tu useEffect lo distribuye a fieldErrors/validationError.
+      // No hagas nada aquí.
+    }
+  };
   const handleClose = () => {
     setForm({
       nombres: "",
@@ -430,9 +432,11 @@ function InputField({
         placeholder={placeholder}
         required={required}
         className={`w-full px-5 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white dark:bg-gray-700 shadow-sm
-          ${error 
-            ? "border-red-500 dark:border-red-400" 
-            : "border-gray-300 dark:border-gray-600"}`}
+          ${
+            error
+              ? "border-red-500 dark:border-red-400"
+              : "border-gray-300 dark:border-gray-600"
+          }`}
       />
       {error && (
         <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">

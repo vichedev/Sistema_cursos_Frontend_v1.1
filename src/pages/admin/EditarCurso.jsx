@@ -50,20 +50,25 @@ export default function EditarCurso() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
+        let profesoresData = [];
+
         if (res.data && Array.isArray(res.data.data)) {
-          setProfesores(res.data.data);
+          profesoresData = res.data.data;
         } else if (Array.isArray(res.data)) {
-          setProfesores(res.data);
+          profesoresData = res.data;
         } else if (res.data && typeof res.data === "object") {
           const possibleArrays = Object.values(res.data).filter((item) =>
             Array.isArray(item)
           );
-          setProfesores(possibleArrays.length > 0 ? possibleArrays[0] : []);
-        } else {
-          setProfesores([]);
+          profesoresData = possibleArrays.length > 0 ? possibleArrays[0] : [];
         }
+
+        setProfesores(profesoresData);
       })
-      .catch(() => setProfesores([]));
+      .catch((err) => {
+        console.error("Error cargando profesores:", err);
+        setProfesores([]);
+      });
 
     // Cargar datos del curso
     axios
@@ -75,10 +80,18 @@ export default function EditarCurso() {
         const cuposValue = curso.cupos || 0;
         const precioValue = curso.precio || 0;
 
+        // Buscar profesorId en diferentes ubicaciones posibles
+        const posibleProfesorId =
+          curso.profesorId ||
+          curso.profesor?.id ||
+          curso.Profesor?.id ||
+          curso.userId || // a veces viene como userId
+          curso.teacherId; // o teacherId
+
         setForm({
           titulo: curso.titulo || "",
           descripcion: curso.descripcion || "",
-          profesorId: curso.profesorId || "",
+          profesorId: posibleProfesorId ? posibleProfesorId.toString() : "",
           tipo: curso.tipo || "ONLINE_GRATIS",
           cupos: cuposValue,
           link: curso.link || "",
@@ -87,7 +100,6 @@ export default function EditarCurso() {
           hora: curso.hora || "",
         });
 
-        // Inicializar estados temporales
         setTempCupos(cuposValue === 0 ? "" : cuposValue.toString());
         setTempPrecio(precioValue === 0 ? "" : precioValue.toString());
 
@@ -108,7 +120,7 @@ export default function EditarCurso() {
   }, [id]);
 
   const profesorSeleccionado = Array.isArray(profesores)
-    ? profesores.find((p) => p.id === Number(form.profesorId))
+    ? profesores.find((p) => p.id.toString() === form.profesorId)
     : null;
 
   const handleImage = (e) => {
@@ -341,7 +353,9 @@ export default function EditarCurso() {
                   onChange={handleChange}
                   required
                   className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                    errors.titulo ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    errors.titulo
+                      ? "border-red-500"
+                      : "border-gray-200 dark:border-gray-600"
                   } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   placeholder="Introducción a la Programación"
                 />
@@ -364,7 +378,9 @@ export default function EditarCurso() {
                   onChange={handleChange}
                   required
                   className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                    errors.descripcion ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    errors.descripcion
+                      ? "border-red-500"
+                      : "border-gray-200 dark:border-gray-600"
                   } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   rows={4}
                   placeholder="Describe los objetivos y contenido del curso..."
@@ -390,13 +406,21 @@ export default function EditarCurso() {
                   onChange={handleChange}
                   required
                   className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                    errors.profesorId ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    errors.profesorId
+                      ? "border-red-500"
+                      : "border-gray-200 dark:border-gray-600"
                   } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base`}
                 >
-                  <option value="" className="text-gray-500 dark:text-gray-400">Seleccione un profesor</option>
+                  <option value="" className="text-gray-500 dark:text-gray-400">
+                    Seleccione un profesor
+                  </option>
                   {Array.isArray(profesores) &&
                     profesores.map((p) => (
-                      <option key={p.id} value={p.id} className="text-gray-800 dark:text-white">
+                      <option
+                        key={p.id}
+                        value={p.id.toString()}
+                        className="text-gray-800 dark:text-white"
+                      >
                         {p.nombres} {p.apellidos}
                       </option>
                     ))}
@@ -429,10 +453,30 @@ export default function EditarCurso() {
                     onChange={handleTipoChange}
                     className="w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base"
                   >
-                    <option value="ONLINE_GRATIS" className="text-gray-800 dark:text-white">Online Gratis</option>
-                    <option value="ONLINE_PAGADO" className="text-gray-800 dark:text-white">Online Pagado</option>
-                    <option value="PRESENCIAL_GRATIS" className="text-gray-800 dark:text-white">Presencial Gratis</option>
-                    <option value="PRESENCIAL_PAGADO" className="text-gray-800 dark:text-white">Presencial Pagado</option>
+                    <option
+                      value="ONLINE_GRATIS"
+                      className="text-gray-800 dark:text-white"
+                    >
+                      Online Gratis
+                    </option>
+                    <option
+                      value="ONLINE_PAGADO"
+                      className="text-gray-800 dark:text-white"
+                    >
+                      Online Pagado
+                    </option>
+                    <option
+                      value="PRESENCIAL_GRATIS"
+                      className="text-gray-800 dark:text-white"
+                    >
+                      Presencial Gratis
+                    </option>
+                    <option
+                      value="PRESENCIAL_PAGADO"
+                      className="text-gray-800 dark:text-white"
+                    >
+                      Presencial Pagado
+                    </option>
                   </select>
                 </div>
 
@@ -450,7 +494,9 @@ export default function EditarCurso() {
                     onChange={handleChange}
                     required
                     className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                      errors.fecha ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                      errors.fecha
+                        ? "border-red-500"
+                        : "border-gray-200 dark:border-gray-600"
                     } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base`}
                   />
                   {errors.fecha && (
@@ -472,7 +518,9 @@ export default function EditarCurso() {
                 <div className="relative">
                   <div
                     className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                      errors.hora ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                      errors.hora
+                        ? "border-red-500"
+                        : "border-gray-200 dark:border-gray-600"
                     } rounded-lg md:rounded-xl text-gray-800 dark:text-white cursor-pointer flex items-center justify-between shadow-sm text-sm md:text-base`}
                     onClick={() => setShowHourDropdown(!showHourDropdown)}
                   >
@@ -600,7 +648,9 @@ export default function EditarCurso() {
                   onChange={handleChange}
                   required
                   className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                    errors.link ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                    errors.link
+                      ? "border-red-500"
+                      : "border-gray-200 dark:border-gray-600"
                   } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   placeholder={
                     form.tipo.startsWith("ONLINE")
@@ -633,7 +683,9 @@ export default function EditarCurso() {
                     required
                     placeholder="0 = sin cupos"
                     className={`w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                      errors.cupos ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                      errors.cupos
+                        ? "border-red-500"
+                        : "border-gray-200 dark:border-gray-600"
                     } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                   />
                   {form.cupos === 0 && (
@@ -667,7 +719,9 @@ export default function EditarCurso() {
                         onChange={handlePrecioChange}
                         placeholder="0.00 = gratis"
                         className={`w-full pl-8 pr-4 py-3 md:pl-10 md:pr-5 md:py-4 bg-white dark:bg-gray-700 border ${
-                          errors.precio ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+                          errors.precio
+                            ? "border-red-500"
+                            : "border-gray-200 dark:border-gray-600"
                         } rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400`}
                         inputMode="decimal"
                         step="0.01"

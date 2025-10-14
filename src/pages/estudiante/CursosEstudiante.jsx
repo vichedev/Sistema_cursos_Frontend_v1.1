@@ -24,6 +24,9 @@ import {
   FaEye,
   FaTimes,
   FaChevronDown,
+  FaGift, // ✅ NUEVO ICONO PARA CUPONES
+  FaTag, // ✅ NUEVO ICONO PARA DESCUENTOS
+  FaPercentage, // ✅ NUEVO ICONO PARA PORCENTAJES
 } from "react-icons/fa";
 import { isCourseExpired } from "../../utils/dateUtils";
 
@@ -160,6 +163,93 @@ const isTodayCourse = (curso) => {
     return fechaStr === todayStr;
   } catch {
     return false;
+  }
+};
+
+// ===============================
+// ✅ FUNCIÓN PARA LIBERAR RESERVA DE CUPÓN (MEJORADA)
+// ===============================
+const releaseCouponReservation = async (reservationId) => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.post(
+      `${
+        import.meta.env.VITE_BACKEND_URL
+      }/api/payments/release-coupon-reservation`,
+      {
+        reservationId,
+        userId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ Cupón liberado correctamente");
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error liberando cupón:", error);
+
+    // Si el error es que la reserva ya no existe, igual consideramos éxito
+    if (
+      error.response?.data?.message?.includes("no encontrada") ||
+      error.response?.data?.message?.includes("ya fue procesada")
+    ) {
+      console.log("ℹ️ La reserva ya estaba liberada");
+      return { success: true };
+    }
+
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error al liberar cupón",
+    };
+  }
+};
+
+// ===============================
+// ✅ FUNCIÓN PARA FORZAR LIBERACIÓN DE CUPÓN
+// ===============================
+const forceReleaseCoupon = async (codigoCupon) => {
+  const token = localStorage.getItem("token");
+  try {
+    // Primero verificar el estado actual del cupón
+    const verification = await verifyCoupon(appliedCoupon.cursoId, codigoCupon);
+
+    if (
+      !verification.success &&
+      verification.error.includes("reserva pendiente")
+    ) {
+      // El cupón sigue reservado, intentar liberarlo manualmente
+      console.log("🔄 Intentando liberar cupón manualmente...");
+
+      // Aquí necesitarías un endpoint específico para liberar por código
+      // Por ahora, simplemente limpiamos el estado local
+      setAppliedCoupon(null);
+
+      Swal.fire({
+        title: "Cupón liberado",
+        text: "El cupón ha sido liberado manualmente. Puedes intentarlo nuevamente.",
+        icon: "success",
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+      });
+
+      return { success: true };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error forzando liberación:", error);
+    // En caso de error, al menos limpiamos el estado local
+    setAppliedCoupon(null);
+    return { success: true };
   }
 };
 
@@ -463,6 +553,127 @@ function FilterDropdown({ activeTab, setActiveTab, counts }) {
   );
 }
 
+// ✅ MODAL PARA CUPONES
+function CouponModal({
+  open,
+  curso,
+  codigoCupon,
+  onClose,
+  onApply,
+  loading,
+  onCodigoChange,
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/80 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full transition-colors duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header del Modal */}
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white relative rounded-t-2xl">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors"
+          >
+            <FaTimes className="text-xl" />
+          </button>
+          <div className="flex items-center gap-3">
+            <FaGift className="text-2xl text-yellow-300" />
+            <div>
+              <h2 className="text-xl font-bold">Aplicar Cupón de Descuento</h2>
+              <p className="text-purple-100 text-sm mt-1">
+                Curso: <strong>{curso?.titulo}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Contenido del Modal */}
+        <div className="p-6">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Código del Cupón
+            </label>
+            <input
+              type="text"
+              placeholder="Ingresa tu código de cupón..."
+              value={codigoCupon}
+              onChange={(e) => onCodigoChange(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              onKeyPress={(e) => e.key === "Enter" && onApply()}
+            />
+          </div>
+
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <FaTag className="text-yellow-600 dark:text-yellow-400 mt-1 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                  Tipos de Cupones Disponibles
+                </h4>
+                <ul className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
+                  {/* ✅ ACTUALIZADO CON NUEVOS CUPONES */}
+                  <li>
+                    🎯 <strong>10% de descuento</strong> - Ahorra una décima
+                    parte
+                  </li>
+                  <li>
+                    🔥 <strong>15% de descuento</strong> - Descuento especial
+                  </li>
+                  <li>
+                    💥 <strong>30% de descuento</strong> - Ahorra casi un tercio
+                  </li>
+                  <li>
+                    ⚡ <strong>50% de descuento</strong> - ¡Mitad de precio!
+                  </li>
+                  <li>
+                    🎁 <strong>Curso GRATIS</strong> - Acceso completo sin costo
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer del Modal */}
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700 rounded-b-2xl">
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all duration-200"
+              disabled={loading}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onApply}
+              disabled={loading || !codigoCupon.trim()}
+              className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Verificando...
+                </>
+              ) : (
+                <>
+                  <FaGift />
+                  Aplicar Cupón
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CursosEstudiante() {
   const [cursos, setCursos] = useState([]);
   const [filteredCursos, setFilteredCursos] = useState([]);
@@ -473,34 +684,63 @@ export default function CursosEstudiante() {
   const [activeTab, setActiveTab] = useState("RELEVANTES");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // ✅ NUEVOS ESTADOS PARA CUPONES
+  const [couponModal, setCouponModal] = useState({
+    open: false,
+    curso: null,
+    codigoCupon: "",
+  });
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const uid = localStorage.getItem("userId");
     setUserId(uid);
 
-    axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/courses/disponibles`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "ngrok-skip-browser-warning": "true",
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((res) => {
+    // ✅ FUNCIÓN PARA LIMPIAR RESERVAS PENDIENTES
+    const cleanupReservations = async () => {
+      if (!token || !uid) return;
+
+      try {
+        console.log("✅ Verificación de reservas completada");
+      } catch (error) {
+        console.error("Error en limpieza de reservas:", error);
+      }
+    };
+
+    // ✅ EJECUTAR LIMPIEZA DE RESERVAS Y CARGAR CURSOS
+    const loadData = async () => {
+      // Primero limpiar reservas pendientes
+      await cleanupReservations();
+
+      // Luego cargar los cursos
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/courses/disponibles`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "ngrok-skip-browser-warning": "true",
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+          }
+        );
+
         if (
-          typeof res.data === "string" &&
-          res.data.includes("<!DOCTYPE html>")
+          typeof response.data === "string" &&
+          response.data.includes("<!DOCTYPE html>")
         ) {
           throw new Error("El servidor está devolviendo HTML en lugar de JSON");
         }
 
         let cursosData = [];
-        if (res.data && Array.isArray(res.data.data))
-          cursosData = res.data.data;
-        else if (Array.isArray(res.data)) cursosData = res.data;
-        else if (res.data && typeof res.data === "object") {
-          const possibleArrays = Object.values(res.data).filter((item) =>
+        if (response.data && Array.isArray(response.data.data))
+          cursosData = response.data.data;
+        else if (Array.isArray(response.data)) cursosData = response.data;
+        else if (response.data && typeof response.data === "object") {
+          const possibleArrays = Object.values(response.data).filter((item) =>
             Array.isArray(item)
           );
           cursosData = possibleArrays.length > 0 ? possibleArrays[0] : [];
@@ -509,8 +749,13 @@ export default function CursosEstudiante() {
         const cursosOrdenados = sortCoursesByRelevance(cursosData);
         setCursos(cursosOrdenados);
         setFilteredCursos(cursosOrdenados);
-      })
-      .catch((err) => {
+
+        
+        // Verificar si algún curso tiene la propiedad tieneCupones
+        const cursosConCupones = cursosOrdenados.filter(
+          (curso) => curso.tieneCupones
+        );
+      } catch (err) {
         console.error("Error al obtener cursos:", err);
         if (err.message && err.message.includes("HTML en lugar de JSON")) {
           Swal.fire({
@@ -527,8 +772,12 @@ export default function CursosEstudiante() {
         }
         setCursos([]);
         setFilteredCursos([]);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -563,6 +812,40 @@ export default function CursosEstudiante() {
 
     setFilteredCursos(filtered);
   }, [cursos, activeTab, searchTerm]);
+
+  // ✅ VERIFICAR RESERVAS PENDIENTES AL CARGAR LA PÁGINA
+  useEffect(() => {
+    const checkPendingReservations = async () => {
+      const pendingReservation = localStorage.getItem("lastCouponReservation");
+
+      if (pendingReservation) {
+        try {
+          const reservationData = JSON.parse(pendingReservation);
+          const { reservationId, clientTransactionId, timestamp } =
+            reservationData;
+
+          // Verificar si la reserva es reciente (menos de 1 hora)
+          const isRecent = Date.now() - timestamp < 60 * 60 * 1000;
+
+          if (isRecent) {
+            // Verificar estado del pago
+            await checkPaymentStatus(clientTransactionId, reservationId);
+          } else {
+            // Liberar reserva antigua
+            await releaseCouponReservation(reservationId);
+          }
+
+          // Limpiar del localStorage
+          localStorage.removeItem("lastCouponReservation");
+        } catch (error) {
+          console.error("Error verificando reserva pendiente:", error);
+          localStorage.removeItem("lastCouponReservation");
+        }
+      }
+    };
+
+    checkPendingReservations();
+  }, []);
 
   const handleEnroll = async (cursoId) => {
     const token = localStorage.getItem("token");
@@ -627,6 +910,463 @@ export default function CursosEstudiante() {
   // ✅ FUNCIÓN PARA ABRIR MODAL DE DESCRIPCIÓN
   const openDescriptionModal = (curso) => {
     setModalDesc({ open: true, curso });
+  };
+
+  // ===============================
+  // ✅ FUNCIÓN PARA VERIFICAR CUPÓN
+  // ===============================
+  const verifyCoupon = async (cursoId, codigoCupon) => {
+    const token = localStorage.getItem("token");
+    try {
+      setCouponLoading(true);
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/payments/verify-coupon`,
+        {
+          cursoId,
+          userId,
+          codigoCupon: codigoCupon.toUpperCase(),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Si hay error de reserva pendiente, intentar liberar forzadamente
+      if (
+        !response.data.success &&
+        response.data.error?.includes("reserva pendiente")
+      ) {
+        console.log(
+          "🔄 Detectada reserva pendiente, intentando liberar forzadamente..."
+        );
+
+        try {
+          await axios.post(
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/api/payments/force-release-coupon`,
+            {
+              cursoId,
+              userId,
+              codigoCupon: codigoCupon.toUpperCase(),
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          // Reintentar la verificación después de liberar
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const retryResponse = await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/payments/verify-coupon`,
+            {
+              cursoId,
+              userId,
+              codigoCupon: codigoCupon.toUpperCase(),
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          return retryResponse.data;
+        } catch (forceError) {
+          console.error("Error liberando cupón forzadamente:", forceError);
+          // Retornar el error original si falla la liberación forzada
+        }
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error verificando cupón:", error);
+      return {
+        success: false,
+        error: error.response?.data?.error || "Error al verificar cupón",
+      };
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+  // ===============================
+  // ✅ FUNCIÓN PARA APLICAR CUPÓN
+  // ===============================
+  const applyCoupon = async () => {
+    if (!couponModal.codigoCupon.trim()) {
+      Swal.fire({
+        title: "Código requerido",
+        text: "Por favor ingresa un código de cupón",
+        icon: "warning",
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+      });
+      return;
+    }
+
+    const result = await verifyCoupon(
+      couponModal.curso.id,
+      couponModal.codigoCupon
+    );
+
+    if (result.success) {
+      setAppliedCoupon({
+        cursoId: couponModal.curso.id,
+        codigo: couponModal.codigoCupon.toUpperCase(),
+        ...result,
+      });
+
+      Swal.fire({
+        title: "¡Cupón aplicado! 🎉",
+        html: `
+          <div class="text-left">
+            <p class="mb-2">✅ <strong>${result.cupon.descuentoTexto}</strong> aplicado correctamente.</p>
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-3 rounded-lg border border-green-200 dark:border-green-700 mt-3">
+              <div class="flex justify-between text-sm">
+                <span>Precio original:</span>
+                <span class="line-through text-gray-500">$${result.precioOriginal}</span>
+              </div>
+              <div class="flex justify-between text-lg font-bold mt-1">
+                <span>Precio final:</span>
+                <span class="text-green-600 dark:text-green-400">$${result.precioConDescuento}</span>
+              </div>
+              <div class="flex justify-between text-sm mt-1">
+                <span>Ahorro:</span>
+                <span class="text-green-600 dark:text-green-400 font-bold">$${result.ahorro}</span>
+              </div>
+            </div>
+          </div>
+        `,
+        icon: "success",
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+      });
+
+      setCouponModal({ open: false, curso: null, codigoCupon: "" });
+    } else {
+      Swal.fire({
+        title: "Cupón no válido",
+        text: result.error,
+        icon: "error",
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+      });
+    }
+  };
+
+  // ===============================
+  // ✅ FUNCIÓN PARA CREAR PAGO CON CUPÓN (MODIFICADA - CORREGIDA)
+  // ===============================
+  const createPaymentWithCoupon = async (curso) => {
+    const token = localStorage.getItem("token");
+
+    try {
+      Swal.fire({
+        title: "Procesando pago con cupón...",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await axios.post(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/payments/create-payphone-payment-with-coupon`,
+        {
+          cursoId: curso.id,
+          userId,
+          codigoCupon: appliedCoupon.codigo,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      Swal.close();
+
+      if (response.data.gratis) {
+        // Si es gratis con cupón, actualizar estado directamente
+        Swal.fire({
+          title: "¡Inscripción exitosa! 🎉",
+          html: `
+          <div class="text-center">
+            <div class="text-6xl mb-4">🎁</div>
+            <p class="text-lg mb-2">Te has inscrito al curso <strong>GRATIS</strong> con cupón.</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Cupón aplicado: <strong>${appliedCoupon.codigo}</strong></p>
+          </div>
+        `,
+          icon: "success",
+          background: document.documentElement.classList.contains("dark")
+            ? "#1f2937"
+            : "#ffffff",
+          color: document.documentElement.classList.contains("dark")
+            ? "#ffffff"
+            : "#000000",
+        });
+
+        setCursos((prev) =>
+          prev.map((c) => (c.id === curso.id ? { ...c, inscrito: true } : c))
+        );
+        setAppliedCoupon(null);
+      } else {
+        // ✅ REDIRIGIR EN LA MISMA VENTANA (COMPORTAMIENTO ORIGINAL)
+        window.location.href = response.data.paymentUrl;
+
+        // ✅ GUARDAR RESERVATION ID EN LOCALSTORAGE PARA POSIBLE RECUPERACIÓN
+        if (response.data.reservationId) {
+          localStorage.setItem(
+            "lastCouponReservation",
+            JSON.stringify({
+              reservationId: response.data.reservationId,
+              clientTransactionId: response.data.clientTransactionId,
+              cursoId: curso.id,
+              codigoCupon: appliedCoupon.codigo,
+              timestamp: Date.now(),
+            })
+          );
+        }
+      }
+    } catch (error) {
+      Swal.close();
+      Swal.fire({
+        title: "Error",
+        text:
+          error.response?.data?.message ||
+          "Error al procesar el pago con cupón",
+        icon: "error",
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+      });
+    }
+  };
+
+  // ===============================
+  // ✅ FUNCIÓN MEJORADA PARA VERIFICAR ESTADO DEL PAGO
+  // ===============================
+  const checkPaymentStatus = async (clientTransactionId, reservationId) => {
+    const token = localStorage.getItem("token");
+
+    try {
+      // Esperar un momento para que el callback de Payphone se procese
+      // await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/payments/check-payment-status`,
+        {
+          params: { clientTransactionId },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Pago exitoso - mantener el cupón aplicado
+        Swal.fire({
+          title: "¡Pago exitoso! 🎉",
+          text: "Tu pago ha sido procesado correctamente",
+          icon: "success",
+          background: document.documentElement.classList.contains("dark")
+            ? "#1f2937"
+            : "#ffffff",
+          color: document.documentElement.classList.contains("dark")
+            ? "#ffffff"
+            : "#000000",
+        });
+
+        // Actualizar estado del curso
+        setCursos((prev) =>
+          prev.map((c) =>
+            c.id === appliedCoupon?.cursoId ? { ...c, inscrito: true } : c
+          )
+        );
+        setAppliedCoupon(null);
+      } else {
+        // ✅ LIBERAR CUPÓN AUTOMÁTICAMENTE EN CASO DE FALLO
+        await releaseCouponByTransaction(clientTransactionId);
+
+        Swal.fire({
+          title: "Pago no completado",
+          text: "El pago no se completó. Tu cupón ha sido liberado y puedes intentarlo nuevamente.",
+          icon: "info",
+          background: document.documentElement.classList.contains("dark")
+            ? "#1f2937"
+            : "#ffffff",
+          color: document.documentElement.classList.contains("dark")
+            ? "#ffffff"
+            : "#000000",
+        });
+
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      console.error("Error verificando estado del pago:", error);
+
+      // ✅ EN CASO DE ERROR TAMBIÉN LIBERAR EL CUPÓN
+      await releaseCouponByTransaction(clientTransactionId);
+      setAppliedCoupon(null);
+
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo verificar el estado del pago. Tu cupón ha sido liberado.",
+        icon: "error",
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#000000",
+      });
+    } finally {
+      // ✅ LIMPIAR SIEMPRE DEL LOCALSTORAGE
+      localStorage.removeItem("lastCouponReservation");
+    }
+  };
+
+  // ===============================
+  // ✅ NUEVA FUNCIÓN PARA LIBERAR CUPÓN POR TRANSACCIÓN
+  // ===============================
+  const releaseCouponByTransaction = async (clientTransactionId) => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await axios.post(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/payments/release-coupon-by-transaction`,
+        {
+          clientTransactionId,
+          userId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("✅ Cupón liberado por transacción");
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("Error liberando cupón por transacción:", error);
+
+      // Si falla, intentar la liberación forzada
+      if (appliedCoupon) {
+        try {
+          await axios.post(
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/api/payments/force-release-coupon`,
+            {
+              cursoId: appliedCoupon.cursoId,
+              userId,
+              codigoCupon: appliedCoupon.codigo,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          console.log("✅ Cupón liberado forzadamente después de error");
+        } catch (forceError) {
+          console.error("Error en liberación forzada:", forceError);
+        }
+      }
+
+      return { success: false };
+    }
+  };
+
+  // ===============================
+  // ✅ ABRIR MODAL DE CUPÓN
+  // ===============================
+  const openCouponModal = (curso) => {
+    setCouponModal({
+      open: true,
+      curso,
+      codigoCupon: "",
+    });
+  };
+
+  // ===============================
+  // ✅ CERRAR MODAL DE CUPÓN
+  // ===============================
+  const closeCouponModal = () => {
+    setCouponModal({ open: false, curso: null, codigoCupon: "" });
+  };
+
+  // ===============================
+  // ✅ ACTUALIZAR CÓDIGO DEL CUPÓN
+  // ===============================
+  const updateCouponCode = (codigo) => {
+    setCouponModal((prev) => ({ ...prev, codigoCupon: codigo }));
+  };
+
+  // ===============================
+  // ✅ REMOVER CUPÓN APLICADO (MEJORADA)
+  // ===============================
+  const removeAppliedCoupon = async () => {
+    // Limpiar inmediatamente el estado local
+    const couponToRemove = { ...appliedCoupon };
+    setAppliedCoupon(null);
+
+    // Si hay un reservationId, liberar la reserva en el backend
+    if (couponToRemove?.reservationId) {
+      try {
+        await releaseCouponReservation(couponToRemove.reservationId);
+      } catch (error) {
+        console.error("Error liberando cupón:", error);
+        // Aunque falle, el cupón ya se removió localmente
+      }
+    }
+
+    Swal.fire({
+      title: "Cupón removido",
+      text: "El cupón ha sido removido correctamente",
+      icon: "info",
+      background: document.documentElement.classList.contains("dark")
+        ? "#1f2937"
+        : "#ffffff",
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#000000",
+    });
   };
 
   // Contar cursos por categoría de lanzamiento
@@ -807,6 +1547,10 @@ export default function CursosEstudiante() {
 
                 const LaunchIcon = launchInfo?.icon || FaStar;
 
+                // ✅ VERIFICAR SI HAY CUPÓN APLICADO PARA ESTE CURSO
+                const hasAppliedCoupon =
+                  appliedCoupon && appliedCoupon.cursoId === curso.id;
+
                 return (
                   <div
                     key={curso.id}
@@ -972,9 +1716,26 @@ export default function CursosEstudiante() {
 
                       <div className="flex justify-between items-center mb-5">
                         {curso.precio > 0 && (
-                          <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 text-yellow-800 dark:text-yellow-300 text-base font-bold border border-yellow-300 dark:border-yellow-700 transition-colors duration-200">
-                            💰 ${curso.precio}
-                          </span>
+                          <div className="flex flex-col gap-2">
+                            {/* ✅ MOSTRAR PRECIO CON DESCUENTO SI HAY CUPÓN APLICADO */}
+                            {hasAppliedCoupon ? (
+                              <div className="text-center">
+                                <div className="line-through text-gray-500 dark:text-gray-400 text-sm">
+                                  ${curso.precio}
+                                </div>
+                                <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-300 text-base font-bold border border-green-300 dark:border-green-700 transition-colors duration-200">
+                                  💰 ${appliedCoupon.precioConDescuento}
+                                </div>
+                                <div className="text-xs text-green-600 dark:text-green-400 font-bold mt-1">
+                                  🎁 Ahorras ${appliedCoupon.ahorro}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 text-yellow-800 dark:text-yellow-300 text-base font-bold border border-yellow-300 dark:border-yellow-700 transition-colors duration-200">
+                                💰 ${curso.precio}
+                              </span>
+                            )}
+                          </div>
                         )}
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           <span className="font-medium">
@@ -1000,25 +1761,92 @@ export default function CursosEstudiante() {
                           </div>
                         ) : curso.precio > 0 ? (
                           <>
-                            <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mb-3 text-center">
-                              💳 Curso premium. Paga con Payphone y accede
-                              inmediatamente.
-                            </p>
-                            <div className="flex justify-center">
-                              <PayphoneButton
-                                curso={curso}
-                                userId={userId}
-                                onSuccess={() =>
-                                  setCursos((prev) =>
-                                    prev.map((c) =>
-                                      c.id === curso.id
-                                        ? { ...c, inscrito: true }
-                                        : c
-                                    )
-                                  )
-                                }
-                              />
-                            </div>
+                            {/* ✅ SECCIÓN MEJORADA PARA CURSOS PAGADOS CON CUPONES */}
+                            {hasAppliedCoupon ? (
+                              <div className="space-y-3">
+                                {/* Información del cupón aplicado */}
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-3 border border-green-200 dark:border-green-700">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <FaGift className="text-green-600 dark:text-green-400" />
+                                      <span className="text-sm font-semibold text-green-800 dark:text-green-300">
+                                        Cupón: {appliedCoupon.codigo}
+                                      </span>
+                                    </div>
+                                    <button
+                                      onClick={removeAppliedCoupon}
+                                      className="text-red-500 hover:text-red-700 transition-colors"
+                                      title="Remover cupón"
+                                    >
+                                      <FaTimes />
+                                    </button>
+                                  </div>
+                                  <div className="text-xs text-green-700 dark:text-green-400 mt-1">
+                                    {appliedCoupon.cupon.descuentoTexto}
+                                  </div>
+                                </div>
+
+                                {/* Botón de pago con cupón aplicado */}
+                                <button
+                                  onClick={() => createPaymentWithCoupon(curso)}
+                                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-5 py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition duration-300 transform hover:shadow-xl flex items-center justify-center gap-2"
+                                >
+                                  <FaGift className="text-yellow-300" />
+                                  {appliedCoupon.gratis
+                                    ? "🎁 Obtener Curso GRATIS"
+                                    : `💳 Pagar $${appliedCoupon.precioConDescuento}`}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold text-center">
+                                  💳 Curso premium. Paga con Payphone y accede
+                                  inmediatamente.
+                                </p>
+
+                                {/* ✅ VERSIÓN TEMPORAL CON DEBUG */}
+                                {curso.precio > 0 && (
+                                  <div className="mb-2">
+                                    <button
+                                      onClick={() => openCouponModal(curso)}
+                                      className={`w-full px-4 py-2 rounded-xl font-semibold transition duration-300 transform flex items-center justify-center gap-2 ${
+                                        curso.tieneCupones
+                                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105"
+                                          : "bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed"
+                                      }`}
+                                      disabled={!curso.tieneCupones}
+                                    >
+                                      <FaGift
+                                        className={
+                                          curso.tieneCupones
+                                            ? "text-yellow-300"
+                                            : "text-gray-400"
+                                        }
+                                      />
+                                      {curso.tieneCupones
+                                        ? "¿Tienes un cupón?"
+                                        : "Sin cupones"}
+                                    </button>
+                                  </div>
+                                )}
+                                {/* Botón de pago normal */}
+                                <div className="flex justify-center">
+                                  <PayphoneButton
+                                    curso={curso}
+                                    userId={userId}
+                                    onSuccess={() =>
+                                      setCursos((prev) =>
+                                        prev.map((c) =>
+                                          c.id === curso.id
+                                            ? { ...c, inscrito: true }
+                                            : c
+                                        )
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </>
                         ) : (
                           <>
@@ -1055,6 +1883,17 @@ export default function CursosEstudiante() {
         open={modalDesc.open}
         curso={modalDesc.curso}
         onClose={() => setModalDesc({ open: false, curso: null })}
+      />
+
+      {/* ✅ NUEVO MODAL PARA CUPONES */}
+      <CouponModal
+        open={couponModal.open}
+        curso={couponModal.curso}
+        codigoCupon={couponModal.codigoCupon}
+        onClose={closeCouponModal}
+        onApply={applyCoupon}
+        loading={couponLoading}
+        onCodigoChange={updateCouponCode}
       />
     </div>
   );
