@@ -93,10 +93,7 @@ export default function Login() {
           title: "swal2-title-custom",
           htmlContainer: "swal2-html-container-custom",
         },
-        didOpen: (toast) => {
-          toast.addEventListener("mouseenter", Swal.stopTimer);
-          toast.addEventListener("mouseleave", Swal.resumeTimer);
-        },
+        // ✅ CORREGIDO: Eliminado didOpen que pausaba el timer
       }).then(() => {
         if (res.data.rol === "ADMIN") {
           navigate("/admin/dashboard", { replace: true });
@@ -229,10 +226,7 @@ export default function Login() {
           title: "swal2-title-custom",
           htmlContainer: "swal2-html-container-custom",
         },
-        didOpen: (toast) => {
-          toast.addEventListener("mouseenter", Swal.stopTimer);
-          toast.addEventListener("mouseleave", Swal.resumeTimer);
-        },
+        // ✅ CORREGIDO: Eliminado didOpen que pausaba el timer
       });
       setShowResendButton(false);
     } catch (err) {

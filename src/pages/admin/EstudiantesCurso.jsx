@@ -16,6 +16,7 @@ import {
 import { HiOutlineAcademicCap } from "react-icons/hi";
 import { FiUsers, FiDownload, FiMail } from "react-icons/fi";
 import { isCourseExpired } from "../../utils/dateUtils";
+import * as XLSX from "xlsx";
 
 export default function EstudiantesCurso() {
   const { id } = useParams();
@@ -104,41 +105,235 @@ export default function EstudiantesCurso() {
     fetchData();
   }, [id]);
 
-  const exportToCSV = () => {
-    const csvContent = [
+  const exportToExcel = () => {
+    // Crear libro de trabajo
+    const wb = XLSX.utils.book_new();
+
+    // ================================
+    // HOJA 1: RESUMEN DEL CURSO
+    // ================================
+    const summaryData = [
+      ["INFORME DETALLADO DE ESTUDIANTES - MAAT ACADEMY"],
+      [""],
+      ["INFORMACIÓN DEL CURSO"],
+      ["Título del curso:", curso?.titulo || "N/A"],
       [
-        "Nombre",
-        "Email",
-        "Monto Pagado",
-        "Método de Pago",
-        "Fecha de Inscripción",
+        "Profesor:",
+        curso?.profesor
+          ? `${curso.profesor.nombres || ""} ${
+              curso.profesor.apellidos || ""
+            }`.trim()
+          : "Por confirmar",
       ],
-      ...estudiantes.map((est) => [
-        `${est.nombres} ${est.apellidos}`,
-        est.correo,
-        `$${est.montoPagado.toFixed(2)}`,
-        est.metodoPago || "Gratis",
-        est.fechaInscripcion
-          ? new Date(est.fechaInscripcion).toLocaleDateString()
-          : "N/A",
-      ]),
-    ]
-      .map((row) => row.join(","))
-      .join("\n");
+      ["Fecha:", curso?.fecha || "Por definir"],
+      ["Hora:", curso?.hora || "Por definir"],
+      ["Tipo:", curso?.tipo?.replace(/_/g, " ") || "N/A"],
+      ["Precio:", `$${curso?.precio || 0}`],
+      ["Cupos:", curso?.cupos || 0],
+      [""],
+      ["ESTADÍSTICAS DE INSCRIPCIÓN"],
+      ["Total de estudiantes:", estudiantes.length],
+      ["Estudiantes pagados:", paymentData.estudiantesPagados],
+      ["Estudiantes gratis:", paymentData.estudiantesGratis],
+      ["Total recaudado:", `$${paymentData.totalRecaudado.toFixed(2)}`],
+      [
+        "Fecha de generación:",
+        new Date().toLocaleDateString("es-ES", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      ],
+      [""],
+      [""],
+    ];
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
 
-    link.setAttribute("href", url);
-    link.setAttribute("download", `estudiantes-curso-${id}.csv`);
-    link.style.visibility = "hidden";
+    // Aplicar estilos a la hoja de resumen
+    if (wsSummary["!merges"] === undefined) wsSummary["!merges"] = [];
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Fusionar celdas para el título
+    wsSummary["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
+
+    // Establecer anchos de columna
+    wsSummary["!cols"] = [
+      { wch: 25 }, // Columna A
+      { wch: 30 }, // Columna B
+      { wch: 15 }, // Columna C
+      { wch: 15 }, // Columna D
+      { wch: 15 }, // Columna E
+    ];
+
+    // ================================
+    // HOJA 2: DETALLE DE ESTUDIANTES - CORREGIDA
+    // ================================
+    const studentsData = [
+      [
+        "N°",
+        "NOMBRES COMPLETOS",
+        "CORREO ELECTRÓNICO",
+        "MONTO PAGADO (USD)",
+        "MÉTODO DE PAGO",
+        "ESTADO DE PAGO",
+        "FECHA DE INSCRIPCIÓN",
+        "TIPO DE INSCRIPCIÓN",
+      ],
+      ...estudiantes.map((est, index) => {
+        console.log("📋 Procesando estudiante:", est); // Para debug
+
+        // ✅ MANEJO SEGURO DE DATOS - CORREGIDO
+        const nombres = est.nombres || est.Nombres || "Sin nombre";
+        const apellidos = est.apellidos || est.Apellidos || "";
+        const correo = est.correo || est.Correo || "Sin correo";
+        const montoPagado = est.montoPagado || est.MontoPagado || 0;
+        const metodoPago = est.metodoPago || est.MetodoPago || "Gratis";
+        const fechaInscripcion =
+          est.fechaInscripcion || est.FechaInscripcion
+            ? new Date(
+                est.fechaInscripcion || est.FechaInscripcion
+              ).toLocaleDateString("es-ES")
+            : "N/A";
+
+        return [
+          index + 1,
+          `${nombres} ${apellidos}`.trim(),
+          correo,
+          montoPagado > 0 ? montoPagado : 0,
+          metodoPago,
+          montoPagado > 0 ? "PAGADO" : "GRATIS",
+          fechaInscripcion,
+          montoPagado > 0 ? "PAGADA" : "GRATUITA",
+        ];
+      }),
+    ];
+
+    // Agregar fila de totales solo si hay estudiantes
+    if (estudiantes.length > 0) {
+      studentsData.push([""]);
+      studentsData.push([
+        "TOTALES:",
+        "",
+        "",
+        `$${paymentData.totalRecaudado.toFixed(2)}`,
+        "",
+        "",
+        "",
+        "",
+      ]);
+    }
+
+    const wsStudents = XLSX.utils.aoa_to_sheet(studentsData);
+
+    // Aplicar estilos a la hoja de estudiantes
+    wsStudents["!cols"] = [
+      { wch: 5 }, // Columna A: N°
+      { wch: 35 }, // Columna B: Nombres (más ancho)
+      { wch: 30 }, // Columna C: Email
+      { wch: 15 }, // Columna D: Monto
+      { wch: 15 }, // Columna E: Método
+      { wch: 12 }, // Columna F: Estado
+      { wch: 15 }, // Columna G: Fecha
+      { wch: 12 }, // Columna H: Tipo
+    ];
+
+    // Aplicar formato de moneda a la columna de montos
+    const range = XLSX.utils.decode_range(wsStudents["!ref"]);
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: 3 }); // Columna D (índice 3)
+      if (wsStudents[cellAddress]) {
+        // Si es un número, aplicar formato de moneda
+        if (typeof wsStudents[cellAddress].v === "number") {
+          wsStudents[cellAddress].z = '"$"#,##0.00';
+        }
+      }
+    }
+
+    // ================================
+    // HOJA 3: RESUMEN FINANCIERO - MEJORADO
+    // ================================
+    const porcentajePagados =
+      estudiantes.length > 0
+        ? (paymentData.estudiantesPagados / estudiantes.length) * 100
+        : 0;
+    const porcentajeGratis =
+      estudiantes.length > 0
+        ? (paymentData.estudiantesGratis / estudiantes.length) * 100
+        : 0;
+    const promedioPago =
+      paymentData.estudiantesPagados > 0
+        ? paymentData.totalRecaudado / paymentData.estudiantesPagados
+        : 0;
+
+    const financialData = [
+      ["RESUMEN FINANCIERO - MAAT ACADEMY"],
+      [""],
+      ["ESTADÍSTICAS DE PAGOS"],
+      ["Concepto", "Cantidad", "Porcentaje", "Monto Total"],
+      [
+        "Estudiantes Pagados",
+        paymentData.estudiantesPagados,
+        `${porcentajePagados.toFixed(1)}%`,
+        `$${paymentData.totalRecaudado.toFixed(2)}`,
+      ],
+      [
+        "Estudiantes Gratis",
+        paymentData.estudiantesGratis,
+        `${porcentajeGratis.toFixed(1)}%`,
+        "$0.00",
+      ],
+      [
+        "TOTAL",
+        estudiantes.length,
+        "100%",
+        `$${paymentData.totalRecaudado.toFixed(2)}`,
+      ],
+      [""],
+      ["ANÁLISIS FINANCIERO"],
+      [
+        "Promedio de pago por estudiante pagado:",
+        `$${promedioPago.toFixed(2)}`,
+      ],
+      ["Tasa de conversión a pago:", `${porcentajePagados.toFixed(1)}%`],
+      [""],
+      ["INFORMACIÓN ADICIONAL"],
+      ["Curso:", curso?.titulo || "N/A"],
+      ["Fecha de corte:", new Date().toLocaleDateString("es-ES")],
+      ["Total estudiantes procesados:", estudiantes.length],
+      ["Generado por:", "Sistema MAAT ACADEMY"],
+    ];
+
+    const wsFinancial = XLSX.utils.aoa_to_sheet(financialData);
+    wsFinancial["!cols"] = [
+      { wch: 40 }, // Columna A (más ancho para textos largos)
+      { wch: 15 }, // Columna B
+      { wch: 15 }, // Columna C
+      { wch: 15 }, // Columna D
+    ];
+
+    // Agregar hojas al libro
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Resumen Curso");
+    XLSX.utils.book_append_sheet(wb, wsStudents, "Estudiantes");
+    XLSX.utils.book_append_sheet(wb, wsFinancial, "Resumen Financiero");
+
+    // Generar archivo con nombre seguro
+    const cursoTitle = curso?.titulo
+      ? curso.titulo.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, "_")
+      : "Curso";
+    const fileName = `Estudiantes_${cursoTitle}_${
+      new Date().toISOString().split("T")[0]
+    }.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+
+    console.log("✅ Excel generado exitosamente");
+    console.log("📊 Estudiantes procesados:", estudiantes.length);
+    console.log("💰 Total recaudado:", paymentData.totalRecaudado);
+    console.log("📋 Datos de estudiantes:", estudiantes); // Para debug
   };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center py-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -411,11 +606,11 @@ export default function EstudiantesCurso() {
 
           {estudiantes.length > 0 && (
             <button
-              onClick={exportToCSV}
+              onClick={exportToExcel}
               className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl transition shadow-md text-sm md:text-base"
             >
               <FiDownload className="text-sm md:text-base" />
-              Exportar CSV
+              Exportar Excel
             </button>
           )}
         </div>

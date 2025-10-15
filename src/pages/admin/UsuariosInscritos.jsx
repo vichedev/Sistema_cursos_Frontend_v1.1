@@ -312,73 +312,250 @@ export default function UsuariosInscritos() {
               </button>
             </div>
 
-            {/* Barra de búsqueda y filtros */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="text-gray-400 dark:text-gray-500" />
+            {/* Barra de búsqueda, filtros y controles */}
+            <div className="space-y-4 mb-6">
+              {/* Primera fila: Búsqueda y botones principales */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="relative flex-1 min-w-0 sm:max-w-md lg:max-w-lg">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaSearch className="text-gray-400 dark:text-gray-500 text-sm" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder={
+                      activeTab === "estudiantes"
+                        ? "Buscar por nombre, email, cédula..."
+                        : "Buscar por nombre, email, usuario..."
+                    }
+                    className="block w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm transition-colors duration-200"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder={
-                    activeTab === "estudiantes"
-                      ? "Buscar por nombre, email, cédula, ciudad..."
-                      : "Buscar por nombre, email, usuario..."
-                  }
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+
+                <div className="flex gap-2 justify-end sm:justify-start">
+                  {activeTab === "estudiantes" && (
+                    <button
+                      className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors duration-200 text-xs sm:text-sm"
+                      onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    >
+                      <FaFilter className="text-gray-600 dark:text-gray-400 text-xs" />
+                      <span className="whitespace-nowrap">Filtros</span>
+                    </button>
+                  )}
+
+                  {activeTab === "administradores" && (
+                    <button
+                      onClick={() => {
+                        setModalType("crear");
+                        setModalUser(null);
+                        setModalError(null);
+                      }}
+                      className="flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-2 rounded-xl transition shadow-md text-xs sm:text-sm"
+                    >
+                      <FaPlus className="flex-shrink-0 text-xs" />
+                      <span className="whitespace-nowrap">Agregar</span>
+                    </button>
+                  )}
+
+                  {paginatedUsers.length > 0 && (
+                    <button
+                      onClick={handleExportToExcel}
+                      className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-2 rounded-xl transition shadow-md text-xs sm:text-sm"
+                    >
+                      <FaFileExcel className="flex-shrink-0 text-xs" />
+                      <span className="whitespace-nowrap">Exportar</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-2">
-                {activeTab === "estudiantes" && (
-                  <button
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors duration-200"
-                    onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  >
-                    <FaFilter className="text-gray-600 dark:text-gray-400" />
-                    <span className="hidden sm:inline">Filtros</span>
-                  </button>
-                )}
+              {/* Segunda fila: Filtros activos y filtros avanzados */}
+              {(filterCiudad ||
+                filterEmpresa ||
+                filterCurso ||
+                filterCedula ||
+                isFilterOpen) &&
+                activeTab === "estudiantes" && (
+                  <div className="space-y-3">
+                    {/* Filtros activos - siempre visibles cuando hay filtros aplicados */}
+                    {(filterCiudad ||
+                      filterEmpresa ||
+                      filterCurso ||
+                      filterCedula) && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                            Filtros aplicados:
+                          </span>
 
-                {activeTab === "administradores" && (
-                  <button
-                    onClick={() => {
-                      setModalType("crear");
-                      setModalUser(null);
-                      setModalError(null);
-                    }}
-                    className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-xl transition shadow-md"
-                  >
-                    <FaPlus className="flex-shrink-0" />
-                    <span className="hidden sm:inline">Agregar Profesor</span>
-                    <span className="sm:hidden">Nuevo</span>
-                  </button>
-                )}
+                          {filterCiudad && (
+                            <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+                              <FaMapMarkerAlt className="text-xs" />
+                              Ciudad: {filterCiudad}
+                              <button
+                                onClick={() => setFilterCiudad("")}
+                                className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
 
-                {paginatedUsers.length > 0 && (
-                  <button
-                    onClick={handleExportToExcel}
-                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-xl transition shadow-md"
-                  >
-                    <FaFileExcel className="flex-shrink-0" />
-                    <span className="hidden sm:inline">Exportar</span>
-                  </button>
+                          {filterEmpresa && (
+                            <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+                              <FaBuilding className="text-xs" />
+                              Empresa: {filterEmpresa}
+                              <button
+                                onClick={() => setFilterEmpresa("")}
+                                className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+
+                          {filterCurso && (
+                            <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+                              <FaGraduationCap className="text-xs" />
+                              Curso: {filterCurso}
+                              <button
+                                onClick={() => setFilterCurso("")}
+                                className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+
+                          {filterCedula && (
+                            <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+                              📋 Cédula: {filterCedula}
+                              <button
+                                onClick={() => setFilterCedula("")}
+                                className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+
+                          <button
+                            onClick={() => {
+                              setFilterCiudad("");
+                              setFilterEmpresa("");
+                              setFilterCurso("");
+                              setFilterCedula("");
+                            }}
+                            className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                          >
+                            Limpiar todos
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Filtros avanzados - panel expandible */}
+                    {isFilterOpen && (
+                      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600 transition-colors duration-200">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="font-medium text-gray-700 dark:text-gray-300 text-sm">
+                            Filtros avanzados
+                          </h3>
+                          <button
+                            onClick={() => {
+                              setSearchTerm("");
+                              setFilterCiudad("");
+                              setFilterEmpresa("");
+                              setFilterCurso("");
+                              setFilterCedula("");
+                            }}
+                            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                          >
+                            Limpiar filtros
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Ciudad
+                            </label>
+                            <select
+                              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200 text-sm"
+                              value={filterCiudad}
+                              onChange={(e) => setFilterCiudad(e.target.value)}
+                            >
+                              <option value="">Todas las ciudades</option>
+                              {filterOptions?.ciudades.map((ciudad) => (
+                                <option key={ciudad} value={ciudad}>
+                                  {ciudad}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Empresa
+                            </label>
+                            <select
+                              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200 text-sm"
+                              value={filterEmpresa}
+                              onChange={(e) => setFilterEmpresa(e.target.value)}
+                            >
+                              <option value="">Todas las empresas</option>
+                              {filterOptions?.empresas.map((empresa) => (
+                                <option key={empresa} value={empresa}>
+                                  {empresa}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Cursos
+                            </label>
+                            <select
+                              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200 text-sm"
+                              value={filterCurso}
+                              onChange={(e) => setFilterCurso(e.target.value)}
+                            >
+                              <option value="">Todos los cursos</option>
+                              {filterOptions?.cursos.map((titulo) => (
+                                <option key={titulo} value={titulo}>
+                                  {titulo}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Cédula
+                            </label>
+                            <input
+                              type="text"
+                              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200 text-sm"
+                              placeholder="Filtrar por cédula"
+                              value={filterCedula}
+                              onChange={(e) => setFilterCedula(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </div>
             </div>
 
             {/* Controles de paginación */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
                 <select
                   value={itemsPerPage}
                   onChange={(e) => {
                     setItemsPerPage(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs sm:text-sm"
                 >
                   <option value={10}>10 por página</option>
                   <option value={20}>20 por página</option>
@@ -386,120 +563,32 @@ export default function UsuariosInscritos() {
                   <option value={100}>100 por página</option>
                 </select>
 
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                   Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
                   {Math.min(currentPage * itemsPerPage, totalItems)} de{" "}
                   {totalItems}
                 </span>
               </div>
 
-              <div className="flex gap-1">
+              <div className="flex gap-1 w-full sm:w-auto justify-center sm:justify-end">
                 <button
                   onClick={() =>
                     setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
                   disabled={currentPage === 1}
-                  className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex-1 sm:flex-none text-center"
                 >
                   Anterior
                 </button>
                 <button
                   onClick={() => setCurrentPage((prev) => prev + 1)}
                   disabled={currentPage * itemsPerPage >= totalItems}
-                  className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex-1 sm:flex-none text-center"
                 >
                   Siguiente
                 </button>
               </div>
             </div>
-
-            {/* Filtros avanzados */}
-            {isFilterOpen && activeTab === "estudiantes" && (
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl mb-6 border border-gray-200 dark:border-gray-600 transition-colors duration-200">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-medium text-gray-700 dark:text-gray-300">
-                    Filtros avanzados
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      setFilterCiudad("");
-                      setFilterEmpresa("");
-                      setFilterCurso("");
-                      setFilterCedula("");
-                    }}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
-                  >
-                    Limpiar filtros
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Ciudad
-                    </label>
-                    <select
-                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200"
-                      value={filterCiudad}
-                      onChange={(e) => setFilterCiudad(e.target.value)}
-                    >
-                      <option value="">Todas las ciudades</option>
-                      {filterOptions?.ciudades.map((ciudad) => (
-                        <option key={ciudad} value={ciudad}>
-                          {ciudad}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Empresa
-                    </label>
-                    <select
-                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200"
-                      value={filterEmpresa}
-                      onChange={(e) => setFilterEmpresa(e.target.value)}
-                    >
-                      <option value="">Todas las empresas</option>
-                      {filterOptions?.empresas.map((empresa) => (
-                        <option key={empresa} value={empresa}>
-                          {empresa}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Cursos
-                    </label>
-                    <select
-                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200"
-                      value={filterCurso}
-                      onChange={(e) => setFilterCurso(e.target.value)}
-                    >
-                      <option value="">Todos los cursos</option>
-                      {filterOptions?.cursos.map((titulo) => (
-                        <option key={titulo} value={titulo}>
-                          {titulo}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Cédula
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200"
-                      placeholder="Filtrar por cédula"
-                      value={filterCedula}
-                      onChange={(e) => setFilterCedula(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Contenido con virtualización */}
             <div className="w-full">

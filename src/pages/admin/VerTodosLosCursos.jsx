@@ -1,5 +1,5 @@
 import { useAuth } from "../../hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import CursoCardAdmin from "../../components/admin/CursoCardAdmin";
 import {
@@ -8,57 +8,148 @@ import {
   FaMoneyBillWave,
   FaGraduationCap,
   FaSearch,
+  FaArchive,
+  FaEye,
+  FaSync,
 } from "react-icons/fa";
 
+// ✅ CONSTANTES PARA URLs
+const API_URLS = {
+  ACTIVOS: `${import.meta.env.VITE_BACKEND_URL}/api/courses/all`,
+  INACTIVOS: `${import.meta.env.VITE_BACKEND_URL}/api/courses/admin/inactivos`,
+  TODOS: `${import.meta.env.VITE_BACKEND_URL}/api/courses/admin/todos`,
+};
+
+// ✅ HOOK PERSONALIZADO PARA LA CARGA DE CURSOS
+const useCursos = (activeTab) => {
+  const [cursos, setCursos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const cargarCursos = useCallback(
+    async (tab = activeTab) => {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
+      try {
+        const url = API_URLS[tab] || API_URLS.ACTIVOS;
+
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true",
+            "Content-Type": "application/json",
+          },
+        });
+
+        let cursosData = [];
+        if (response.data && Array.isArray(response.data.data)) {
+          cursosData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          cursosData = response.data;
+        } else if (response.data && typeof response.data === "object") {
+          const arrays = Object.values(response.data).filter(Array.isArray);
+          cursosData = arrays.length > 0 ? arrays[0] : [];
+        }
+
+        // Ordenar por ID descendente
+        const ordenados = cursosData.sort((a, b) => b.id - a.id);
+        setCursos(ordenados);
+      } catch (err) {
+        console.error("❌ [FRONTEND] Error al cargar cursos:", err);
+        setCursos([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeTab]
+  );
+
+  useEffect(() => {
+    cargarCursos();
+  }, [cargarCursos]);
+
+  return { cursos, loading, recargarCursos: cargarCursos };
+};
+
+// ✅ COMPONENTE DE LOADING
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-full">
+    <div className="flex flex-col items-center gap-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
+      <div className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+        Cargando cursos...
+      </div>
+    </div>
+  </div>
+);
+
+// ✅ COMPONENTE DE ESTADO VACÍO
+const EmptyState = ({ activeTab, searchTerm }) => (
+  <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-lg transition-colors duration-200">
+    <div
+      className={`text-6xl mb-4 ${
+        activeTab === "INACTIVOS" ? "text-red-400" : "text-gray-400"
+      }`}
+    >
+      {activeTab === "INACTIVOS" ? "📁" : "📚"}
+    </div>
+    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+      {searchTerm
+        ? "No se encontraron cursos"
+        : activeTab === "INACTIVOS"
+        ? "No hay cursos inactivos"
+        : "No hay cursos disponibles"}
+    </h3>
+    <p className="text-gray-500 dark:text-gray-400">
+      {searchTerm
+        ? "Intenta con otros términos de búsqueda"
+        : activeTab === "INACTIVOS"
+        ? "Los cursos que archives aparecerán aquí"
+        : "Crea tu primer curso"}
+    </p>
+    {!searchTerm && activeTab !== "INACTIVOS" && (
+      <a
+        href="/admin/crear-curso"
+        className="inline-flex items-center gap-2 mt-4 px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-200"
+      >
+        <FaPlus /> Crear curso
+      </a>
+    )}
+  </div>
+);
+
+// ✅ COMPONENTE PRINCIPAL OPTIMIZADO
 export default function VerTodosLosCursos() {
   useAuth(["ADMIN"]);
 
-  const [cursos, setCursos] = useState([]);
-  const [filteredCursos, setFilteredCursos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("TODOS");
+  const [activeTab, setActiveTab] = useState("ACTIVOS");
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/courses/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "ngrok-skip-browser-warning": "true",
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-      .then((res) => {
-        let cursosData = [];
-        if (res.data && Array.isArray(res.data.data)) cursosData = res.data.data;
-        else if (Array.isArray(res.data)) cursosData = res.data;
-        else if (res.data && typeof res.data === "object") {
-          const arrays = Object.values(res.data).filter(Array.isArray);
-          cursosData = arrays.length > 0 ? arrays[0] : [];
-        }
-        const ordenados = cursosData.sort((a, b) => b.id - a.id);
-        setCursos(ordenados);
-        setFilteredCursos(ordenados);
-      })
-      .catch((err) => {
-        console.error("Error al cargar cursos:", err);
-        setCursos([]);
-        setFilteredCursos([]);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { cursos, loading, recargarCursos } = useCursos(activeTab);
 
-  useEffect(() => {
+  // ✅ MEMOIZAR FILTRADO DE CURSOS
+  const filteredCursos = useMemo(() => {
     let filtered = cursos;
-    if (activeTab !== "TODOS") {
-      filtered = filtered.filter((c) =>
-        activeTab === "PAGADO"
-          ? c.tipo.endsWith("PAGADO")
-          : c.tipo.endsWith("GRATIS")
-      );
+
+    // Aplicar filtros según la pestaña activa
+    switch (activeTab) {
+      case "ACTIVOS":
+        filtered = filtered.filter((c) => c.activo !== false);
+        break;
+      case "INACTIVOS":
+        filtered = filtered.filter((c) => c.activo === false);
+        break;
+      case "PAGADO":
+        filtered = filtered.filter((c) => c.precio > 0 && c.activo !== false);
+        break;
+      case "GRATIS":
+        filtered = filtered.filter((c) => c.precio === 0 && c.activo !== false);
+        break;
+      default:
+        break;
     }
+
+    // Aplicar filtro de búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -66,23 +157,31 @@ export default function VerTodosLosCursos() {
           c.titulo.toLowerCase().includes(term) ||
           (c.descripcion && c.descripcion.toLowerCase().includes(term)) ||
           (c.profesor &&
-            (`${c.profesor.nombres} ${c.profesor.apellidos}`.toLowerCase().includes(term)))
+            `${c.profesor.nombres} ${c.profesor.apellidos}`
+              .toLowerCase()
+              .includes(term))
       );
     }
-    setFilteredCursos(filtered);
+
+    return filtered;
   }, [cursos, activeTab, searchTerm]);
 
+  // ✅ HANDLERS MEMOIZADOS
+  const handleSearchChange = useCallback((e) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const handleTabChange = useCallback((tab) => {
+    setActiveTab(tab);
+    setSearchTerm(""); // Limpiar búsqueda al cambiar pestaña
+  }, []);
+
+  const handleRecargar = useCallback(() => {
+    recargarCursos(activeTab);
+  }, [recargarCursos, activeTab]);
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500"></div>
-          <div className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-            Cargando cursos...
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -93,107 +192,151 @@ export default function VerTodosLosCursos() {
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">TODOS LOS CURSOS</h1>
+              <h1 className="text-3xl font-bold mb-2">
+                {activeTab === "INACTIVOS"
+                  ? "CURSOS INACTIVOS"
+                  : activeTab === "TODOS"
+                  ? "TODOS LOS CURSOS"
+                  : "CURSOS ACTIVOS"}
+              </h1>
               <p className="text-blue-100">
-                Gestiona tus cursos y estudiantes aquí
+                {activeTab === "INACTIVOS"
+                  ? "Gestiona los cursos archivados"
+                  : activeTab === "TODOS"
+                  ? "Vista completa de todos los cursos"
+                  : "Gestiona y administra todos los cursos activos"}
               </p>
             </div>
-            <a
-              href="/admin/crear-curso"
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-blue-600 font-bold shadow-md hover:bg-gray-100 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors duration-200"
-            >
-              <FaPlus />
-              Crear nuevo curso
-            </a>
-          </div>
-        </div>
-        
-        <div className="flex flex-col lg:flex-row items-stretch gap-4">
-          {/* Search */}
-          <div className="relative flex-grow">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-            <input
-              type="text"
-              placeholder="Buscar cursos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-            />
-          </div>
-
-          {/* Contador */}
-          <div className="flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-xl border border-blue-200 dark:border-blue-700 whitespace-nowrap min-w-[120px] transition-colors duration-200">
-            <span className="text-blue-700 dark:text-blue-300 font-medium">
-              {filteredCursos.length} curso
-              {filteredCursos.length !== 1 ? "s" : ""}
-            </span>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleRecargar}
+                className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-colors duration-200 backdrop-blur-sm"
+              >
+                <FaSync className="text-sm" />
+                Recargar
+              </button>
+              <a
+                href="/admin/crear-curso"
+                className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 hover:bg-gray-100 rounded-xl font-semibold transition-colors duration-200"
+              >
+                <FaPlus className="text-sm" />
+                Crear Curso
+              </a>
+            </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-          <button
-            onClick={() => setActiveTab("PAGADO")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors duration-200 ${activeTab === "PAGADO"
-              ? "bg-blue-500 text-white shadow-md"
-              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-              }`}
-          >
-            <FaMoneyBillWave /> Pagados
-          </button>
+        {/* Barra de búsqueda */}
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FaSearch className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar cursos por título, descripción o profesor..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
 
+        {/* Pestañas de filtro */}
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
-            onClick={() => setActiveTab("GRATIS")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors duration-200 ${activeTab === "GRATIS"
-              ? "bg-green-500 text-white shadow-md"
-              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-              }`}
+            onClick={() => handleTabChange("ACTIVOS")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === "ACTIVOS"
+                ? "bg-blue-500 text-white shadow-lg"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            }`}
           >
-            <FaGraduationCap /> Gratuitos
+            <FaEye className="text-sm" />
+            Activos ({cursos.filter((c) => c.activo !== false).length})
           </button>
+          <button
+            onClick={() => handleTabChange("INACTIVOS")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === "INACTIVOS"
+                ? "bg-red-500 text-white shadow-lg"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            }`}
+          >
+            <FaArchive className="text-sm" />
+            Inactivos ({cursos.filter((c) => c.activo === false).length})
+          </button>
+          <button
+            onClick={() => handleTabChange("PAGADO")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === "PAGADO"
+                ? "bg-yellow-500 text-white shadow-lg"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            }`}
+          >
+            <FaMoneyBillWave className="text-sm" />
+            Premium
+          </button>
+          <button
+            onClick={() => handleTabChange("GRATIS")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === "GRATIS"
+                ? "bg-green-500 text-white shadow-lg"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            }`}
+          >
+            <FaGraduationCap className="text-sm" />
+            Gratuitos
+          </button>
+        </div>
+      </div>
 
-          <button
-            onClick={() => setActiveTab("TODOS")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors duration-200 ${activeTab === "TODOS"
-              ? "bg-gray-600 dark:bg-gray-500 text-white shadow-md"
-              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-              }`}
-          >
-            <FaFilter /> Todos
-          </button>
+      {/* Contador de resultados */}
+      <div className="mb-6">
+        <div className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-xl p-4 shadow-inner">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg px-4 py-2 shadow">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Mostrando
+                </span>
+                <span className="ml-2 font-bold text-blue-600 dark:text-blue-400">
+                  {filteredCursos.length}
+                </span>
+                <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                  de {cursos.length} cursos
+                </span>
+              </div>
+              {searchTerm && (
+                <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded-lg px-4 py-2 border border-yellow-200 dark:border-yellow-700">
+                  <span className="text-sm text-yellow-800 dark:text-yellow-300">
+                    Filtrado por: "{searchTerm}"
+                  </span>
+                </div>
+              )}
+            </div>
+            {filteredCursos.length > 0 && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Ordenado por: <strong>Más recientes primero</strong>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Grid de cursos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCursos.length === 0 ? (
-          <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-lg transition-colors duration-200">
-            <div className="text-6xl mb-4">📚</div>
-            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              {searchTerm
-                ? "No se encontraron cursos"
-                : "No hay cursos disponibles"}
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              {searchTerm
-                ? "Intenta con otros términos de búsqueda"
-                : "Crea tu primer curso"}
-            </p>
-            {!searchTerm && (
-              <a
-                href="/admin/crear-curso"
-                className="inline-flex items-center gap-2 mt-4 px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-200"
-              >
-                <FaPlus /> Crear curso
-              </a>
-            )}
-          </div>
-        ) : (
-          filteredCursos.map((curso) => (
-            <CursoCardAdmin key={curso.id} curso={curso} setCursos={setCursos} />
-          ))
-        )}
-      </div>
+      {filteredCursos.length === 0 ? (
+        <EmptyState activeTab={activeTab} searchTerm={searchTerm} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCursos.map((curso) => (
+            <CursoCardAdmin
+              key={curso.id}
+              curso={curso}
+              setCursos={() => recargarCursos(activeTab)}
+              showInactive={activeTab === "INACTIVOS"}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

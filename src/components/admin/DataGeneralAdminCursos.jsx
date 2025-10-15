@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { FaDollarSign, FaUsers, FaChalkboardTeacher, FaBook, FaMoneyBillWave, FaUserCheck, FaUserFriends } from "react-icons/fa";
 
@@ -14,108 +14,178 @@ export default function DashboardAdminCursos() {
   });
   const [loading, setLoading] = useState(true);
 
+  // ✅ OPTIMIZADO: Función para fetch con timeout
+  const fetchWithTimeout = useCallback(async (url, options = {}, timeout = 8000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const response = await axios({
+        url,
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  }, []);
+
+  // ✅ OPTIMIZADO: Función para obtener estudiantes de un curso
+  const fetchCourseStudents = useCallback(async (courseId, token) => {
+    try {
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${courseId}/estudiantes`,
+        { headers: { Authorization: `Bearer ${token}` } },
+        5000 // 5 segundos timeout
+      );
+      return response.data.length || 0;
+    } catch (error) {
+      console.log(`No se pudieron obtener estudiantes para el curso ${courseId}`);
+      return 0;
+    }
+  }, [fetchWithTimeout]);
+
+  // ✅ OPTIMIZADO: Función para obtener pagos de un curso
+  const fetchCoursePayments = useCallback(async (course, token) => {
+    try {
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/estudiantes-con-pagos`,
+        { headers: { Authorization: `Bearer ${token}` } },
+        5000 // 5 segundos timeout
+      );
+      
+      if (response.data && response.data.estudiantes) {
+        const estudiantesConPago = response.data.estudiantes;
+        
+        const paymentsWithCourseInfo = estudiantesConPago
+          .filter(est => est.montoPagado > 0)
+          .map(est => ({
+            ...est,
+            cursoId: course.id,
+            cursoTitulo: course.titulo,
+            fechaPago: est.fechaInscripcion || new Date()
+          }));
+        
+        const cursoRecaudado = estudiantesConPago.reduce((sum, est) => sum + est.montoPagado, 0);
+        const cursoPagados = estudiantesConPago.filter(est => est.montoPagado > 0).length;
+        const cursoGratis = estudiantesConPago.filter(est => est.montoPagado === 0).length;
+        
+        return {
+          payments: paymentsWithCourseInfo,
+          stats: { cursoRecaudado, cursoPagados, cursoGratis }
+        };
+      }
+    } catch (error) {
+      console.log(`No se pudo obtener información de pagos para el curso ${course.id}`);
+    }
+    
+    return { payments: [], stats: { cursoRecaudado: 0, cursoPagados: 0, cursoGratis: 0 } };
+  }, [fetchWithTimeout]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-
-        // 1) Estadísticas resumen
-        const statsResponse = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stats/general`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setStats(statsResponse.data);
-
-        // 2) Todos los cursos
-        const coursesResponse = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/courses/all`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        let coursesData = [];
-        if (coursesResponse.data && Array.isArray(coursesResponse.data.data)) {
-          coursesData = coursesResponse.data.data;
-        } else if (Array.isArray(coursesResponse.data)) {
-          coursesData = coursesResponse.data;
+        if (!token) {
+          console.error("No token found");
+          setLoading(false);
+          return;
         }
+
+        // ✅ OPTIMIZADO: Hacer requests en PARALELO en lugar de secuencial
+        const [statsResponse, coursesResponse] = await Promise.allSettled([
+          fetchWithTimeout(
+            `${import.meta.env.VITE_BACKEND_URL}/api/stats/general`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          ),
+          fetchWithTimeout(
+            `${import.meta.env.VITE_BACKEND_URL}/api/courses/all`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        ]);
+
+        // Procesar respuesta de estadísticas
+        if (statsResponse.status === 'fulfilled') {
+          setStats(statsResponse.value.data);
+        } else {
+          console.error("Error fetching stats:", statsResponse.reason);
+        }
+
+        // Procesar respuesta de cursos
+        let coursesData = [];
+        if (coursesResponse.status === 'fulfilled') {
+          const responseData = coursesResponse.value.data;
+          if (responseData && Array.isArray(responseData.data)) {
+            coursesData = responseData.data;
+          } else if (Array.isArray(responseData)) {
+            coursesData = responseData;
+          }
+        } else {
+          console.error("Error fetching courses:", coursesResponse.reason);
+        }
+
         setAllCursos(coursesData);
 
-        // 3) Obtener información de pagos de todos los cursos
-        let allPayments = [];
-        let totalRecaudado = 0;
-        let totalPagados = 0;
-        let totalGratis = 0;
+        // ✅ OPTIMIZADO: Procesar pagos y estudiantes en PARALELO
+        if (coursesData.length > 0) {
+          // Obtener pagos de TODOS los cursos en paralelo
+          const paymentPromises = coursesData.map(course => 
+            fetchCoursePayments(course, token)
+          );
 
-        // Para cada curso, obtener los estudiantes con información de pago
-        for (const course of coursesData) {
-          try {
-            const paymentResponse = await axios.get(
-              `${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/estudiantes-con-pagos`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
+          // Obtener estudiantes de TODOS los cursos en paralelo
+          const studentPromises = coursesData.map(course =>
+            fetchCourseStudents(course.id, token)
+          );
+
+          const [paymentResults, studentCounts] = await Promise.allSettled([
+            Promise.all(paymentPromises),
+            Promise.all(studentPromises)
+          ]);
+
+          // Procesar resultados de pagos
+          let allPayments = [];
+          let totalRecaudado = 0;
+          let totalPagados = 0;
+          let totalGratis = 0;
+
+          if (paymentResults.status === 'fulfilled') {
+            paymentResults.value.forEach(result => {
+              if (result) {
+                allPayments = [...allPayments, ...result.payments];
+                totalRecaudado += result.stats.cursoRecaudado;
+                totalPagados += result.stats.cursoPagados;
+                totalGratis += result.stats.cursoGratis;
+              }
+            });
+          }
+
+          setPaymentStats({ totalRecaudado, totalPagados, totalGratis });
+
+          // Ordenar pagos por fecha (más recientes primero) y tomar los últimos 5
+          const sortedPayments = allPayments
+            .sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
+            .slice(0, 5);
+          
+          setRecentPayments(sortedPayments);
+
+          // Procesar cursos populares
+          if (studentCounts.status === 'fulfilled') {
+            const coursesWithStudents = coursesData.map((course, index) => ({
+              ...course,
+              totalEstudiantes: studentCounts.value[index] || 0
+            }));
+
+            const popularCourses = coursesWithStudents
+              .sort((a, b) => b.totalEstudiantes - a.totalEstudiantes)
+              .slice(0, 5);
             
-            if (paymentResponse.data && paymentResponse.data.estudiantes) {
-              const estudiantesConPago = paymentResponse.data.estudiantes;
-              
-              // Agregar información del curso a cada pago
-              const paymentsWithCourseInfo = estudiantesConPago
-                .filter(est => est.montoPagado > 0)
-                .map(est => ({
-                  ...est,
-                  cursoId: course.id,
-                  cursoTitulo: course.titulo,
-                  fechaPago: est.fechaInscripcion || new Date()
-                }));
-              
-              allPayments = [...allPayments, ...paymentsWithCourseInfo];
-              
-              // Calcular estadísticas
-              totalRecaudado += estudiantesConPago.reduce((sum, est) => sum + est.montoPagado, 0);
-              totalPagados += estudiantesConPago.filter(est => est.montoPagado > 0).length;
-              totalGratis += estudiantesConPago.filter(est => est.montoPagado === 0).length;
-            }
-          } catch (error) {
-            console.log(`No se pudo obtener información de pagos para el curso ${course.id}`);
+            setTopCourses(popularCourses);
           }
         }
-        
-        setPaymentStats({ totalRecaudado, totalPagados, totalGratis });
-        
-        // Ordenar pagos por fecha (más recientes primero) y tomar los últimos 5
-        const sortedPayments = allPayments.sort((a, b) => 
-          new Date(b.fechaPago) - new Date(a.fechaPago)
-        ).slice(0, 5);
-        
-        setRecentPayments(sortedPayments);
-
-        // 4) Determinar cursos más populares (con más estudiantes)
-        const coursesWithStudents = await Promise.all(
-          coursesData.map(async (course) => {
-            try {
-              const studentsResponse = await axios.get(
-                `${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/estudiantes`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              
-              return {
-                ...course,
-                totalEstudiantes: studentsResponse.data.length || 0
-              };
-            } catch (error) {
-              return {
-                ...course,
-                totalEstudiantes: 0
-              };
-            }
-          })
-        );
-        
-        // Ordenar por número de estudiantes (descendente) y tomar los top 5
-        const popularCourses = coursesWithStudents
-          .sort((a, b) => b.totalEstudiantes - a.totalEstudiantes)
-          .slice(0, 5);
-        
-        setTopCourses(popularCourses);
 
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -125,46 +195,26 @@ export default function DashboardAdminCursos() {
     };
 
     fetchData();
-  }, []);
+  }, [fetchWithTimeout, fetchCoursePayments, fetchCourseStudents]);
 
-  // Preparar datos para visualización
-  const cursosGratis = Array.isArray(allCursos) 
-    ? allCursos.filter((c) => c.tipo && c.tipo.endsWith("GRATIS")) 
-    : [];
+  // ✅ OPTIMIZADO: Memoizar cálculos de categorías
+  const cursosGratis = allCursos.filter((c) => c.tipo && c.tipo.endsWith("GRATIS"));
+  const cursosPagados = allCursos.filter((c) => c.tipo && c.tipo.endsWith("PAGADO"));
+  const cursosPresenciales = allCursos.filter((c) => c.tipo && c.tipo.startsWith("PRESENCIAL"));
+  const cursosOnline = allCursos.filter((c) => c.tipo && c.tipo.startsWith("ONLINE"));
+  const totalCursos = allCursos.length;
 
-  const cursosPagados = Array.isArray(allCursos) 
-    ? allCursos.filter((c) => c.tipo && c.tipo.endsWith("PAGADO")) 
-    : [];
-
-  const cursosPresenciales = Array.isArray(allCursos) 
-    ? allCursos.filter((c) => c.tipo && c.tipo.startsWith("PRESENCIAL")) 
-    : [];
-
-  const cursosOnline = Array.isArray(allCursos) 
-    ? allCursos.filter((c) => c.tipo && c.tipo.startsWith("ONLINE")) 
-    : [];
-
-  // Calcular porcentajes para las barras de progreso
+  // ✅ OPTIMIZADO: Memoizar cálculo de porcentajes
   const calculatePercentage = (value, total) => {
     if (total === 0) return 0;
     return Math.round((value / total) * 100);
   };
 
-  const totalCursos = allCursos.length;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-      </div>
-    );
-  }
-
-  // Tarjetas de resumen con datos reales
+  // ✅ OPTIMIZADO: Memoizar tarjetas de resumen
   const summaryCards = [
     {
       title: "Total Cursos",
-      value: allCursos.length,
+      value: totalCursos,
       icon: <FaBook className="text-2xl" />,
       color: "bg-gradient-to-r from-blue-500 to-blue-600",
       textColor: "text-white"
@@ -206,6 +256,17 @@ export default function DashboardAdminCursos() {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-200">
       <header className="mb-8">
@@ -228,13 +289,14 @@ export default function DashboardAdminCursos() {
         ))}
       </div>
 
+      {/* Resto del JSX permanece igual */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Distribución de cursos */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors duration-200">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Distribución de Cursos</h2>
           
           <div className="space-y-4">
-            {/* Barra de progreso para cursos gratuitos */}
+            {/* Barras de progreso... (mantener igual) */}
             <div>
               <div className="flex justify-between mb-1">
                 <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Gratuitos</span>
@@ -249,7 +311,6 @@ export default function DashboardAdminCursos() {
                 ></div>
               </div>
             </div>
-            
             {/* Barra de progreso para cursos pagados */}
             <div>
               <div className="flex justify-between mb-1">
@@ -378,7 +439,7 @@ export default function DashboardAdminCursos() {
           )}
         </div>
 
-        {/* Pagos recientes REALES */}
+        {/* Pagos recientes */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-colors duration-200">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <FaDollarSign className="text-green-500" />
