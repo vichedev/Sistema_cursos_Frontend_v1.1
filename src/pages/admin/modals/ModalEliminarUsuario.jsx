@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 
 export default function ModalEliminarUsuario({
@@ -8,6 +8,17 @@ export default function ModalEliminarUsuario({
   loading,
   error,
 }) {
+  const [estadoEliminacion, setEstadoEliminacion] = useState("inicial"); // 'inicial', 'exito', 'advertencia'
+  const [mensajePersonalizado, setMensajePersonalizado] = useState("");
+
+  // Resetear estado cuando se abre el modal
+  useEffect(() => {
+    if (user && user.id) {
+      setEstadoEliminacion("inicial");
+      setMensajePersonalizado("");
+    }
+  }, [user]);
+
   if (!user || !user.id) {
     return (
       <Modal onClose={onClose}>
@@ -21,48 +32,153 @@ export default function ModalEliminarUsuario({
     );
   }
 
+  // En ModalEliminarUsuario.jsx - modificar handleConfirmDelete
   const handleConfirmDelete = async () => {
     try {
-      await onDelete(user);
-      // Mostrar mensaje de éxito
-      const userType = user.rol === "ADMIN" ? "profesor" : "estudiante";
+      const result = await onDelete(user);
 
-      // Crear un modal de éxito personalizado
-      const successModal = document.createElement("div");
-      successModal.className =
-        "fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50";
-      successModal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-4 max-w-sm w-full text-center shadow-xl">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
-            <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">¡Éxito!</h3>
-          <p class="text-gray-600 dark:text-gray-300 mb-4">${
-            userType.charAt(0).toUpperCase() + userType.slice(1)
-          } eliminado correctamente</p>
-          <button onclick="this.parentElement.parentElement.remove()" class="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors">
-            Aceptar
-          </button>
-        </div>
-      `;
-      document.body.appendChild(successModal);
+      // ✅ NUEVO: Verificar si la eliminación fue exitosa o si hay advertencia
+      if (result && result.success) {
+        // Éxito - mostrar estado de éxito
+        setEstadoEliminacion("exito");
 
-      // Auto-eliminar el modal después de 3 segundos
-      setTimeout(() => {
-        if (successModal.parentElement) {
-          successModal.remove();
-        }
-      }, 3000);
+        // Auto-cerrar después de 2 segundos
+        setTimeout(() => {
+          onClose();
+          // Recargar la lista de usuarios
+          if (window.location.reload) window.location.reload();
+        }, 2000);
+      } else {
+        // Mostrar advertencia (no se puede eliminar por relaciones)
+        setEstadoEliminacion("advertencia");
+        setMensajePersonalizado(
+          result?.message || error || "No se puede eliminar el usuario"
+        );
+      }
     } catch (err) {
-      // El error ya se maneja en el componente padre
-      console.error("Error al eliminar:", err);
+      // Manejar errores inesperados
+      setEstadoEliminacion("advertencia");
+      setMensajePersonalizado(
+        err.response?.data?.message || "Error interno del servidor"
+      );
     }
   };
 
   const userType = user.rol === "ADMIN" ? "profesor" : "estudiante";
 
+  // Renderizar estado de éxito
+  if (estadoEliminacion === "exito") {
+    return (
+      <Modal onClose={onClose}>
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4 shadow-md">
+            <svg
+              className="w-8 h-8 text-green-600 dark:text-green-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-green-700 dark:text-green-400">
+            ¡Éxito!
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
+            {userType === "profesor" ? "Profesor" : "Estudiante"} eliminado
+            correctamente
+          </p>
+        </div>
+
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-6 mb-6">
+          <p className="text-green-800 dark:text-green-200 text-center">
+            <span className="font-bold">
+              {user.nombres} {user.apellidos}
+            </span>{" "}
+            ha sido eliminado permanentemente del sistema.
+          </p>
+        </div>
+
+        <div className="flex justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors duration-200"
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+
+  // Renderizar estado de advertencia (no se puede eliminar)
+  if (estadoEliminacion === "advertencia") {
+    return (
+      <Modal onClose={onClose}>
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full mb-4 shadow-md">
+            <svg
+              className="w-8 h-8 text-yellow-600 dark:text-yellow-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+            No se puede eliminar
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
+            Información asociada encontrada
+          </p>
+        </div>
+
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-6 mb-6">
+          <p className="text-yellow-800 dark:text-yellow-200 text-center font-semibold mb-3">
+            {mensajePersonalizado ||
+              "No se puede eliminar el usuario porque tiene información asociada"}
+          </p>
+          <div className="text-yellow-700 dark:text-yellow-300 text-sm space-y-2">
+            <p>
+              📚 <strong>Cursos inscritos</strong>
+            </p>
+            <p>
+              🎫 <strong>Cupones utilizados</strong>
+            </p>
+            <p>
+              💳 <strong>Pagos realizados</strong>
+            </p>
+            <p className="text-xs mt-3">
+              Para eliminar este {userType}, primero debe eliminar o transferir
+              esta información.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-yellow-600 text-white font-semibold rounded-xl hover:bg-yellow-700 transition-colors duration-200"
+          >
+            Entendido
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+
+  // Renderizar estado inicial (confirmación de eliminación)
   return (
     <Modal onClose={onClose}>
       <div className="text-center mb-6">
@@ -119,6 +235,15 @@ export default function ModalEliminarUsuario({
             ? "El profesor y toda su información asociada será eliminada permanentemente."
             : "El estudiante y toda su información asociada será eliminada permanentemente."}
         </p>
+
+        {/* Información adicional sobre posibles restricciones */}
+        <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border">
+          <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+            ⚠️ <strong>Nota:</strong> Si el {userType} tiene cursos, cupones o
+            pagos asociados, no podrá ser eliminado y se mostrará una
+            advertencia.
+          </p>
+        </div>
       </div>
 
       <div className="flex space-x-4">

@@ -150,24 +150,47 @@ export default function UsuariosInscritos() {
     }
   };
 
+  // En UsuariosInscritos.jsx - modificar la función handleDeleteUser
   const handleDeleteUser = async (userToDelete) => {
     setModalLoading(true);
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(
+      const response = await axios.delete(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/${userToDelete.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      closeModal();
-      fetchUsuarios();
+
+      // ✅ NUEVO: Manejar la respuesta estructurada del backend
+      if (response.data && response.data.success) {
+        // Éxito - el backend retornó { success: true, message: "..." }
+        closeModal();
+        fetchUsuarios();
+        return { success: true, message: response.data.message };
+      } else {
+        // El backend no retornó la estructura esperada
+        return {
+          success: false,
+          message: response.data?.message || "Error al eliminar usuario",
+        };
+      }
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || "Error al eliminar usuario";
-      setModalError(errorMessage);
-      throw err;
+      // ✅ NUEVO: Manejar errores estructurados del backend
+      if (err.response?.data?.success === false) {
+        // El backend retornó { success: false, message: "..." }
+        const errorMessage =
+          err.response.data.message || "No se puede eliminar el usuario";
+        setModalError(errorMessage);
+        return { success: false, message: errorMessage };
+      } else {
+        // Error tradicional
+        const errorMessage =
+          err.response?.data?.message || "Error al eliminar usuario";
+        setModalError(errorMessage);
+        return { success: false, message: errorMessage };
+      }
     } finally {
       setModalLoading(false);
     }

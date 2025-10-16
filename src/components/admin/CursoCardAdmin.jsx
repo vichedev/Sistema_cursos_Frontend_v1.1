@@ -16,7 +16,8 @@ import {
   FaHistory,
   FaHourglassHalf,
   FaArchive,
-  FaUndo
+  FaUndo,
+  FaTrash,
 } from "react-icons/fa";
 
 // ✅ FUNCIONES OPTIMIZADAS (sin cambios)
@@ -92,7 +93,8 @@ const getCourseLaunchInfo = (curso) => {
     const weeks = Math.floor(daysDiff / 7);
     return {
       type: "weeks",
-      label: weeks === 1 ? "Lanzado hace 1 semana" : `Lanzado hace ${weeks} semanas`,
+      label:
+        weeks === 1 ? "Lanzado hace 1 semana" : `Lanzado hace ${weeks} semanas`,
       icon: FaHistory,
       color: "from-gray-500 to-slate-600",
       borderColor: "border-gray-300",
@@ -129,7 +131,10 @@ const parseDateString = (dateStr) => {
 
 const getTodayString = () => {
   const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(today.getDate()).padStart(2, "0")}`;
 };
 
 const isTodayCourse = (curso) => {
@@ -140,11 +145,13 @@ const isTodayCourse = (curso) => {
 const isTomorrowCourse = (curso) => {
   const fechaStr = parseDateString(curso.fecha);
   if (!fechaStr) return false;
-  
+
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
-  
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(
+    tomorrow.getMonth() + 1
+  ).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+
   return fechaStr === tomorrowStr;
 };
 
@@ -155,8 +162,12 @@ const getDaysUntilCourse = (curso) => {
   const [year, month, day] = fechaStr.split("-").map(Number);
   const courseDate = new Date(year, month - 1, day);
   const today = new Date();
-  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  
+  const todayDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
   const daysDiff = Math.round((courseDate - todayDate) / (1000 * 60 * 60 * 24));
   return daysDiff >= 0 ? daysDiff : null;
 };
@@ -166,15 +177,18 @@ const isUpcomingCourse = (curso) => {
   return daysUntil !== null && daysUntil >= 2 && daysUntil <= 7;
 };
 
-// ✅ MODAL MEMOIZADO
+// MODAL MEMOIZADO
 const DescriptionModal = React.memo(({ open, curso, onClose }) => {
   if (!open) return null;
 
-  const handleBackdropClick = useCallback((e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  }, [onClose]);
+  const handleBackdropClick = useCallback(
+    (e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   const handleContentClick = useCallback((e) => {
     e.stopPropagation();
@@ -232,7 +246,8 @@ const DescriptionModal = React.memo(({ open, curso, onClose }) => {
             </h3>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600 transition-colors duration-200">
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-                {curso.descripcion || "Este curso no tiene descripción disponible."}
+                {curso.descripcion ||
+                  "Este curso no tiene descripción disponible."}
               </p>
             </div>
           </div>
@@ -314,7 +329,7 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
       daysUntil,
       hasFewSpots,
       hasLimitedSpots,
-      LaunchIcon
+      LaunchIcon,
     };
   }, [curso]);
 
@@ -334,12 +349,18 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
 
     try {
       await axios.patch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${curso.id}/deactivate`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${
+          curso.id
+        }/deactivate`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCursos((prev) => prev.filter((c) => c.id !== curso.id));
-      Swal.fire("Archivado", "Curso movido a inactivos correctamente", "success");
+      Swal.fire(
+        "Archivado",
+        "Curso movido a inactivos correctamente",
+        "success"
+      );
     } catch (error) {
       console.error("Error al archivar curso:", error);
       Swal.fire("Error", "No se pudo archivar el curso", "error");
@@ -390,22 +411,82 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
     hasFewSpots,
     hasLimitedSpots,
     LaunchIcon,
-    isExpired
+    isExpired,
   } = courseData;
+
+  // En CursoCardAdmin.jsx - agregar esta función
+  const eliminarDefinitivamente = useCallback(async () => {
+    const confirm = await Swal.fire({
+      title: "¿ELIMINAR DEFINITIVAMENTE?",
+      html: `
+      <div class="text-left">
+        <p class="text-red-600 font-bold mb-3">⚠️ ESTA ACCIÓN NO SE PUEDE DESHACER</p>
+        <p class="mb-2">Se eliminará permanentemente:</p>
+        <ul class="list-disc list-inside text-sm space-y-1">
+          <li>El curso: <strong>"${curso.titulo}"</strong></li>
+          <li>Todos los cupones asociados al curso</li>
+          <li>Las inscripciones de estudiantes</li>
+          <li>Los registros de pagos relacionados</li>
+        </ul>
+        <p class="mt-3 text-red-600 font-semibold">¿Estás completamente seguro?</p>
+      </div>
+    `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "SÍ, ELIMINAR DEFINITIVAMENTE",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      background: "#fff",
+      color: "#333",
+      customClass: {
+        confirmButton: "swal2-confirm-danger",
+      },
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const response = await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${curso.id}/permanent`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setCursos((prev) => prev.filter((c) => c.id !== curso.id));
+        Swal.fire({
+          title: "✅ ELIMINADO",
+          text: response.data.message,
+          icon: "success",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire("Error", response.data.message, "error");
+      }
+    } catch (error) {
+      console.error("Error al eliminar curso definitivamente:", error);
+      const errorMessage =
+        error.response?.data?.message || "No se pudo eliminar el curso";
+      Swal.fire("Error", errorMessage, "error");
+    }
+  }, [curso.id, curso.titulo, token, setCursos]);
 
   // ✅ IMAGE ERROR HANDLER MEMOIZADO
   const handleImageError = useCallback((e) => {
-    e.target.src = "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop";
+    e.target.src =
+      "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop";
   }, []);
 
   return (
     <>
-      <div className={`group bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 ${
-        curso.activo === false 
-          ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20" 
-          : "border-gray-200 dark:border-gray-700"
-      } hover:shadow-2xl transition-all duration-300 flex flex-col relative overflow-hidden`}>
-        
+      <div
+        className={`group bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 ${
+          curso.activo === false
+            ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20"
+            : "border-gray-200 dark:border-gray-700"
+        } hover:shadow-2xl transition-all duration-300 flex flex-col relative overflow-hidden`}
+      >
         {/* ✅ ETIQUETA DE CURSO INACTIVO */}
         {curso.activo === false && (
           <div className="absolute top-2 left-2 z-20">
@@ -418,13 +499,31 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
 
         {/* ✅ ETIQUETA DINÁMICA DE LANZAMIENTO */}
         {launchInfo && curso.activo !== false && (
-          <div className={`absolute ${
-            launchInfo.type === "just-launched" ? "-top-2 -left-2" : "top-2 right-2"
-          } z-20`}>
-            <div className={`bg-gradient-to-r ${launchInfo.color} text-white px-4 py-2 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2 ${
-              launchInfo.animate
-            } ${launchInfo.borderColor ? `border-2 ${launchInfo.borderColor}` : ""}`}>
-              <LaunchIcon className={launchInfo.type === "just-launched" ? "text-yellow-300 animate-bounce" : ""} />
+          <div
+            className={`absolute ${
+              launchInfo.type === "just-launched"
+                ? "-top-2 -left-2"
+                : "top-2 right-2"
+            } z-20`}
+          >
+            <div
+              className={`bg-gradient-to-r ${
+                launchInfo.color
+              } text-white px-4 py-2 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2 ${
+                launchInfo.animate
+              } ${
+                launchInfo.borderColor
+                  ? `border-2 ${launchInfo.borderColor}`
+                  : ""
+              }`}
+            >
+              <LaunchIcon
+                className={
+                  launchInfo.type === "just-launched"
+                    ? "text-yellow-300 animate-bounce"
+                    : ""
+                }
+              />
               {launchInfo.label}
               {launchInfo.type === "just-launched" && (
                 <LaunchIcon className="text-yellow-300 animate-bounce" />
@@ -442,7 +541,9 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
             }
             alt={curso.titulo}
             className={`w-full h-48 object-cover rounded-t-2xl transition duration-300 ${
-              curso.activo === false ? "grayscale opacity-70" : "group-hover:brightness-90"
+              curso.activo === false
+                ? "grayscale opacity-70"
+                : "group-hover:brightness-90"
             }`}
             onError={handleImageError}
             loading="lazy"
@@ -450,11 +551,13 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
 
           {curso.activo !== false && (
             <div className="absolute top-12 left-2 flex flex-col gap-1">
-              <span className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md ${
-                curso.precio > 0
-                  ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white"
-                  : "bg-gradient-to-r from-sky-400 to-blue-500 text-white"
-              }`}>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-bold shadow-md ${
+                  curso.precio > 0
+                    ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white"
+                    : "bg-gradient-to-r from-sky-400 to-blue-500 text-white"
+                }`}
+              >
                 {curso.precio > 0 ? "🔥 PREMIUM" : "🎓 GRATUITO"}
               </span>
 
@@ -472,12 +575,17 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
                 </span>
               )}
 
-              {isUpcoming && daysUntil !== null && daysUntil >= 2 && daysUntil <= 7 && !isToday && !isTomorrow && (
-                <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold shadow-md flex items-center gap-1">
-                  <FaCalendarAlt />
-                  EN {daysUntil} DÍA{daysUntil !== 1 ? "S" : ""}
-                </span>
-              )}
+              {isUpcoming &&
+                daysUntil !== null &&
+                daysUntil >= 2 &&
+                daysUntil <= 7 &&
+                !isToday &&
+                !isTomorrow && (
+                  <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold shadow-md flex items-center gap-1">
+                    <FaCalendarAlt />
+                    EN {daysUntil} DÍA{daysUntil !== 1 ? "S" : ""}
+                  </span>
+                )}
 
               {hasFewSpots && !isExpired && (
                 <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-purple-600 to-pink-700 text-white font-bold shadow-md flex items-center gap-1 animate-pulse">
@@ -507,20 +615,23 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
         </div>
 
         <div className="flex-1 flex flex-col justify-between p-6">
-          <h3 className={`text-xl font-bold mb-3 ${
-            curso.activo === false 
-              ? "text-gray-500 dark:text-gray-400 line-through" 
-              : "text-gray-900 dark:text-white"
-          }`}>
+          <h3
+            className={`text-xl font-bold mb-3 ${
+              curso.activo === false
+                ? "text-gray-500 dark:text-gray-400 line-through"
+                : "text-gray-900 dark:text-white"
+            }`}
+          >
             {curso.titulo}
           </h3>
-
           <div className="mb-4">
-            <p className={`line-clamp-3 mb-3 ${
-              curso.activo === false 
-                ? "text-gray-400 dark:text-gray-500" 
-                : "text-gray-700 dark:text-gray-300"
-            }`}>
+            <p
+              className={`line-clamp-3 mb-3 ${
+                curso.activo === false
+                  ? "text-gray-400 dark:text-gray-500"
+                  : "text-gray-700 dark:text-gray-300"
+              }`}
+            >
               {curso.descripcion || "Sin descripción disponible."}
             </p>
             <button
@@ -531,7 +642,6 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
               <span>Ver descripción completa</span>
             </button>
           </div>
-
           {curso.profesor && (
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="inline-block px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-200 dark:border-blue-700">
@@ -542,7 +652,6 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
               </span>
             </div>
           )}
-
           <div className="flex justify-between items-center mb-5">
             {curso.precio > 0 && (
               <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20 text-yellow-800 dark:text-yellow-300 text-base font-bold border border-yellow-300 dark:border-yellow-600">
@@ -550,9 +659,13 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
               </span>
             )}
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              <span className="font-medium">📅 {curso.fecha || "Por definir"}</span>
+              <span className="font-medium">
+                📅 {curso.fecha || "Por definir"}
+              </span>
               {" | "}
-              <span className="font-medium">⏰ {curso.hora || "Por definir"}</span>
+              <span className="font-medium">
+                ⏰ {curso.hora || "Por definir"}
+              </span>
             </div>
           </div>
 
@@ -573,6 +686,14 @@ function CursoCardAdmin({ curso, setCursos, showInactive = false }) {
                   <span className="text-xs sm:text-sm">👥</span>
                   <span className="truncate">Ver Inscritos</span>
                 </Link>
+                {/* ✅ NUEVO BOTÓN ELIMINAR DEFINITIVAMENTE */}
+                <button
+                  onClick={eliminarDefinitivamente}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-red-700 to-red-800 text-white font-semibold shadow-lg hover:from-red-800 hover:to-red-900 transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 flex-1 min-w-0 text-sm sm:text-base border-2 border-red-500"
+                >
+                  <FaTrash className="text-xs sm:text-sm" />
+                  <span className="truncate">Eliminar Definitivamente</span>
+                </button>
               </>
             ) : (
               <>

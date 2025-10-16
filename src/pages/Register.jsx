@@ -283,15 +283,38 @@ export default function Register() {
       if (backendErrors.length > 0) {
         const firstError = backendErrors[0];
         Swal.fire({
-          title: "Error de validación",
-          text: `${firstError.property}: ${firstError.message}`,
-          icon: "error",
-          confirmButtonText: "Aceptar",
+          title: "¡Registro Exitoso! ✅",
+          html: `
+    <div style="text-align: left;">
+      <p style="margin-bottom: 15px;">${
+        res.data.message || "Usuario registrado correctamente."
+      }</p>
+      <div style="background: rgba(248, 249, 250, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; backdrop-filter: blur(10px);">
+        <strong style="display: block; margin-bottom: 10px;">📧 Proceso de verificación:</strong>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li style="margin-bottom: 5px;">Revisa tu bandeja de entrada en los próximos segundos</li>
+          <li style="margin-bottom: 5px;">Busca el correo de <strong>"Cursos MAAT - Verificación"</strong></li>
+          <li style="margin-bottom: 5px;">Haz clic en el botón de verificación</li>
+          <li>¡Listo! Podrás iniciar sesión</li>
+        </ul>
+      </div>
+      <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
+        <em>¿No ves el correo? Revisa la carpeta de spam.</em>
+      </p>
+    </div>
+  `,
+          icon: "success",
+          timer: 8000,
+          showConfirmButton: true,
+          confirmButtonText: "Entendido",
           customClass: {
-            popup: "swal2-modern dark:bg-gray-800",
-            title: "swal2-title-custom dark:text-white",
-            htmlContainer: "swal2-html-container-custom dark:text-gray-300",
+            popup: "swal2-modern",
+            title: "swal2-title-custom",
+            htmlContainer: "swal2-html-container-custom",
+            confirmButton: "swal2-confirm-custom",
           },
+        }).then(() => {
+          navigate("/login");
         });
       }
     }
@@ -327,58 +350,85 @@ export default function Register() {
           popup: "swal2-modern dark:bg-gray-800",
           title: "swal2-title-custom dark:text-white",
           htmlContainer: "swal2-html-container-custom dark:text-gray-300",
+          confirmButton: "swal2-confirm-custom",
         },
       });
       setIsLoading(false);
       return;
     }
 
-    // ✅ CORREGIDO: Definir timeoutId aquí
     let timeoutId;
 
     try {
-      // ✅ OPTIMIZACIÓN: Timeout de 10 segundos y AbortController para mayor velocidad
+      // ✅ AUMENTAR TIMEOUT A 30 SEGUNDOS
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos máximo
+      timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos máximo
 
       // ✅ APLICAR SANITIZACIÓN FINAL ANTES DE ENVIAR
       const formDataToSend = {
         ...form,
-        nombres: sanitizeName(form.nombres), // ✅ Sanitizar nombres al enviar
-        apellidos: sanitizeName(form.apellidos), // ✅ Sanitizar apellidos al enviar
+        nombres: sanitizeName(form.nombres),
+        apellidos: sanitizeName(form.apellidos),
         empresa: form.empresa ? sanitizeInput(form.empresa) : form.empresa,
       };
+
+      console.log("📤 Enviando registro...");
 
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/register`,
         formDataToSend,
         {
           signal: controller.signal,
-          timeout: 10000, // Timeout adicional
+          timeout: 30000,
         }
       );
 
       clearTimeout(timeoutId);
+      console.log("✅ Respuesta del backend:", res.data);
 
-      Swal.fire({
-        title: "¡Registro exitoso!",
-        text:
-          res.data.message ||
-          "Ahora verifica tu correo electrónico para activar tu cuenta.",
-        icon: "success",
-        timer: 3000,
-        showConfirmButton: true,
-        customClass: {
-          popup: "swal2-modern dark:bg-gray-800",
-          title: "swal2-title-custom dark:text-white",
-          htmlContainer: "swal2-html-container-custom dark:text-gray-300",
-        },
-      }).then(() => {
-        navigate("/login");
-      });
+      // ✅ VERIFICAR SI LA RESPUESTA TIENE success O message
+      if (res.data.success || res.data.message) {
+        Swal.fire({
+          title: "¡Registro Exitoso! ✅",
+          html: `
+      <div style="color: inherit;">
+        <p style="margin-bottom: 15px; color: inherit;">${
+          res.data.message || "Usuario registrado correctamente."
+        }</p>
+        <div style="background: transparent; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; color: inherit;">
+          <strong style="color: inherit;">📧 Proceso de verificación:</strong>
+          <ul style="margin: 10px 0; padding-left: 20px; color: inherit;">
+            <li style="color: inherit;">Revisa tu bandeja de entrada en los próximos segundos</li>
+            <li style="color: inherit;">Busca el correo de <strong style="color: inherit;">"Cursos MAAT - Verificación"</strong></li>
+            <li style="color: inherit;">Haz clic en el botón de verificación</li>
+            <li style="color: inherit;">¡Listo! Podrás iniciar sesión</li>
+          </ul>
+        </div>
+        <p style="margin-top: 15px; font-size: 14px; opacity: 0.8; color: inherit;">
+          <em>¿No ves el correo? Revisa la carpeta de spam.</em>
+        </p>
+      </div>
+    `,
+          icon: "success",
+          timer: 8000,
+          showConfirmButton: true,
+          confirmButtonText: "Entendido",
+          customClass: {
+            popup: "swal2-modern",
+            title: "swal2-title-custom",
+            htmlContainer: "swal2-html-container-custom",
+          },
+        }).then(() => {
+          navigate("/login");
+        });
+      } else {
+        throw new Error("Respuesta del servidor inválida");
+      }
     } catch (err) {
-      // ✅ CORREGIDO: Usar timeoutId definido en el scope correcto
       if (timeoutId) clearTimeout(timeoutId);
+
+      console.log("🔴 Error en frontend:", err);
+      console.log("🔴 Response data:", err.response?.data);
 
       if (err.name === "AbortError" || err.code === "ECONNABORTED") {
         Swal.fire({
@@ -390,65 +440,86 @@ export default function Register() {
             popup: "swal2-modern dark:bg-gray-800",
             title: "swal2-title-custom dark:text-white",
             htmlContainer: "swal2-html-container-custom dark:text-gray-300",
+            confirmButton: "swal2-confirm-custom",
           },
         });
         setIsLoading(false);
         return;
       }
 
-      // ✅ MANEJO MEJORADO DE ERRORES DEL BACKEND
+      // ✅ CORREGIDO: AHORA SÍ USAMOS handleBackendErrors
       if (err.response?.status === 400) {
         handleBackendErrors(err.response);
       } else {
-        // Manejar errores específicos del backend
-        const errorMessage =
-          err.response?.data?.message || "Error al registrar";
+        // Manejo de otros errores
+        const errorResponse = err.response?.data;
 
-        if (
-          errorMessage.includes("correo") ||
-          errorMessage.includes("Correo")
-        ) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            correo: "Este correo ya está registrado.",
-          }));
-        } else if (
-          errorMessage.includes("usuario") ||
-          errorMessage.includes("Usuario")
-        ) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            usuario: "Este usuario ya está en uso.",
-          }));
-        } else if (
-          errorMessage.includes("cédula") ||
-          errorMessage.includes("cedula")
-        ) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            cedula: "Esta cédula ya está registrada.",
-          }));
-        } else if (
-          errorMessage.includes("celular") ||
-          errorMessage.includes("teléfono")
-        ) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            celular: "Este celular ya está registrado.",
-          }));
+        if (errorResponse?.message) {
+          // Verificar si es un error de duplicado
+          if (
+            errorResponse.message.includes("ya existe") ||
+            errorResponse.message.includes("ya está") ||
+            errorResponse.message.includes("duplicad")
+          ) {
+            // Mapear errores a campos específicos
+            if (errorResponse.message.includes("Usuario")) {
+              setFieldErrors((prev) => ({
+                ...prev,
+                usuario: errorResponse.message,
+              }));
+            } else if (errorResponse.message.includes("Correo")) {
+              setFieldErrors((prev) => ({
+                ...prev,
+                correo: errorResponse.message,
+              }));
+            } else if (errorResponse.message.includes("Cédula")) {
+              setFieldErrors((prev) => ({
+                ...prev,
+                cedula: errorResponse.message,
+              }));
+            } else {
+              Swal.fire({
+                title: "Error de registro",
+                text: errorResponse.message,
+                icon: "error",
+                confirmButtonText: "Aceptar",
+                customClass: {
+                  popup: "swal2-modern dark:bg-gray-800",
+                  title: "swal2-title-custom dark:text-white",
+                  htmlContainer:
+                    "swal2-html-container-custom dark:text-gray-300",
+                  confirmButton: "swal2-confirm-custom",
+                },
+              });
+            }
+          } else {
+            Swal.fire({
+              title: "Error de registro",
+              text: errorResponse.message,
+              icon: "error",
+              confirmButtonText: "Aceptar",
+              customClass: {
+                popup: "swal2-modern dark:bg-gray-800",
+                title: "swal2-title-custom dark:text-white",
+                htmlContainer: "swal2-html-container-custom dark:text-gray-300",
+                confirmButton: "swal2-confirm-custom",
+              },
+            });
+          }
+        } else {
+          Swal.fire({
+            title: "Error de registro",
+            text: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente.",
+            icon: "error",
+            confirmButtonText: "Aceptar",
+            customClass: {
+              popup: "swal2-modern dark:bg-gray-800",
+              title: "swal2-title-custom dark:text-white",
+              htmlContainer: "swal2-html-container-custom dark:text-gray-300",
+              confirmButton: "swal2-confirm-custom",
+            },
+          });
         }
-
-        Swal.fire({
-          title: "Error",
-          html: errorMessage,
-          icon: "error",
-          confirmButtonText: "Aceptar",
-          customClass: {
-            popup: "swal2-modern dark:bg-gray-800",
-            title: "swal2-title-custom dark:text-white",
-            htmlContainer: "swal2-html-container-custom dark:text-gray-300",
-          },
-        });
       }
     } finally {
       setIsLoading(false);
@@ -796,12 +867,14 @@ export default function Register() {
           animation-delay: 2s;
         }
 
+        /* MODALES SWEETALERT2 - FORZAR HERENCIA DE COLORES */
         .swal2-modern {
           border-radius: 1.5rem !important;
           box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
             0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
           padding: 2rem !important;
           background: white !important;
+          color: #1a202c !important;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -811,29 +884,36 @@ export default function Register() {
           }
         }
 
+        /* FORZAR QUE TODO EL CONTENIDO HEREDE LOS COLORES */
+        .swal2-modern * {
+          color: inherit !important;
+        }
+
         .swal2-title-custom {
           font-size: 1.875rem !important;
           font-weight: 700 !important;
-          color: #1a202c !important;
+          color: inherit !important;
           margin-bottom: 0.5rem !important;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          .swal2-title-custom {
-            color: white !important;
-          }
         }
 
         .swal2-html-container-custom {
           font-size: 1.125rem !important;
-          color: #4a5568 !important;
+          color: inherit !important;
           line-height: 1.5 !important;
         }
 
-        @media (prefers-color-scheme: dark) {
-          .swal2-html-container-custom {
-            color: #d1d5db !important;
-          }
+        /* ESTILOS ESPECÍFICOS PARA EL CONTENEDOR DE INFORMACIÓN */
+        .swal2-html-container-custom div {
+          background: transparent !important;
+        }
+
+        .swal2-html-container-custom ul {
+          margin: 10px 0 !important;
+          padding-left: 20px !important;
+        }
+
+        .swal2-html-container-custom li {
+          margin-bottom: 5px !important;
         }
 
         .swal2-success .swal2-success-ring {
