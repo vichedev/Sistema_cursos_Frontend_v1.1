@@ -129,7 +129,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-center md:text-left">
               <p className="text-gray-500 text-sm">
-                © {new Date().getFullYear()} MAAT ACADEMY. Todos los derechos
+                © {new Date().getFullYear()} MAAT ACADEMY!. Todos los derechos
                 reservados.
               </p>
             </div>
