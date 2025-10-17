@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const PayphoneButton = ({ curso, userId, onSuccess, onError }) => {
+const PayphoneButton = ({ curso, onSuccess, onError }) => { // ❌ ELIMINAR userId prop
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,10 +15,6 @@ const PayphoneButton = ({ curso, userId, onSuccess, onError }) => {
         throw new Error('Información del curso no disponible');
       }
 
-      if (!userId) {
-        throw new Error('Usuario no autenticado');
-      }
-
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('Token de autenticación no encontrado');
@@ -26,7 +22,10 @@ const PayphoneButton = ({ curso, userId, onSuccess, onError }) => {
 
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/payments/create-payphone-payment`,
-        { cursoId: curso.id, userId },
+        { 
+          cursoId: curso.id, 
+          // ❌ ELIMINAR userId del body - el backend lo obtiene del token
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -57,8 +56,9 @@ const PayphoneButton = ({ curso, userId, onSuccess, onError }) => {
       <button
         onClick={handlePayment}
         disabled={loading}
-        className={`px-6 py-2 rounded-xl font-semibold text-white ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-blue-700'
-          }`}
+        className={`px-6 py-2 rounded-xl font-semibold text-white ${
+          loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-blue-700'
+        }`}
       >
         {loading ? 'Procesando...' : `Pagar $${curso?.precio || 0}`}
       </button>

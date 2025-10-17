@@ -24,760 +24,39 @@ import {
   FaEye,
   FaTimes,
   FaChevronDown,
-  FaGift, // ✅ NUEVO ICONO PARA CUPONES
-  FaTag, // ✅ NUEVO ICONO PARA DESCUENTOS
-  FaPercentage, // ✅ NUEVO ICONO PARA PORCENTAJES
+  FaGift,
+  FaTag,
+  FaPercentage,
   FaCheck,
 } from "react-icons/fa";
 import { isCourseExpired } from "../../utils/dateUtils";
 
-// ✅ ORDENAMIENTO - CURSOS NUEVOS SIEMPRE PRIMERO
-const sortCoursesByRelevance = (cursos) => {
-  return cursos.sort((a, b) => {
-    const dateA = new Date(a.createdAt || 0);
-    const dateB = new Date(b.createdAt || 0);
-    return dateB - dateA;
-  });
-};
+// ✅ RUTAS CORREGIDAS - USA RUTAS RELATIVAS DESDE TU ESTRUCTURA
+import {
+  sortCoursesByRelevance,
+  getCourseLaunchInfo,
+} from "./utils/courseSorting"; // ← ./utils/ porque están en la misma carpeta
 
-// ✅ FUNCIONES MEJORADAS PARA DETECCIÓN DE CURSOS NUEVOS
-const getCourseLaunchInfo = (curso) => {
-  if (!curso.createdAt) return null;
+import {
+  isTodayCourse,
+  isTomorrowCourse,
+  isUpcomingCourse,
+  getDaysUntilCourse,
+} from "./utils/courseDates"; // ← ./utils/
 
-  try {
-    const courseDate = new Date(curso.createdAt);
-    const now = new Date();
-    const hoursDiff = (now - courseDate) / (1000 * 60 * 60);
-    const daysDiff = Math.floor(hoursDiff / 24);
+import {
+  releaseCouponReservation,
+  forceReleaseCoupon,
+} from "./utils/couponUtils"; // ← ./utils/
 
-    // Menos de 6 horas
-    if (hoursDiff < 6) {
-      return {
-        type: "just-launched",
-        label: "¡RECIÉN LANZADO!",
-        icon: FaBolt,
-        color: "from-green-500 to-emerald-600",
-        borderColor: "border-yellow-300",
-        animate: "animate-pulse",
-        hours: Math.floor(hoursDiff),
-      };
-    }
-
-    // Menos de 24 horas
-    if (hoursDiff < 24) {
-      return {
-        type: "today",
-        label: `Lanzado hace ${Math.floor(hoursDiff)}h`,
-        icon: FaRocket,
-        color: "from-blue-500 to-cyan-600",
-        borderColor: "border-blue-300",
-        animate: "",
-        hours: Math.floor(hoursDiff),
-      };
-    }
-
-    // 1 día
-    if (daysDiff === 1) {
-      return {
-        type: "yesterday",
-        label: "Lanzado hace 1 día",
-        icon: FaStar,
-        color: "from-purple-500 to-indigo-600",
-        borderColor: "border-purple-300",
-        animate: "",
-        days: 1,
-      };
-    }
-
-    // 2-3 días
-    if (daysDiff >= 2 && daysDiff <= 3) {
-      return {
-        type: "recent",
-        label: `Lanzado hace ${daysDiff} días`,
-        icon: FaStar,
-        color: "from-indigo-500 to-purple-600",
-        borderColor: "border-indigo-300",
-        animate: "",
-        days: daysDiff,
-      };
-    }
-
-    // 4-7 días (una semana)
-    if (daysDiff >= 4 && daysDiff <= 7) {
-      return {
-        type: "week",
-        label: `Lanzado hace ${daysDiff} días`,
-        icon: FaCalendarAlt,
-        color: "from-orange-500 to-amber-600",
-        borderColor: "border-orange-300",
-        animate: "",
-        days: daysDiff,
-      };
-    }
-
-    // 1-2 semanas
-    if (daysDiff >= 8 && daysDiff <= 14) {
-      const weeks = Math.floor(daysDiff / 7);
-      return {
-        type: "weeks",
-        label:
-          weeks === 1
-            ? "Lanzado hace 1 semana"
-            : `Lanzado hace ${weeks} semanas`,
-        icon: FaHistory,
-        color: "from-gray-500 to-slate-600",
-        borderColor: "border-gray-300",
-        animate: "",
-        days: daysDiff,
-      };
-    }
-
-    // Más de 2 semanas
-    if (daysDiff > 14) {
-      const weeks = Math.floor(daysDiff / 7);
-      return {
-        type: "old",
-        label: `Lanzado hace ${weeks} semanas`,
-        icon: FaHistory,
-        color: "from-gray-400 to-gray-500",
-        borderColor: "border-gray-200",
-        animate: "",
-        days: daysDiff,
-      };
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-};
-
-// ✅ FUNCIONES PARA FECHAS DEL CURSO (100% PRECISAS)
-const isTodayCourse = (curso) => {
-  if (!curso.fecha) return false;
-  try {
-    const fechaStr = curso.fecha.split("T")[0];
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(
-      today.getMonth() + 1
-    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    return fechaStr === todayStr;
-  } catch {
-    return false;
-  }
-};
-
-// ===============================
-// ✅ FUNCIÓN PARA LIBERAR RESERVA DE CUPÓN (MEJORADA)
-// ===============================
-const releaseCouponReservation = async (reservationId) => {
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.post(
-      `${
-        import.meta.env.VITE_BACKEND_URL
-      }/api/payments/release-coupon-reservation`,
-      {
-        reservationId,
-        userId,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    console.log("✅ Cupón liberado correctamente");
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error("Error liberando cupón:", error);
-
-    // Si el error es que la reserva ya no existe, igual consideramos éxito
-    if (
-      error.response?.data?.message?.includes("no encontrada") ||
-      error.response?.data?.message?.includes("ya fue procesada")
-    ) {
-      console.log("ℹ️ La reserva ya estaba liberada");
-      return { success: true };
-    }
-
-    return {
-      success: false,
-      error: error.response?.data?.message || "Error al liberar cupón",
-    };
-  }
-};
-
-// ===============================
-// ✅ FUNCIÓN PARA FORZAR LIBERACIÓN DE CUPÓN
-// ===============================
-const forceReleaseCoupon = async (codigoCupon) => {
-  const token = localStorage.getItem("token");
-  try {
-    // Primero verificar el estado actual del cupón
-    const verification = await verifyCoupon(appliedCoupon.cursoId, codigoCupon);
-
-    if (
-      !verification.success &&
-      verification.error.includes("reserva pendiente")
-    ) {
-      // El cupón sigue reservado, intentar liberarlo manualmente
-      console.log("🔄 Intentando liberar cupón manualmente...");
-
-      // Aquí necesitarías un endpoint específico para liberar por código
-      // Por ahora, simplemente limpiamos el estado local
-      setAppliedCoupon(null);
-
-      Swal.fire({
-        title: "Cupón liberado",
-        text: "El cupón ha sido liberado manualmente. Puedes intentarlo nuevamente.",
-        icon: "success",
-        background: document.documentElement.classList.contains("dark")
-          ? "#1f2937"
-          : "#ffffff",
-        color: document.documentElement.classList.contains("dark")
-          ? "#ffffff"
-          : "#000000",
-      });
-
-      return { success: true };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error forzando liberación:", error);
-    // En caso de error, al menos limpiamos el estado local
-    setAppliedCoupon(null);
-    return { success: true };
-  }
-};
-
-const isTomorrowCourse = (curso) => {
-  if (!curso.fecha) return false;
-  try {
-    const fechaStr = curso.fecha.split("T")[0];
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = `${tomorrow.getFullYear()}-${String(
-      tomorrow.getMonth() + 1
-    ).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
-    return fechaStr === tomorrowStr;
-  } catch {
-    return false;
-  }
-};
-
-const isUpcomingCourse = (curso) => {
-  if (!curso.fecha) return false;
-  try {
-    const fechaStr = curso.fecha.split("T")[0];
-    const [year, month, day] = fechaStr.split("-").map(Number);
-    const courseDate = new Date(year, month - 1, day);
-    const today = new Date();
-    const todayDate = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const daysDiff = Math.round(
-      (courseDate - todayDate) / (1000 * 60 * 60 * 24)
-    );
-    return daysDiff >= 2 && daysDiff <= 7;
-  } catch {
-    return false;
-  }
-};
-
-const getDaysUntilCourse = (curso) => {
-  if (!curso.fecha) return null;
-  try {
-    const fechaStr = curso.fecha.split("T")[0];
-    const [year, month, day] = fechaStr.split("-").map(Number);
-    const courseDate = new Date(year, month - 1, day);
-    const today = new Date();
-    const todayDate = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const daysDiff = Math.round(
-      (courseDate - todayDate) / (1000 * 60 * 60 * 24)
-    );
-    return daysDiff >= 0 ? daysDiff : null;
-  } catch {
-    return null;
-  }
-};
-
-// ✅ MODAL PARA IMAGEN
-function ImageModal({ open, src, alt, onClose }) {
-  if (!open) return null;
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/80"
-      onClick={onClose}
-    >
-      <img
-        src={src}
-        alt={alt}
-        className="max-w-[90vw] max-h-[90vh] rounded-3xl shadow-2xl border-4 border-white dark:border-gray-700"
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
-  );
-}
-
-// ✅ NUEVO MODAL PARA DESCRIPCIÓN COMPLETA
-function DescriptionModal({ open, curso, onClose }) {
-  if (!open) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/80 p-2 md:p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] md:max-h-[90vh] overflow-hidden transition-colors duration-200 flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header del Modal - MEJORADO PARA MÓVIL */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-6 text-white relative flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 md:top-4 md:right-4 text-white hover:text-gray-200 transition-colors bg-black/20 rounded-full p-1"
-          >
-            <FaTimes className="text-lg md:text-xl" />
-          </button>
-          <h2 className="text-xl md:text-2xl font-bold mb-2 pr-10 md:pr-8 line-clamp-2">
-            {curso.titulo || "Curso sin título"}
-          </h2>
-          <div className="flex flex-wrap gap-1 md:gap-2">
-            {curso.profesorNombre && (
-              <span className="bg-white/20 px-2 py-1 rounded-full text-xs md:text-sm">
-                👨‍🏫 {curso.profesorNombre}
-              </span>
-            )}
-            {curso.asignatura && (
-              <span className="bg-white/20 px-2 py-1 rounded-full text-xs md:text-sm">
-                📚 {curso.asignatura}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Contenido del Modal - MEJORADO PARA MÓVIL */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mb-4 md:mb-6">
-            <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-2 md:mb-3 flex items-center gap-2">
-              <FaEye className="text-blue-500 dark:text-blue-400 text-sm md:text-base" />
-              Descripción Completa del Curso
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 md:p-4 border border-gray-200 dark:border-gray-600 transition-colors duration-200">
-              <div className="max-h-[30vh] md:max-h-[40vh] overflow-y-auto">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line text-sm md:text-base">
-                  {curso.descripcion ||
-                    "Este curso no tiene descripción disponible."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Información adicional - MEJORADA PARA MÓVIL */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
-            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 border border-blue-200 dark:border-blue-700 transition-colors duration-200">
-              <div className="font-semibold text-blue-800 dark:text-blue-300 mb-1">
-                📅 Fecha del Curso
-              </div>
-              <div className="text-blue-700 dark:text-blue-400">
-                {curso.fecha || "Por definir"}
-              </div>
-            </div>
-            <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 border border-green-200 dark:border-green-700 transition-colors duration-200">
-              <div className="font-semibold text-green-800 dark:text-green-300 mb-1">
-                ⏰ Horario
-              </div>
-              <div className="text-green-700 dark:text-green-400">
-                {curso.hora || "Por definir"}
-              </div>
-            </div>
-            <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 border border-purple-200 dark:border-purple-700 transition-colors duration-200">
-              <div className="font-semibold text-purple-800 dark:text-purple-300 mb-1">
-                🎯 Cupos Disponibles
-              </div>
-              <div className="text-purple-700 dark:text-purple-400">
-                {curso.cupos || 0} cupos
-              </div>
-            </div>
-            <div className="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 border border-orange-200 dark:border-orange-700 transition-colors duration-200">
-              <div className="font-semibold text-orange-800 dark:text-orange-300 mb-1">
-                💰 Precio
-              </div>
-              <div className="text-orange-700 dark:text-orange-400">
-                {curso.precio > 0 ? `$${curso.precio} USD` : "Gratuito"}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer del Modal - SIEMPRE VISIBLE */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-3 md:p-4 bg-gray-50 dark:bg-gray-700 transition-colors duration-200 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-2 md:py-3 rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-200 text-sm md:text-base"
-          >
-            Cerrar Descripción
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ✅ COMPONENTE DROPDOWN PARA FILTROS - VERSIÓN MEJORADA PARA MÓVIL
-function FilterDropdown({ activeTab, setActiveTab, counts, mobile = false }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const filterOptions = [
-    {
-      key: "RELEVANTES",
-      label: "Más Relevantes",
-      icon: FaFire,
-      color: "from-purple-500 to-blue-500",
-      count: counts.justLaunchedCount,
-    },
-    {
-      key: "PAGADO",
-      label: "Premium",
-      icon: FaMoneyBillWave,
-      color: "from-yellow-500 to-orange-500",
-      count: counts.paidCoursesCount,
-    },
-    {
-      key: "GRATIS",
-      label: "Gratuitos",
-      icon: FaGraduationCap,
-      color: "from-green-500 to-emerald-500",
-      count: counts.freeCoursesCount,
-    },
-    {
-      key: "FINALIZADOS",
-      label: "Finalizados",
-      icon: FaTimesCircle,
-      color: "from-red-500 to-pink-500",
-      count: counts.expiredCoursesCount,
-    },
-    {
-      key: "TODOS",
-      label: "Ver Todos",
-      icon: FaFilter,
-      color: "from-gray-600 to-gray-700",
-      count: counts.totalCoursesCount,
-    },
-  ];
-
-  const activeFilter = filterOptions.find((option) => option.key === activeTab);
-
-  // VERSIÓN MÓVIL MEJORADA - SE ABRE HACIA ARRIBA FUERA DEL PANEL
-  if (mobile) {
-    return (
-      <div className="relative w-full">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center justify-between w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-        >
-          <div className="flex items-center gap-3">
-            {activeFilter && (
-              <activeFilter.icon className="text-blue-500 text-lg" />
-            )}
-            <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-              {activeFilter?.label || "Filtrar por"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {activeFilter?.count > 0 && (
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-bold min-w-6 text-center ${
-                  activeTab === "RELEVANTES"
-                    ? "bg-yellow-400 text-yellow-900"
-                    : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                }`}
-              >
-                {activeFilter.count}
-              </span>
-            )}
-            <FaChevronDown
-              className={`text-gray-500 transition-transform duration-300 ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </div>
-        </button>
-
-        {isOpen && (
-          <>
-            {/* Overlay para cerrar - CON Z-INDEX MÁS ALTO */}
-            <div
-              className="fixed inset-0 z-[60]"
-              onClick={() => setIsOpen(false)}
-            />
-
-            {/* Dropdown que se abre HACIA ARRIBA FUERA DEL PANEL */}
-            <div className="fixed bottom-32 left-4 right-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[70] max-h-48 overflow-y-auto">
-              {filterOptions.map((option) => {
-                const Icon = option.icon;
-                return (
-                  <button
-                    key={option.key}
-                    onClick={() => {
-                      setActiveTab(option.key);
-                      setIsOpen(false);
-                    }}
-                    className={`flex items-center justify-between w-full px-4 py-3 text-left transition-all duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
-                      activeTab === option.key
-                        ? `bg-gradient-to-r ${option.color} text-white`
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon
-                        className={`text-lg ${
-                          activeTab === option.key
-                            ? "text-white"
-                            : "text-gray-500"
-                        }`}
-                      />
-                      <span className="font-medium text-sm">
-                        {option.label}
-                      </span>
-                    </div>
-                    {option.count > 0 && (
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-bold min-w-6 text-center ${
-                          activeTab === option.key
-                            ? "bg-white/20 text-white"
-                            : option.key === "RELEVANTES"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                        }`}
-                      >
-                        {option.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  // Versión original para desktop
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 w-full md:w-auto"
-      >
-        <div className="flex items-center gap-2">
-          {activeFilter && <activeFilter.icon className="text-blue-500" />}
-          <span className="font-semibold text-gray-700 dark:text-gray-300">
-            {activeFilter?.label || "Seleccionar filtro"}
-          </span>
-          {activeFilter?.count > 0 && (
-            <span
-              className={`px-2 py-1 rounded-full text-xs font-bold ${
-                activeTab === "RELEVANTES"
-                  ? "bg-yellow-400 text-yellow-900 animate-pulse"
-                  : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-              }`}
-            >
-              {activeFilter.count}
-            </span>
-          )}
-        </div>
-        <FaChevronDown
-          className={`text-gray-500 transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-40 overflow-hidden">
-          {filterOptions.map((option) => {
-            const Icon = option.icon;
-            return (
-              <button
-                key={option.key}
-                onClick={() => {
-                  setActiveTab(option.key);
-                  setIsOpen(false);
-                }}
-                className={`flex items-center justify-between w-full px-4 py-3 text-left transition-all duration-200 ${
-                  activeTab === option.key
-                    ? `bg-gradient-to-r ${option.color} text-white`
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon
-                    className={
-                      activeTab === option.key ? "text-white" : "text-gray-500"
-                    }
-                  />
-                  <span className="font-medium">{option.label}</span>
-                </div>
-                {option.count > 0 && (
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-bold ${
-                      activeTab === option.key
-                        ? "bg-white/20 text-white"
-                        : option.key === "RELEVANTES"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                    }`}
-                  >
-                    {option.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ✅ MODAL PARA CUPONES
-function CouponModal({
-  open,
-  curso,
-  codigoCupon,
-  onClose,
-  onApply,
-  loading,
-  onCodigoChange,
-}) {
-  if (!open) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/80 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full transition-colors duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header del Modal */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white relative rounded-t-2xl">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors"
-          >
-            <FaTimes className="text-xl" />
-          </button>
-          <div className="flex items-center gap-3">
-            <FaGift className="text-2xl text-yellow-300" />
-            <div>
-              <h2 className="text-xl font-bold">Aplicar Cupón de Descuento</h2>
-              <p className="text-purple-100 text-sm mt-1">
-                Curso: <strong>{curso?.titulo}</strong>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Contenido del Modal */}
-        <div className="p-6">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Código del Cupón
-            </label>
-            <input
-              type="text"
-              placeholder="Ingresa tu código de cupón..."
-              value={codigoCupon}
-              onChange={(e) => onCodigoChange(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              onKeyPress={(e) => e.key === "Enter" && onApply()}
-            />
-          </div>
-
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <FaTag className="text-yellow-600 dark:text-yellow-400 mt-1 flex-shrink-0" />
-              <div>
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
-                  Tipos de Cupones Disponibles
-                </h4>
-                <ul className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
-                  {/* ✅ ACTUALIZADO CON NUEVOS CUPONES */}
-                  <li>
-                    🎯 <strong>10% de descuento</strong> - Ahorra una décima
-                    parte
-                  </li>
-                  <li>
-                    🔥 <strong>15% de descuento</strong> - Descuento especial
-                  </li>
-                  <li>
-                    💥 <strong>30% de descuento</strong> - Ahorra casi un tercio
-                  </li>
-                  <li>
-                    ⚡ <strong>50% de descuento</strong> - ¡Mitad de precio!
-                  </li>
-                  <li>
-                    🎁 <strong>Curso GRATIS</strong> - Acceso completo sin costo
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer del Modal */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700 rounded-b-2xl">
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all duration-200"
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={onApply}
-              disabled={loading || !codigoCupon.trim()}
-              className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Verificando...
-                </>
-              ) : (
-                <>
-                  <FaGift />
-                  Aplicar Cupón
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { ImageModal } from "./components/common/ImageModal";
+import { DescriptionModal } from "./components/common/DescriptionModal";
+import { FilterDropdown } from "./components/common/FilterDropdown";
+import { CouponModal } from "./components/common/CouponModal";
 
 export default function CursosEstudiante() {
   const [cursos, setCursos] = useState([]);
   const [filteredCursos, setFilteredCursos] = useState([]);
-  const [userId, setUserId] = useState(null);
   const [modalImg, setModalImg] = useState({ open: false, src: "", alt: "" });
   const [modalDesc, setModalDesc] = useState({ open: false, curso: null });
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -796,12 +75,9 @@ export default function CursosEstudiante() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const uid = localStorage.getItem("userId");
-    setUserId(uid);
 
-    // ✅ FUNCIÓN PARA LIMPIAR RESERVAS PENDIENTES
     const cleanupReservations = async () => {
-      if (!token || !uid) return;
+      if (!token) return;
 
       try {
         console.log("✅ Verificación de reservas completada");
@@ -855,6 +131,12 @@ export default function CursosEstudiante() {
         const cursosConCupones = cursosOrdenados.filter(
           (curso) => curso.tieneCupones
         );
+
+        if (cursosConCupones.length > 0) {
+          console.log(
+            `🎁 ${cursosConCupones.length} cursos tienen cupones disponibles`
+          );
+        }
       } catch (err) {
         console.error("Error al obtener cursos:", err);
         if (err.message && err.message.includes("HTML en lugar de JSON")) {
@@ -924,18 +206,15 @@ export default function CursosEstudiante() {
           const { reservationId, clientTransactionId, timestamp } =
             reservationData;
 
-          // Verificar si la reserva es reciente (menos de 1 hora)
           const isRecent = Date.now() - timestamp < 60 * 60 * 1000;
 
           if (isRecent) {
-            // Verificar estado del pago
             await checkPaymentStatus(clientTransactionId, reservationId);
           } else {
-            // Liberar reserva antigua
+            // ✅ CORREGIDO: Liberar sin userId
             await releaseCouponReservation(reservationId);
           }
 
-          // Limpiar del localStorage
           localStorage.removeItem("lastCouponReservation");
         } catch (error) {
           console.error("Error verificando reserva pendiente:", error);
@@ -963,9 +242,10 @@ export default function CursosEstudiante() {
         didOpen: () => Swal.showLoading(),
       });
 
+      // ✅ SIN userId en el body
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/payments/inscribir-gratis`,
-        { cursoId, userId },
+        { cursoId }, // ← Solo cursoId
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1020,11 +300,11 @@ export default function CursosEstudiante() {
     try {
       setCouponLoading(true);
 
+      // ✅ PRIMER INTENTO - SIN userId en el body
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/payments/verify-coupon`,
         {
           cursoId,
-          userId,
           codigoCupon: codigoCupon.toUpperCase(),
         },
         {
@@ -1035,24 +315,25 @@ export default function CursosEstudiante() {
         }
       );
 
-      // Si hay error de reserva pendiente, intentar liberar forzadamente
+      // ✅ SI HAY ERROR DE RESERVA PENDIENTE, INTENTAR LIBERAR
       if (
         !response.data.success &&
         response.data.error?.includes("reserva pendiente")
       ) {
         console.log(
-          "🔄 Detectada reserva pendiente, intentando liberar forzadamente..."
+          "🔄 Detectada reserva pendiente, liberando forzadamente..."
         );
 
         try {
+          // ✅ LIBERACIÓN FORZADA - SIN userId
           await axios.post(
             `${
               import.meta.env.VITE_BACKEND_URL
             }/api/payments/force-release-coupon`,
             {
               cursoId,
-              userId,
               codigoCupon: codigoCupon.toUpperCase(),
+              // ✅ SIN userId - el backend lo obtiene del token
             },
             {
               headers: {
@@ -1062,13 +343,13 @@ export default function CursosEstudiante() {
             }
           );
 
-          // Reintentar la verificación después de liberar
+          // ✅ REINTENTAR VERIFICACIÓN DESPUÉS DE LIBERAR
           await new Promise((resolve) => setTimeout(resolve, 1000));
+
           const retryResponse = await axios.post(
             `${import.meta.env.VITE_BACKEND_URL}/api/payments/verify-coupon`,
             {
               cursoId,
-              userId,
               codigoCupon: codigoCupon.toUpperCase(),
             },
             {
@@ -1083,6 +364,7 @@ export default function CursosEstudiante() {
         } catch (forceError) {
           console.error("Error liberando cupón forzadamente:", forceError);
           // Retornar el error original si falla la liberación forzada
+          return response.data;
         }
       }
 
@@ -1097,6 +379,7 @@ export default function CursosEstudiante() {
       setCouponLoading(false);
     }
   };
+
   // ===============================
   // ✅ FUNCIÓN PARA APLICAR CUPÓN
   // ===============================
@@ -1200,8 +483,7 @@ export default function CursosEstudiante() {
         }/api/payments/create-payphone-payment-with-coupon`,
         {
           cursoId: curso.id,
-          userId,
-          codigoCupon: appliedCoupon.codigo,
+          codigoCupon: appliedCoupon.codigo, // ← SIN userId
         },
         {
           headers: {
@@ -1214,7 +496,7 @@ export default function CursosEstudiante() {
       Swal.close();
 
       if (response.data.gratis) {
-        // Si es gratis con cupón, actualizar estado directamente
+        // Si es gratis con cupón
         Swal.fire({
           title: "¡Inscripción exitosa! 🎉",
           html: `
@@ -1238,10 +520,10 @@ export default function CursosEstudiante() {
         );
         setAppliedCoupon(null);
       } else {
-        // ✅ REDIRIGIR EN LA MISMA VENTANA (COMPORTAMIENTO ORIGINAL)
+        // Redirigir a Payphone
         window.location.href = response.data.paymentUrl;
 
-        // ✅ GUARDAR RESERVATION ID EN LOCALSTORAGE PARA POSIBLE RECUPERACIÓN
+        // Guardar para posible recuperación
         if (response.data.reservationId) {
           localStorage.setItem(
             "lastCouponReservation",
@@ -1369,7 +651,7 @@ export default function CursosEstudiante() {
         }/api/payments/release-coupon-by-transaction`,
         {
           clientTransactionId,
-          userId,
+          // ❌ SIN userId
         },
         {
           headers: {
@@ -1384,25 +666,11 @@ export default function CursosEstudiante() {
     } catch (error) {
       console.error("Error liberando cupón por transacción:", error);
 
-      // Si falla, intentar la liberación forzada
+      // Si falla, intentar liberación forzada
       if (appliedCoupon) {
         try {
-          await axios.post(
-            `${
-              import.meta.env.VITE_BACKEND_URL
-            }/api/payments/force-release-coupon`,
-            {
-              cursoId: appliedCoupon.cursoId,
-              userId,
-              codigoCupon: appliedCoupon.codigo,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          // ✅ USAR LA NUEVA FUNCIÓN forceReleaseCoupon
+          await forceReleaseCoupon(appliedCoupon.codigo, appliedCoupon.cursoId);
           console.log("✅ Cupón liberado forzadamente después de error");
         } catch (forceError) {
           console.error("Error en liberación forzada:", forceError);
@@ -1442,17 +710,15 @@ export default function CursosEstudiante() {
   // ✅ REMOVER CUPÓN APLICADO (MEJORADA)
   // ===============================
   const removeAppliedCoupon = async () => {
-    // Limpiar inmediatamente el estado local
     const couponToRemove = { ...appliedCoupon };
     setAppliedCoupon(null);
 
-    // Si hay un reservationId, liberar la reserva en el backend
     if (couponToRemove?.reservationId) {
       try {
+        // ✅ LLAMAR SIN userId
         await releaseCouponReservation(couponToRemove.reservationId);
       } catch (error) {
         console.error("Error liberando cupón:", error);
-        // Aunque falle, el cupón ya se removió localmente
       }
     }
 
@@ -1990,7 +1256,6 @@ export default function CursosEstudiante() {
                                 <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold text-center">
                                   💳 Curso premium
                                 </p>
-
                                 {curso.precio > 0 && (
                                   <div className="mb-1 md:mb-2">
                                     <button
@@ -2015,11 +1280,10 @@ export default function CursosEstudiante() {
                                     </button>
                                   </div>
                                 )}
-
+                                <br />
                                 <div className="flex justify-center">
                                   <PayphoneButton
                                     curso={curso}
-                                    userId={userId}
                                     onSuccess={() =>
                                       setCursos((prev) =>
                                         prev.map((c) =>
