@@ -1,15 +1,26 @@
+// src/pages/estudiante/utils/courseSorting.js
+import {
+  FaBolt,
+  FaRocket,
+  FaStar,
+  FaCalendarAlt,
+  FaHistory
+} from "react-icons/fa";
+
 // ✅ ORDENAMIENTO - CURSOS NUEVOS SIEMPRE PRIMERO
 export const sortCoursesByRelevance = (cursos) => {
-  return cursos.sort((a, b) => {
+  if (!cursos || !Array.isArray(cursos)) return [];
+  
+  return [...cursos].sort((a, b) => {
     const dateA = new Date(a.createdAt || 0);
     const dateB = new Date(b.createdAt || 0);
     return dateB - dateA;
   });
 };
 
-// ✅ FUNCIONES MEJORADAS PARA DETECCIÓN DE CURSOS NUEVOS
+// ✅ FUNCIONES MEJORADAS PARA DETECCIÓN DE CURSOS NUEVOS - VERSIÓN CORREGIDA
 export const getCourseLaunchInfo = (curso) => {
-  if (!curso.createdAt) return null;
+  if (!curso || !curso.createdAt) return null;
 
   try {
     const courseDate = new Date(curso.createdAt);
@@ -113,8 +124,10 @@ export const getCourseLaunchInfo = (curso) => {
       };
     }
 
-    return null;
-  } catch {
+  } catch (error) {
+    console.error('Error en getCourseLaunchInfo:', error);
     return null;
   }
+
+  return null;
 };

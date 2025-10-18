@@ -22,6 +22,10 @@ import {
 } from "react-icons/fa";
 import { isCourseExpired } from "../../utils/dateUtils";
 
+import {
+  getCourseLaunchInfo,
+} from "./utils/courseSorting"; // ← ./utils/ porque están en la misma carpeta
+
 // ✅ HOOK PERSONALIZADO PARA LA CARGA DE CURSOS
 const useMisCursos = () => {
   const [state, setState] = useState({
@@ -105,94 +109,6 @@ const getTodayString = () => {
     2,
     "0"
   )}-${String(today.getDate()).padStart(2, "0")}`;
-};
-
-// ✅ FUNCIONES MEJORADAS PARA DETECCIÓN DE CURSOS NUEVOS
-const getCourseLaunchInfo = (curso) => {
-  if (!curso.createdAt) return null;
-
-  const courseDate = new Date(curso.createdAt);
-  const now = new Date();
-  const hoursDiff = (now - courseDate) / (1000 * 60 * 60);
-  const daysDiff = Math.floor(hoursDiff / 24);
-
-  if (hoursDiff < 6) {
-    return {
-      type: "just-launched",
-      label: "¡RECIÉN LANZADO!",
-      icon: FaBolt,
-      color: "from-green-500 to-emerald-600",
-      borderColor: "border-yellow-300",
-      animate: "animate-pulse",
-    };
-  }
-
-  if (hoursDiff < 24) {
-    return {
-      type: "today",
-      label: `Lanzado hace ${Math.floor(hoursDiff)}h`,
-      icon: FaRocket,
-      color: "from-blue-500 to-cyan-600",
-      borderColor: "border-blue-300",
-      animate: "",
-    };
-  }
-
-  if (daysDiff === 1) {
-    return {
-      type: "yesterday",
-      label: "Lanzado hace 1 día",
-      icon: FaStar,
-      color: "from-purple-500 to-indigo-600",
-      borderColor: "border-purple-300",
-      animate: "",
-    };
-  }
-
-  if (daysDiff <= 3) {
-    return {
-      type: "recent",
-      label: `Lanzado hace ${daysDiff} días`,
-      icon: FaStar,
-      color: "from-indigo-500 to-purple-600",
-      borderColor: "border-indigo-300",
-      animate: "",
-    };
-  }
-
-  if (daysDiff <= 7) {
-    return {
-      type: "week",
-      label: `Lanzado hace ${daysDiff} días`,
-      icon: FaCalendarAlt,
-      color: "from-orange-500 to-amber-600",
-      borderColor: "border-orange-300",
-      animate: "",
-    };
-  }
-
-  if (daysDiff <= 14) {
-    const weeks = Math.floor(daysDiff / 7);
-    return {
-      type: "weeks",
-      label:
-        weeks === 1 ? "Lanzado hace 1 semana" : `Lanzado hace ${weeks} semanas`,
-      icon: FaHistory,
-      color: "from-gray-500 to-slate-600",
-      borderColor: "border-gray-300",
-      animate: "",
-    };
-  }
-
-  const weeks = Math.floor(daysDiff / 7);
-  return {
-    type: "old",
-    label: `Lanzado hace ${weeks} semanas`,
-    icon: FaHistory,
-    color: "from-gray-400 to-gray-500",
-    borderColor: "border-gray-200",
-    animate: "",
-  };
 };
 
 // ✅ FUNCIONES PARA FECHAS OPTIMIZADAS

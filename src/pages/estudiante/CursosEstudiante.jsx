@@ -35,19 +35,19 @@ import { isCourseExpired } from "../../utils/dateUtils";
 import {
   sortCoursesByRelevance,
   getCourseLaunchInfo,
-} from "./utils/courseSorting"; // ← ./utils/ porque están en la misma carpeta
+} from "./utils/courseSorting"; 
 
 import {
   isTodayCourse,
   isTomorrowCourse,
   isUpcomingCourse,
   getDaysUntilCourse,
-} from "./utils/courseDates"; // ← ./utils/
+} from "./utils/courseDates"; 
 
 import {
   releaseCouponReservation,
   forceReleaseCoupon,
-} from "./utils/couponUtils"; // ← ./utils/
+} from "./utils/couponUtils"; 
 
 import { ImageModal } from "./components/common/ImageModal";
 import { DescriptionModal } from "./components/common/DescriptionModal";
