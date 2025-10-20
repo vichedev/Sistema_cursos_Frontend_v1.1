@@ -184,42 +184,9 @@ function PerfilDesplegableEstudiante({ userData }) {
 
 // El resto del código se mantiene igual...
 export default function EstudianteNavbar({
-  notifications = [],
-  onClearNotification,
   onMenuClick,
-  onMarkAsRead,
   userData,
 }) {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const notificationsRef = useRef(null);
-
-  useEffect(() => {
-    setUnreadCount(notifications.filter((n) => !n.read).length);
-  }, [notifications]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        notificationsRef.current &&
-        !notificationsRef.current.contains(event.target)
-      ) {
-        setShowNotifications(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const markAsRead = (id) => {
-    onMarkAsRead?.(id);
-  };
-
-  const clearAllNotifications = () => {
-    onClearNotification?.();
-  };
-
   return (
     <nav className="relative z-40 bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3">
       <div className="flex items-center gap-3">
@@ -246,120 +213,6 @@ export default function EstudianteNavbar({
         {/* Selector de Tema */}
         <ThemeSelector position="bottom" />
 
-        {/* Notificaciones */}
-        <div className="relative" ref={notificationsRef}>
-          <button
-            onClick={() => setShowNotifications((v) => !v)}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 relative transition-colors"
-            aria-haspopup="true"
-            aria-expanded={showNotifications}
-            aria-label="Notificaciones"
-          >
-            <FaBell className="text-gray-600 dark:text-gray-400 text-xl" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
-
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
-              <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h3 className="font-semibold text-gray-800 dark:text-white text-sm sm:text-base">
-                  Notificaciones de Cursos
-                </h3>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  aria-label="Cerrar notificaciones"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-
-              <div className="max-h-96 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                    No hay notificaciones
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {notifications.map((n) => {
-                      const completed = n.progress?.completed ?? 0;
-                      const total = n.progress?.total ?? 0;
-                      const pct =
-                        total > 0
-                          ? Math.min(100, Math.round((completed / total) * 100))
-                          : 0;
-                      return (
-                        <div
-                          key={n.id}
-                          className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
-                            !n.read ? "bg-blue-50 dark:bg-blue-900/20" : ""
-                          }`}
-                          onClick={() => markAsRead(n.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div
-                              className={`p-2 rounded-full ${getNotificationIconColor(
-                                n.type
-                              )}`}
-                            >
-                              {getNotificationIcon(n.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                                {n.title}
-                              </h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                {n.message}
-                              </p>
-
-                              {n.progress && (
-                                <div className="mt-2">
-                                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
-                                    <div
-                                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                                      style={{ width: `${pct}%` }}
-                                    />
-                                  </div>
-                                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    <span>
-                                      {completed} de {total}
-                                    </span>
-                                    <span>{pct}%</span>
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                                {new Date(
-                                  n.timestamp || Date.now()
-                                ).toLocaleString()}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {notifications.length > 0 && (
-                <div className="p-2 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    onClick={clearAllNotifications}
-                    className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 py-2 transition-colors"
-                  >
-                    Limpiar todas las notificaciones
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* Perfil del Estudiante SIN CIUDAD */}
         <PerfilDesplegableEstudiante userData={userData} />

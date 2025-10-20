@@ -22,9 +22,7 @@ import {
 } from "react-icons/fa";
 import { isCourseExpired } from "../../utils/dateUtils";
 
-import {
-  getCourseLaunchInfo,
-} from "./utils/courseSorting"; // ← ./utils/ porque están en la misma carpeta
+import { getCourseLaunchInfo } from "./utils/courseSorting"; // ← ./utils/ porque están en la misma carpeta
 
 // ✅ HOOK PERSONALIZADO PARA LA CARGA DE CURSOS
 const useMisCursos = () => {
@@ -440,8 +438,8 @@ const CursoCard = React.memo(({ curso }) => {
           </div>
 
           {/* CONTADOR DE CUPOS */}
-          <span className="absolute top-2 right-2 px-4 py-2 rounded-full text-xs bg-black/70 text-white font-bold shadow-lg backdrop-blur-sm">
-            🎯 {curso.cupos || 0} CUPOS
+          <span className="absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs bg-black/80 text-white font-bold shadow-lg backdrop-blur-sm z-10">
+            🎯 {curso.cupos || 0} Cupos
           </span>
         </div>
 

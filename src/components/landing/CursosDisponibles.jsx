@@ -359,7 +359,9 @@ function CursoCard({ curso, onAccessClick }) {
             <img
               src={
                 curso.imagen
-                  ? `${import.meta.env.VITE_BACKEND_URL}/uploads/${curso.imagen}`
+                  ? `${import.meta.env.VITE_BACKEND_URL}/uploads/${
+                      curso.imagen
+                    }`
                   : "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=400&h=400&fit=crop"
               }
               alt={curso.titulo}
@@ -430,8 +432,8 @@ function CursoCard({ curso, onAccessClick }) {
           </div>
 
           {/* CONTADOR DE CUPOS */}
-          <span className="absolute top-2 right-2 px-4 py-2 rounded-full text-xs bg-black/70 text-white font-bold shadow-lg backdrop-blur-sm">
-            🎯 {curso.cupos || 0} CUPOS
+          <span className="absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs bg-black/80 text-white font-bold shadow-lg backdrop-blur-sm z-10">
+            🎯 {curso.cupos || 0} Cupos
           </span>
         </div>
 
@@ -650,7 +652,7 @@ const CursosDisponibles = () => {
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
     // Scroll suave hacia arriba cuando cambia de página
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading)
@@ -699,7 +701,8 @@ const CursosDisponibles = () => {
               disponibles en diferentes modalidades
             </p>
             <p className="text-sm text-gray-500 mt-2">
-              Página {currentPage} de {totalPages} - Mostrando {currentCursos.length} cursos
+              Página {currentPage} de {totalPages} - Mostrando{" "}
+              {currentCursos.length} cursos
             </p>
           </div>
         </div>

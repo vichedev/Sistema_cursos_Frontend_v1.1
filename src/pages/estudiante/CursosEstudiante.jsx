@@ -35,19 +35,19 @@ import { isCourseExpired } from "../../utils/dateUtils";
 import {
   sortCoursesByRelevance,
   getCourseLaunchInfo,
-} from "./utils/courseSorting"; 
+} from "./utils/courseSorting";
 
 import {
   isTodayCourse,
   isTomorrowCourse,
   isUpcomingCourse,
   getDaysUntilCourse,
-} from "./utils/courseDates"; 
+} from "./utils/courseDates";
 
 import {
   releaseCouponReservation,
   forceReleaseCoupon,
-} from "./utils/couponUtils"; 
+} from "./utils/couponUtils";
 
 import { ImageModal } from "./components/common/ImageModal";
 import { DescriptionModal } from "./components/common/DescriptionModal";
@@ -1130,7 +1130,7 @@ export default function CursosEstudiante() {
                       </div>
 
                       <span className="absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs bg-black/80 text-white font-bold shadow-lg backdrop-blur-sm z-10">
-                        🎯 {curso.cupos || 0}
+                        🎯 {curso.cupos || 0} Cupos
                       </span>
                     </div>
 
