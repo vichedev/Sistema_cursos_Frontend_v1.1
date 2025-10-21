@@ -228,6 +228,41 @@ export default function UsuariosInscritos() {
     }
   };
 
+  // Función para verificar cuenta de usuario
+  const handleVerifyAccount = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/auth/admin/verify-user/${userId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        // Éxito - refrescar la lista de usuarios
+        fetchUsuarios();
+        return { success: true, message: response.data.message };
+      } else {
+        throw new Error(
+          response.data?.message || "Error al verificar la cuenta"
+        );
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Error al verificar la cuenta";
+      throw new Error(errorMessage);
+    }
+  };
+
   const closeModal = () => {
     setModalType(null);
     setModalUser(null);
@@ -968,6 +1003,7 @@ export default function UsuariosInscritos() {
             onClose={closeModal}
             loading={modalLoading}
             error={modalError}
+            onVerifyAccount={handleVerifyAccount}
           />
         )}
 
