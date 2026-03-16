@@ -9,7 +9,9 @@ export function useUsuarios() {
   const [activeTab, setActiveTab] = useState("estudiantes");
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  // ✅ FIX: leadingEdge true para que el primer valor vacío ("") se aplique inmediatamente
+  // sin esperar los 300ms, evitando que la lista aparezca vacía al cargar
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300, { leading: true });
 
   const [filterCiudad, setFilterCiudad] = useState("");
   const [filterEmpresa, setFilterEmpresa] = useState("");
@@ -177,5 +179,6 @@ export function useUsuarios() {
     filterOptions,
     paginatedUsers,
     totalItems,
+    filteredUsers, 
   };
 }
