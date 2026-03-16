@@ -1,9 +1,12 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
 import { FaUserPlus } from "react-icons/fa";
 import { City } from "country-state-city";
+import InternationalPhoneInput from "../components/InternationalPhoneInput";
+import "../styles/phone-input.css";
+import { LATAM_COUNTRIES } from "../constants/latam-countries";
 import {
   sanitizeInput,
   sanitizeEmail,
@@ -11,9 +14,6 @@ import {
   sanitizeName,
   sanitizeUsername,
 } from "../utils/sanitize";
-
-// ✅ Pre-cargar ciudades fuera del componente para optimización
-const ciudadesEcuador = City.getCitiesOfCountry("EC") || [];
 
 // ✅ Hook debounce personalizado
 function useDebounce(callback, delay) {
@@ -29,7 +29,7 @@ function useDebounce(callback, delay) {
         callback(...args);
       }, delay);
     },
-    [callback, delay]
+    [callback, delay],
   );
 }
 
@@ -42,9 +42,10 @@ export default function Register() {
     correo: "",
     celular: "",
     cedula: "",
+    pais: "",
     ciudad: "",
     empresa: "",
-    rol: "Gerente",
+    cargo: "Gerente",
     usuario: "",
     password: "",
   });
@@ -59,20 +60,47 @@ export default function Register() {
     apellidos: "",
     password: "",
     ciudad: "",
+    pais: "",
   });
 
-  // ✅ Memoizar las opciones de ciudades para optimización
-  const ciudadOptions = useMemo(
+  const [ciudades, setCiudades] = useState([]);
+  const [loadingCiudades, setLoadingCiudades] = useState(false);
+
+  // País seleccionado
+  const selectedCountry = LATAM_COUNTRIES.find((c) => c.code === form.pais);
+
+  // Cargar ciudades cuando cambia el país
+  useEffect(() => {
+    const fetchCiudades = async () => {
+      if (!form.pais) {
+        setCiudades([]);
+        return;
+      }
+
+      setLoadingCiudades(true);
+      try {
+        const cities = City.getCitiesOfCountry(form.pais) || [];
+        setCiudades(cities);
+      } catch (error) {
+        console.error("Error cargando ciudades:", error);
+        setCiudades([]);
+      } finally {
+        setLoadingCiudades(false);
+      }
+    };
+
+    fetchCiudades();
+  }, [form.pais]);
+
+  // Opciones de países
+  const countryOptions = useMemo(
     () =>
-      ciudadesEcuador.map((city) => (
-        <option
-          key={`${city.name}-${city.latitude}-${city.longitude}`}
-          value={city.name}
-        >
-          {city.name}
+      LATAM_COUNTRIES.map((country) => (
+        <option key={country.code} value={country.code}>
+          {country.flag} {country.name} ({country.dialCode})
         </option>
       )),
-    []
+    [],
   );
 
   // Validar formato de email
@@ -80,17 +108,34 @@ export default function Register() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }, []);
 
-  // Validar formato de cédula (solo números, 10 dígitos para Ecuador)
-  const isValidCedula = useCallback((cedula) => {
-    return /^\d{10}$/.test(cedula);
+  // Validar formato de identificación según país
+  const isValidCedula = useCallback((cedula, pais) => {
+    if (!pais || !cedula) return false;
+    const country = LATAM_COUNTRIES.find((c) => c.code === pais);
+    if (!country) return false;
+
+    // Limpiar caracteres especiales
+    const cleanValue = cedula.replace(/[-\s.]/g, "");
+    return country.idPattern.test(cleanValue);
   }, []);
 
-  // Validar formato de celular (solo números, 10 dígitos)
+  // ✅ MEJORADO: Validar formato internacional del celular
   const isValidCelular = useCallback((celular) => {
-    return /^\d{10}$/.test(celular);
+    if (!celular) return false;
+    // Debe empezar con + y tener entre 8 y 15 dígitos después
+    return /^\+\d{8,15}$/.test(celular);
   }, []);
 
-  // ✅ Validaciones en tiempo real con debounce
+  // ✅ SIMPLIFICADO: Manejar cambio de celular
+  const handlePhoneChange = (phoneValue) => {
+    setForm((prev) => ({ ...prev, celular: phoneValue || "" }));
+
+    if (fieldErrors.celular) {
+      setFieldErrors((prev) => ({ ...prev, celular: "" }));
+    }
+  };
+
+  // Validaciones en tiempo real con debounce
   const debouncedValidate = useDebounce((field, value) => {
     let error = "";
 
@@ -101,13 +146,16 @@ export default function Register() {
         }
         break;
       case "cedula":
-        if (value && !isValidCedula(value)) {
-          error = "La cédula debe tener 10 dígitos";
+        if (value && !isValidCedula(value, form.pais)) {
+          const country = LATAM_COUNTRIES.find((c) => c.code === form.pais);
+          error = country
+            ? `Formato inválido. Ej: ${country.idExample}`
+            : "Formato inválido";
         }
         break;
       case "celular":
         if (value && !isValidCelular(value)) {
-          error = "El celular debe tener 10 dígitos";
+          error = "Número de celular inválido (debe incluir código de país)";
         }
         break;
       case "usuario":
@@ -139,6 +187,11 @@ export default function Register() {
           error = "La ciudad es obligatoria";
         }
         break;
+      case "pais":
+        if (!value) {
+          error = "El país es obligatorio";
+        }
+        break;
       default:
         break;
     }
@@ -150,21 +203,10 @@ export default function Register() {
     const { name, value } = e.target;
     let sanitizedValue = value;
 
-    // ✅ SOLO eliminar espacios de campos que NO deben tenerlos
-    if (
-      name === "usuario" ||
-      name === "correo" ||
-      name === "cedula" ||
-      name === "celular"
-    ) {
+    if (name === "usuario" || name === "correo" || name === "cedula") {
       sanitizedValue = value.replace(/\s/g, "");
     }
-    // ✅ Para nombres, apellidos y empresa - DEJAR EL VALOR ORIGINAL CON ESPACIOS
-    else {
-      sanitizedValue = value; // Mantener espacios tal cual
-    }
 
-    // ✅ APLICAR SANITIZACIÓN ESPECÍFICA POR CAMPO
     switch (name) {
       case "correo":
         sanitizedValue = sanitizeEmail(sanitizedValue);
@@ -173,7 +215,6 @@ export default function Register() {
         sanitizedValue = sanitizeUsername(sanitizedValue);
         break;
       case "cedula":
-      case "celular":
         sanitizedValue = sanitizeNumber(sanitizedValue);
         break;
       case "password":
@@ -182,29 +223,18 @@ export default function Register() {
       case "ciudad":
         sanitizedValue = sanitizeInput(sanitizedValue);
         break;
-      case "nombres":
-      case "apellidos":
-        // ✅ NO aplicar sanitización durante escritura para permitir corrección
-        break;
-      case "empresa":
-        // Mantener valor original
-        break;
-      default:
-        break;
     }
 
     setForm({ ...form, [name]: sanitizedValue });
 
-    // Limpiar errores cuando el usuario empiece a escribir
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     }
 
-    // ✅ Validación en tiempo real con debounce
     debouncedValidate(name, sanitizedValue);
   };
 
-  // ✅ FUNCIÓN: Validación completa del formulario
+  // Validación completa del formulario
   const validateForm = () => {
     const errors = {};
 
@@ -226,6 +256,10 @@ export default function Register() {
       errors.correo = "Por favor, ingresa un correo electrónico válido";
     }
 
+    if (!form.pais) {
+      errors.pais = "El país es obligatorio";
+    }
+
     if (!form.usuario.trim()) {
       errors.usuario = "El usuario es obligatorio";
     } else if (form.usuario.length < 3) {
@@ -233,15 +267,18 @@ export default function Register() {
     }
 
     if (!form.cedula.trim()) {
-      errors.cedula = "La cédula es obligatoria";
-    } else if (!isValidCedula(form.cedula)) {
-      errors.cedula = "La cédula debe tener 10 dígitos numéricos";
+      errors.cedula = "La identificación es obligatoria";
+    } else if (!isValidCedula(form.cedula, form.pais)) {
+      const country = LATAM_COUNTRIES.find((c) => c.code === form.pais);
+      errors.cedula = country
+        ? `Formato inválido. Ej: ${country.idExample}`
+        : "Formato de identificación inválido";
     }
 
     if (!form.celular.trim()) {
       errors.celular = "El celular es obligatorio";
     } else if (!isValidCelular(form.celular)) {
-      errors.celular = "El celular debe tener 10 dígitos numéricos";
+      errors.celular = "Número de celular inválido (ej: +593991234567)";
     }
 
     if (!form.password.trim()) {
@@ -254,83 +291,71 @@ export default function Register() {
       errors.ciudad = "La ciudad es obligatoria";
     }
 
-    // Actualizar errores
     setFieldErrors((prev) => ({ ...prev, ...errors }));
-
-    // Retornar si hay errores
-    return Object.keys(errors).length > 0
-      ? "Por favor corrige los errores del formulario"
-      : null;
+    return Object.keys(errors).length === 0;
   };
 
-  // ✅ FUNCIÓN MEJORADA: Manejar errores del backend
+  // Manejar errores del backend
   const handleBackendErrors = (errorResponse) => {
-    const backendErrors = errorResponse?.data?.message || [];
+    const errorData = errorResponse?.data;
 
-    // Si es un array de errores de validación
-    if (Array.isArray(backendErrors)) {
-      const newErrors = {};
+    // Si el backend envía un array de errores
+    if (errorData?.message && Array.isArray(errorData.message)) {
+      const errores = errorData.message
+        .map((err) =>
+          typeof err === "object" ? err.message || JSON.stringify(err) : err,
+        )
+        .join("\n");
 
-      backendErrors.forEach((error) => {
-        if (error.property && error.message) {
-          newErrors[error.property] = error.message;
-        }
-      });
-
-      setFieldErrors((prev) => ({ ...prev, ...newErrors }));
-
-      // Mostrar el primer error en un modal
-      if (backendErrors.length > 0) {
-        const firstError = backendErrors[0];
-        Swal.fire({
-          title: "¡Registro Exitoso! ✅",
-          html: `
-    <div style="text-align: left;">
-      <p style="margin-bottom: 15px;">${
-        res.data.message || "Usuario registrado correctamente."
-      }</p>
-      <div style="background: rgba(248, 249, 250, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; backdrop-filter: blur(10px);">
-        <strong style="display: block; margin-bottom: 10px;">📧 Proceso de verificación:</strong>
-        <ul style="margin: 10px 0; padding-left: 20px;">
-          <li style="margin-bottom: 5px;">Revisa tu bandeja de entrada en los próximos segundos</li>
-          <li style="margin-bottom: 5px;">Busca el correo de <strong>"Cursos MAAT - Verificación"</strong></li>
-          <li style="margin-bottom: 5px;">Haz clic en el botón de verificación</li>
-          <li>¡Listo! Podrás iniciar sesión</li>
-        </ul>
-      </div>
-      <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
-        <em>¿No ves el correo? Revisa la carpeta de spam.</em>
-      </p>
-    </div>
-  `,
-          icon: "success",
-          timer: 8000,
-          showConfirmButton: true,
-          confirmButtonText: "Entendido",
-          customClass: {
-            popup: "swal2-modern",
-            title: "swal2-title-custom",
-            htmlContainer: "swal2-html-container-custom",
-            confirmButton: "swal2-confirm-custom",
-          },
-        }).then(() => {
-          navigate("/login");
-        });
-      }
-    }
-    // Si es un string de error simple
-    else if (typeof backendErrors === "string") {
       Swal.fire({
-        title: "Error",
-        text: backendErrors,
+        title: "Error de validación",
+        text: errores,
         icon: "error",
-        confirmButtonText: "Aceptar",
+        confirmButtonText: "Entendido",
         customClass: {
           popup: "swal2-modern dark:bg-gray-800",
-          title: "swal2-title-custom dark:text-white",
-          htmlContainer: "swal2-html-container-custom dark:text-gray-300",
         },
       });
+
+      // Actualizar errores en campos específicos
+      errorData.message.forEach((err) => {
+        if (err.property === "celular") {
+          setFieldErrors((prev) => ({ ...prev, celular: err.message }));
+        } else if (err.property === "correo") {
+          setFieldErrors((prev) => ({ ...prev, correo: err.message }));
+        } else if (err.property === "usuario") {
+          setFieldErrors((prev) => ({ ...prev, usuario: err.message }));
+        } else if (err.property === "cedula") {
+          setFieldErrors((prev) => ({ ...prev, cedula: err.message }));
+        }
+      });
+    }
+    // Si es un string de error simple
+    else if (typeof errorData?.message === "string") {
+      const errorMsg = errorData.message;
+
+      if (errorMsg.includes("celular")) {
+        setFieldErrors((prev) => ({ ...prev, celular: errorMsg }));
+      } else if (errorMsg.includes("correo")) {
+        setFieldErrors((prev) => ({ ...prev, correo: errorMsg }));
+      } else if (errorMsg.includes("usuario")) {
+        setFieldErrors((prev) => ({ ...prev, usuario: errorMsg }));
+      } else if (
+        errorMsg.includes("cédula") ||
+        errorMsg.includes("identificación")
+      ) {
+        setFieldErrors((prev) => ({ ...prev, cedula: errorMsg }));
+      } else {
+        Swal.fire({
+          title: "Error",
+          text: errorMsg,
+          icon: "error",
+          confirmButtonText: "Aceptar",
+          customClass: {
+            popup: "swal2-modern dark:bg-gray-800",
+          },
+        });
+      }
     }
   };
 
@@ -338,19 +363,15 @@ export default function Register() {
     e.preventDefault();
     setIsLoading(true);
 
-    // ✅ VALIDACIÓN MEJORADA CON FUNCIÓN DEDICADA
-    const validationError = validateForm();
-    if (validationError) {
+    const isValid = validateForm();
+    if (!isValid) {
       Swal.fire({
         title: "Error de validación",
-        text: validationError,
+        text: "Por favor corrige los errores del formulario",
         icon: "error",
         confirmButtonText: "Aceptar",
         customClass: {
           popup: "swal2-modern dark:bg-gray-800",
-          title: "swal2-title-custom dark:text-white",
-          htmlContainer: "swal2-html-container-custom dark:text-gray-300",
-          confirmButton: "swal2-confirm-custom",
         },
       });
       setIsLoading(false);
@@ -360,11 +381,9 @@ export default function Register() {
     let timeoutId;
 
     try {
-      // ✅ AUMENTAR TIMEOUT A 30 SEGUNDOS
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos máximo
+      timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      // ✅ APLICAR SANITIZACIÓN FINAL ANTES DE ENVIAR
       const formDataToSend = {
         ...form,
         nombres: sanitizeName(form.nombres),
@@ -372,7 +391,7 @@ export default function Register() {
         empresa: form.empresa ? sanitizeInput(form.empresa) : form.empresa,
       };
 
-      console.log("📤 Enviando registro...");
+      console.log("📤 Enviando datos:", formDataToSend);
 
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/register`,
@@ -380,55 +399,45 @@ export default function Register() {
         {
           signal: controller.signal,
           timeout: 30000,
-        }
+        },
       );
 
       clearTimeout(timeoutId);
-      console.log("✅ Respuesta del backend:", res.data);
 
-      // ✅ VERIFICAR SI LA RESPUESTA TIENE success O message
       if (res.data.success || res.data.message) {
         Swal.fire({
           title: "¡Registro Exitoso! ✅",
           html: `
-      <div style="color: inherit;">
-        <p style="margin-bottom: 15px; color: inherit;">${
-          res.data.message || "Usuario registrado correctamente."
-        }</p>
-        <div style="background: transparent; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; color: inherit;">
-          <strong style="color: inherit;">📧 Proceso de verificación:</strong>
-          <ul style="margin: 10px 0; padding-left: 20px; color: inherit;">
-            <li style="color: inherit;">Revisa tu bandeja de entrada en los próximos segundos</li>
-            <li style="color: inherit;">Busca el correo de <strong style="color: inherit;">"Cursos MAAT - Verificación"</strong></li>
-            <li style="color: inherit;">Haz clic en el botón de verificación</li>
-            <li style="color: inherit;">¡Listo! Podrás iniciar sesión</li>
-          </ul>
-        </div>
-        <p style="margin-top: 15px; font-size: 14px; opacity: 0.8; color: inherit;">
-          <em>¿No ves el correo? Revisa la carpeta de spam.</em>
-        </p>
-      </div>
-    `,
+            <div style="color: inherit;">
+              <p style="margin-bottom: 15px; color: inherit;">${
+                res.data.message || "Usuario registrado correctamente."
+              }</p>
+              <div style="background: transparent; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; color: inherit;">
+                <strong style="color: inherit;">📧 Proceso de verificación:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px; color: inherit;">
+                  <li style="color: inherit;">Revisa tu bandeja de entrada</li>
+                  <li style="color: inherit;">Busca el correo de verificación</li>
+                  <li style="color: inherit;">Haz clic en el botón para verificar tu cuenta</li>
+                </ul>
+              </div>
+            </div>
+          `,
           icon: "success",
           timer: 8000,
           showConfirmButton: true,
           confirmButtonText: "Entendido",
           customClass: {
             popup: "swal2-modern",
-            title: "swal2-title-custom",
-            htmlContainer: "swal2-html-container-custom",
           },
         }).then(() => {
           navigate("/login");
         });
-      } else {
-        throw new Error("Respuesta del servidor inválida");
       }
     } catch (err) {
       if (timeoutId) clearTimeout(timeoutId);
 
-      console.log("🔴 Error en frontend:", err);
-      console.log("🔴 Response data:", err.response?.data);
+      console.error("❌ Error completo:", err);
+      console.error("❌ Response data:", err.response?.data);
 
       if (err.name === "AbortError" || err.code === "ECONNABORTED") {
         Swal.fire({
@@ -436,90 +445,16 @@ export default function Register() {
           text: "El servidor está tardando demasiado. Por favor, intenta nuevamente.",
           icon: "error",
           confirmButtonText: "Aceptar",
-          customClass: {
-            popup: "swal2-modern dark:bg-gray-800",
-            title: "swal2-title-custom dark:text-white",
-            htmlContainer: "swal2-html-container-custom dark:text-gray-300",
-            confirmButton: "swal2-confirm-custom",
-          },
         });
-        setIsLoading(false);
-        return;
-      }
-
-      // ✅ CORREGIDO: AHORA SÍ USAMOS handleBackendErrors
-      if (err.response?.status === 400) {
+      } else if (err.response?.status === 400) {
         handleBackendErrors(err.response);
       } else {
-        // Manejo de otros errores
-        const errorResponse = err.response?.data;
-
-        if (errorResponse?.message) {
-          // Verificar si es un error de duplicado
-          if (
-            errorResponse.message.includes("ya existe") ||
-            errorResponse.message.includes("ya está") ||
-            errorResponse.message.includes("duplicad")
-          ) {
-            // Mapear errores a campos específicos
-            if (errorResponse.message.includes("Usuario")) {
-              setFieldErrors((prev) => ({
-                ...prev,
-                usuario: errorResponse.message,
-              }));
-            } else if (errorResponse.message.includes("Correo")) {
-              setFieldErrors((prev) => ({
-                ...prev,
-                correo: errorResponse.message,
-              }));
-            } else if (errorResponse.message.includes("Cédula")) {
-              setFieldErrors((prev) => ({
-                ...prev,
-                cedula: errorResponse.message,
-              }));
-            } else {
-              Swal.fire({
-                title: "Error de registro",
-                text: errorResponse.message,
-                icon: "error",
-                confirmButtonText: "Aceptar",
-                customClass: {
-                  popup: "swal2-modern dark:bg-gray-800",
-                  title: "swal2-title-custom dark:text-white",
-                  htmlContainer:
-                    "swal2-html-container-custom dark:text-gray-300",
-                  confirmButton: "swal2-confirm-custom",
-                },
-              });
-            }
-          } else {
-            Swal.fire({
-              title: "Error de registro",
-              text: errorResponse.message,
-              icon: "error",
-              confirmButtonText: "Aceptar",
-              customClass: {
-                popup: "swal2-modern dark:bg-gray-800",
-                title: "swal2-title-custom dark:text-white",
-                htmlContainer: "swal2-html-container-custom dark:text-gray-300",
-                confirmButton: "swal2-confirm-custom",
-              },
-            });
-          }
-        } else {
-          Swal.fire({
-            title: "Error de registro",
-            text: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente.",
-            icon: "error",
-            confirmButtonText: "Aceptar",
-            customClass: {
-              popup: "swal2-modern dark:bg-gray-800",
-              title: "swal2-title-custom dark:text-white",
-              htmlContainer: "swal2-html-container-custom dark:text-gray-300",
-              confirmButton: "swal2-confirm-custom",
-            },
-          });
-        }
+        Swal.fire({
+          title: "Error",
+          text: "Ha ocurrido un error inesperado",
+          icon: "error",
+          confirmButtonText: "Aceptar",
+        });
       }
     } finally {
       setIsLoading(false);
@@ -531,7 +466,7 @@ export default function Register() {
       {/* Botón volver al inicio */}
       <button
         onClick={() => navigate("/")}
-        className="absolute top-6 left-6 flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 transition-colors duration-200 z-10"
+        className="absolute top-6 left-6 flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 transition-colors duration-200 z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -549,232 +484,336 @@ export default function Register() {
       </button>
 
       {/* Contenedor principal */}
-      <div className="relative w-full max-w-7xl bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row z-10">
+      <div className="relative w-full max-w-6xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row z-10">
         {/* Imagen + texto lado izquierdo */}
-        <div className="hidden md:flex md:w-2/5 bg-gradient-to-tr from-blue-600 to-blue-800 p-16 flex-col justify-center rounded-l-3xl">
-          <img
-            src="/logo_render.png"
-            alt="Libro abierto"
-            className="mb-8 max-h-72 mx-auto object-contain"
-            loading="lazy"
-          />
-          <h2 className="text-4xl font-extrabold text-white mb-4 drop-shadow-lg">
-            Únete a MAAT ACADEMY
-          </h2>
-          <p className="text-blue-200 text-lg leading-relaxed drop-shadow-md">
-            Completa el formulario para crear tu cuenta y acceder a cursos y
-            recursos exclusivos.
-          </p>
+        <div className="hidden md:flex md:w-2/5 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-10 flex-col justify-between rounded-l-3xl relative overflow-hidden">
+          {/* Fondo decorativo */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400 rounded-full -translate-y-32 translate-x-32 opacity-20 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500 rounded-full translate-y-32 -translate-x-32 opacity-20 blur-3xl"></div>
+
+          <div className="relative z-10">
+            <img
+              src="/logo_render.png"
+              alt="Logo"
+              className="mb-8 max-h-48 mx-auto object-contain drop-shadow-2xl"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="relative z-10 text-center">
+            <h2 className="text-4xl font-extrabold text-white mb-4 drop-shadow-lg">
+              ¡Bienvenido!
+            </h2>
+            <p className="text-blue-200 text-lg leading-relaxed drop-shadow-md">
+              Regístrate y accede a cursos exclusivos desde cualquier país de
+              Latinoamérica
+            </p>
+
+            {/* Features list */}
+            <div className="mt-8 space-y-3 text-left">
+              <div className="flex items-center gap-3 text-white bg-white/10 backdrop-blur-sm rounded-xl p-3">
+                <span className="text-2xl">🌎</span>
+                <span className="text-sm">Soporte para 18 países</span>
+              </div>
+              <div className="flex items-center gap-3 text-white bg-white/10 backdrop-blur-sm rounded-xl p-3">
+                <span className="text-2xl">📱</span>
+                <span className="text-sm">Números internacionales</span>
+              </div>
+              <div className="flex items-center gap-3 text-white bg-white/10 backdrop-blur-sm rounded-xl p-3">
+                <span className="text-2xl">🆔</span>
+                <span className="text-sm">Documentos por país</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Formulario lado derecho */}
-        <div className="w-full md:w-3/5 p-8 md:p-16 flex flex-col justify-center">
+        <div className="w-full md:w-3/5 p-8 md:p-10 overflow-y-auto max-h-[calc(100vh-4rem)]">
           {/* Título, icono y descripción */}
-          <div className="text-center mb-8">
-            <FaUserPlus
-              className="text-blue-500 dark:text-blue-400 mx-auto mb-3"
-              size={44}
-            />
-            <h1 className="text-3xl font-bold text-blue-900 dark:text-white mb-2">
+          <div className="text-center mb-6">
+            <div className="inline-block p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4">
+              <FaUserPlus
+                className="text-blue-600 dark:text-blue-400"
+                size={32}
+              />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Crear Cuenta
             </h1>
-            <p className="text-blue-700 dark:text-blue-300">
-              Llena los datos para registrarte en la plataforma
+            <p className="text-gray-600 dark:text-gray-400">
+              Completa tus datos para registrarte
             </p>
           </div>
 
-          {/* Formulario con grid responsive */}
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-6xl w-full mx-auto"
-          >
-            {/* Nombres */}
+          {/* Formulario */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Fila 1: Nombres y Apellidos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nombres <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="nombres"
+                  placeholder="Ej: Juan Carlos"
+                  required
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    fieldErrors.nombres
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  onChange={handleChange}
+                  value={form.nombres}
+                />
+                {fieldErrors.nombres && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.nombres}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Apellidos <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="apellidos"
+                  placeholder="Ej: Pérez García"
+                  required
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    fieldErrors.apellidos
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  onChange={handleChange}
+                  value={form.apellidos}
+                />
+                {fieldErrors.apellidos && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.apellidos}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Fila 2: País y Celular */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  País <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="pais"
+                  value={form.pais}
+                  onChange={handleChange}
+                  required
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    fieldErrors.pais
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                >
+                  <option value="">Selecciona tu país</option>
+                  {countryOptions}
+                </select>
+                {fieldErrors.pais && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.pais}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Celular <span className="text-red-500">*</span>
+                </label>
+                <InternationalPhoneInput
+                  value={form.celular}
+                  onChange={handlePhoneChange}
+                  error={fieldErrors.celular}
+                  country={form.pais}
+                />
+                {fieldErrors.celular && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.celular}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Fila 3: Correo y Usuario */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Correo electrónico <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="correo"
+                  type="email"
+                  placeholder="ejemplo@correo.com"
+                  required
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    fieldErrors.correo
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  onChange={handleChange}
+                  value={form.correo}
+                />
+                {fieldErrors.correo && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.correo}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Usuario <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="usuario"
+                  placeholder="usuario123"
+                  required
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    fieldErrors.usuario
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  onChange={handleChange}
+                  value={form.usuario}
+                />
+                {fieldErrors.usuario && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.usuario}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Fila 4: Identificación y Ciudad */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {selectedCountry
+                    ? `${selectedCountry.idFormat}`
+                    : "Identificación"}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="cedula"
+                  placeholder={
+                    selectedCountry
+                      ? `Ej: ${selectedCountry.idExample}`
+                      : "Número de identificación"
+                  }
+                  required
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    fieldErrors.cedula
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  onChange={handleChange}
+                  value={form.cedula}
+                />
+                {fieldErrors.cedula && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.cedula}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Ciudad <span className="text-red-500">*</span>
+                </label>
+                {loadingCiudades ? (
+                  <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : (
+                  <select
+                    name="ciudad"
+                    value={form.ciudad}
+                    onChange={handleChange}
+                    required
+                    disabled={!form.pais || ciudades.length === 0}
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      fieldErrors.ciudad
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    } ${
+                      !form.pais || ciudades.length === 0
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                  >
+                    <option value="">Selecciona tu ciudad</option>
+                    {ciudades.map((city) => (
+                      <option
+                        key={`${city.name}-${city.latitude}`}
+                        value={city.name}
+                      >
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {fieldErrors.ciudad && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors.ciudad}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Fila 5: Empresa y Cargo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Empresa
+                </label>
+                <input
+                  name="empresa"
+                  placeholder="Nombre de tu empresa (opcional)"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  onChange={handleChange}
+                  value={form.empresa}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Cargo <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="cargo"
+                  value={form.cargo}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="Gerente">Gerente</option>
+                  <option value="Técnico">Técnico</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Fila 6: Contraseña */}
             <div>
-              <input
-                name="nombres"
-                placeholder="Nombres"
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400 ${
-                  fieldErrors.nombres
-                    ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
-                }`}
-                onChange={handleChange}
-                value={form.nombres}
-              />
-              {fieldErrors.nombres && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.nombres}
-                </p>
-              )}
-            </div>
-
-            {/* Apellidos */}
-            <div>
-              <input
-                name="apellidos"
-                placeholder="Apellidos"
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400 ${
-                  fieldErrors.apellidos
-                    ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
-                }`}
-                onChange={handleChange}
-                value={form.apellidos}
-              />
-              {fieldErrors.apellidos && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.apellidos}
-                </p>
-              )}
-            </div>
-
-            {/* Empresa */}
-            <div>
-              <input
-                name="empresa"
-                placeholder="Empresa (opcional)"
-                className="w-full px-4 py-3 border border-blue-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400"
-                onChange={handleChange}
-                value={form.empresa}
-              />
-            </div>
-
-            {/* Correo electrónico */}
-            <div className="md:col-span-2">
-              <input
-                name="correo"
-                type="email"
-                placeholder="Correo electrónico"
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400 ${
-                  fieldErrors.correo
-                    ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
-                }`}
-                onChange={handleChange}
-                value={form.correo}
-              />
-              {fieldErrors.correo && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.correo}
-                </p>
-              )}
-            </div>
-
-            {/* Rol */}
-            <div>
-              <select
-                name="rol"
-                value={form.rol}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-blue-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700"
-              >
-                <option value="Gerente">Gerente</option>
-                <option value="Técnico">Técnico</option>
-              </select>
-            </div>
-
-            {/* Cédula */}
-            <div>
-              <input
-                name="cedula"
-                placeholder="Cédula"
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400 ${
-                  fieldErrors.cedula
-                    ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
-                }`}
-                onChange={handleChange}
-                value={form.cedula}
-              />
-              {fieldErrors.cedula && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.cedula}
-                </p>
-              )}
-            </div>
-
-            {/* Celular */}
-            <div>
-              <input
-                name="celular"
-                placeholder="Celular"
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400 ${
-                  fieldErrors.celular
-                    ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
-                }`}
-                onChange={handleChange}
-                value={form.celular}
-              />
-              {fieldErrors.celular && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.celular}
-                </p>
-              )}
-            </div>
-
-            {/* Usuario */}
-            <div>
-              <input
-                name="usuario"
-                placeholder="Usuario"
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400 ${
-                  fieldErrors.usuario
-                    ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
-                }`}
-                onChange={handleChange}
-                value={form.usuario}
-              />
-              {fieldErrors.usuario && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.usuario}
-                </p>
-              )}
-            </div>
-
-            {/* Ciudad */}
-            <div className="md:col-span-2">
-              <select
-                name="ciudad"
-                value={form.ciudad}
-                onChange={handleChange}
-                required
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 ${
-                  fieldErrors.ciudad
-                    ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
-                }`}
-              >
-                <option value="">Selecciona tu ciudad</option>
-                {ciudadOptions}
-              </select>
-              {fieldErrors.ciudad && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.ciudad}
-                </p>
-              )}
-            </div>
-
-            {/* Contraseña */}
-            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Contraseña <span className="text-red-500">*</span>
+              </label>
               <input
                 name="password"
                 type="password"
-                placeholder="Contraseña"
+                placeholder="Mínimo 6 caracteres"
                 required
                 minLength="6"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400 ${
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                   fieldErrors.password
                     ? "border-red-500"
-                    : "border-blue-300 dark:border-gray-600"
+                    : "border-gray-300 dark:border-gray-600"
                 }`}
                 onChange={handleChange}
                 value={form.password}
@@ -787,11 +826,11 @@ export default function Register() {
             </div>
 
             {/* Botón de registro */}
-            <div className="md:col-span-3">
+            <div className="pt-4">
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 dark:focus:ring-offset-gray-800 ${
+                className={`w-full py-4 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ${
                   isLoading ? "opacity-75 cursor-not-allowed" : ""
                 }`}
               >
@@ -820,138 +859,85 @@ export default function Register() {
                     Procesando...
                   </div>
                 ) : (
-                  "Registrarse"
+                  "Crear Cuenta"
                 )}
               </button>
             </div>
-          </form>
 
-          <div className="mt-6 text-center text-sm text-blue-600 dark:text-blue-400">
-            ¿Ya tienes una cuenta?{" "}
-            <a
-              href="/login"
-              className="font-medium text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
-            >
-              Inicia sesión
-            </a>
-          </div>
+            {/* Link a login */}
+            <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+              ¿Ya tienes una cuenta?{" "}
+              <a
+                href="/login"
+                className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+              >
+                Inicia sesión aquí
+              </a>
+            </div>
+          </form>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="absolute bottom-6 text-xs text-blue-400 dark:text-blue-500 text-center w-full z-10">
-        &copy; {new Date().getFullYear()} Sistema de Cursos MAAT. Todos los
-        derechos reservados.
-      </footer>
+     
 
-      {/* Animación CSS y estilos SweetAlert2 */}
-      <style jsx global>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
+      {/* Estilos SweetAlert2 - CORREGIDO */}
+      <style>{`
+  @keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
 
-        /* MODALES SWEETALERT2 - FORZAR HERENCIA DE COLORES */
-        .swal2-modern {
-          border-radius: 1.5rem !important;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-            0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-          padding: 2rem !important;
-          background: white !important;
-          color: #1a202c !important;
-        }
+  .swal2-modern {
+    border-radius: 1.5rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important;
+    padding: 2rem !important;
+    background: white !important;
+    color: #1a202c !important;
+  }
 
-        @media (prefers-color-scheme: dark) {
-          .swal2-modern {
-            background: #1f2937 !important;
-            color: white !important;
-          }
-        }
+  @media (prefers-color-scheme: dark) {
+    .swal2-modern {
+      background: #1f2937 !important;
+      color: white !important;
+    }
+  }
 
-        /* FORZAR QUE TODO EL CONTENIDO HEREDE LOS COLORES */
-        .swal2-modern * {
-          color: inherit !important;
-        }
+  .swal2-modern * {
+    color: inherit !important;
+  }
 
-        .swal2-title-custom {
-          font-size: 1.875rem !important;
-          font-weight: 700 !important;
-          color: inherit !important;
-          margin-bottom: 0.5rem !important;
-        }
+  .swal2-title-custom {
+    font-size: 1.875rem !important;
+    font-weight: 700 !important;
+    color: inherit !important;
+    margin-bottom: 0.5rem !important;
+  }
 
-        .swal2-html-container-custom {
-          font-size: 1.125rem !important;
-          color: inherit !important;
-          line-height: 1.5 !important;
-        }
+  .swal2-html-container-custom {
+    font-size: 1.125rem !important;
+    color: inherit !important;
+    line-height: 1.5 !important;
+  }
 
-        /* ESTILOS ESPECÍFICOS PARA EL CONTENEDOR DE INFORMACIÓN */
-        .swal2-html-container-custom div {
-          background: transparent !important;
-        }
-
-        .swal2-html-container-custom ul {
-          margin: 10px 0 !important;
-          padding-left: 20px !important;
-        }
-
-        .swal2-html-container-custom li {
-          margin-bottom: 5px !important;
-        }
-
-        .swal2-success .swal2-success-ring {
-          border-color: #3b82f6 !important;
-        }
-        .swal2-success [class^="swal2-success-line"][class$="long"] {
-          background-color: #3b82f6 !important;
-        }
-        .swal2-success [class^="swal2-success-line"][class$="tip"] {
-          background-color: #3b82f6 !important;
-        }
-        .swal2-error .swal2-x-mark-line-left,
-        .swal2-error .swal2-x-mark-line-right {
-          background-color: #ef4444 !important;
-        }
-        .swal2-warning {
-          border-color: #f59e0b !important;
-        }
-        .swal2-warning .swal2-icon-content {
-          color: #f59e0b !important;
-        }
-        .swal2-info {
-          border-color: #3b82f6 !important;
-        }
-        .swal2-info .swal2-icon-content {
-          color: #3b82f6 !important;
-        }
-        .swal2-confirm {
-          background-color: #3b82f6 !important;
-          border-radius: 0.75rem !important;
-          font-weight: 600 !important;
-          padding: 0.75rem 1.5rem !important;
-          transition: all 0.2s ease-in-out !important;
-        }
-        .swal2-confirm:hover {
-          background-color: #2563eb !important;
-        }
-      `}</style>
+  .swal2-confirm {
+    background-color: #3b82f6 !important;
+    border-radius: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1.5rem !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+  .swal2-confirm:hover {
+    background-color: #2563eb !important;
+  }
+`}</style>
     </div>
   );
 }

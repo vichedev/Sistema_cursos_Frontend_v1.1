@@ -1,3 +1,4 @@
+// src/pages/admin/modals/ModalEditarUsuario.jsx
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 import Swal from "sweetalert2";
@@ -8,6 +9,7 @@ import {
   sanitizeName,
   sanitizeUsername,
 } from "../../../utils/sanitize";
+import { LATAM_COUNTRIES } from "../../../constants/latam-countries";
 
 export default function ModalEditarUsuario({
   user,
@@ -20,6 +22,7 @@ export default function ModalEditarUsuario({
     nombres: "",
     apellidos: "",
     correo: "",
+    pais: "",
     ciudad: "",
     empresa: "",
     cargo: "",
@@ -35,11 +38,12 @@ export default function ModalEditarUsuario({
         nombres: user.nombres || "",
         apellidos: user.apellidos || "",
         correo: user.correo || "",
+        pais: user.pais || "",
         ciudad: user.ciudad || "",
         empresa: user.empresa || "",
         cargo: user.cargo || "",
         usuario: user.usuario || "",
-        rol: user.rol || "", // Asegúrate que esto esté
+        rol: user.rol || "",
         asignatura: user.asignatura || "",
         password: "", // Vacío para no mostrar hash
       });
@@ -68,6 +72,7 @@ export default function ModalEditarUsuario({
       case "password":
         sanitizedValue = sanitizeInput(value);
         break;
+      case "pais":
       case "ciudad":
       case "empresa":
       case "cargo":
@@ -275,6 +280,26 @@ export default function ModalEditarUsuario({
             required
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           />
+        </div>
+
+        {/* ✅ NUEVO: Campo País */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            País
+          </label>
+          <select
+            name="pais"
+            value={form.pais}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          >
+            <option value="">Seleccione un país</option>
+            {LATAM_COUNTRIES.map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.flag} {country.name} ({country.dialCode})
+              </option>
+            ))}
+          </select>
         </div>
 
         {!isAdmin && (

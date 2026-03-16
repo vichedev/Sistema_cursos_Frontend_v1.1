@@ -102,7 +102,7 @@ export default function CursosEstudiante() {
               "Content-Type": "application/json",
               Accept: "application/json",
             },
-          }
+          },
         );
 
         if (
@@ -118,7 +118,7 @@ export default function CursosEstudiante() {
         else if (Array.isArray(response.data)) cursosData = response.data;
         else if (response.data && typeof response.data === "object") {
           const possibleArrays = Object.values(response.data).filter((item) =>
-            Array.isArray(item)
+            Array.isArray(item),
           );
           cursosData = possibleArrays.length > 0 ? possibleArrays[0] : [];
         }
@@ -129,12 +129,12 @@ export default function CursosEstudiante() {
 
         // Verificar si algún curso tiene la propiedad tieneCupones
         const cursosConCupones = cursosOrdenados.filter(
-          (curso) => curso.tieneCupones
+          (curso) => curso.tieneCupones,
         );
 
         if (cursosConCupones.length > 0) {
           console.log(
-            `🎁 ${cursosConCupones.length} cursos tienen cupones disponibles`
+            `🎁 ${cursosConCupones.length} cursos tienen cupones disponibles`,
           );
         }
       } catch (err) {
@@ -169,11 +169,11 @@ export default function CursosEstudiante() {
       filtered = filtered.filter((curso) => !isCourseExpired(curso));
     } else if (activeTab === "PAGADO") {
       filtered = filtered.filter(
-        (curso) => curso.precio > 0 && !isCourseExpired(curso)
+        (curso) => curso.precio > 0 && !isCourseExpired(curso),
       );
     } else if (activeTab === "GRATIS") {
       filtered = filtered.filter(
-        (curso) => curso.precio === 0 && !isCourseExpired(curso)
+        (curso) => curso.precio === 0 && !isCourseExpired(curso),
       );
     } else if (activeTab === "FINALIZADOS") {
       filtered = filtered.filter((curso) => isCourseExpired(curso));
@@ -188,7 +188,7 @@ export default function CursosEstudiante() {
             curso.descripcion.toLowerCase().includes(term)) ||
           (curso.profesorNombre &&
             curso.profesorNombre.toLowerCase().includes(term)) ||
-          (curso.asignatura && curso.asignatura.toLowerCase().includes(term))
+          (curso.asignatura && curso.asignatura.toLowerCase().includes(term)),
       );
     }
 
@@ -252,7 +252,7 @@ export default function CursosEstudiante() {
             "ngrok-skip-browser-warning": "true",
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       Swal.close();
@@ -269,7 +269,7 @@ export default function CursosEstudiante() {
       });
 
       setCursos((prev) =>
-        prev.map((c) => (c.id === cursoId ? { ...c, inscrito: true } : c))
+        prev.map((c) => (c.id === cursoId ? { ...c, inscrito: true } : c)),
       );
     } catch (err) {
       Swal.close();
@@ -312,7 +312,7 @@ export default function CursosEstudiante() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       // ✅ SI HAY ERROR DE RESERVA PENDIENTE, INTENTAR LIBERAR
@@ -321,7 +321,7 @@ export default function CursosEstudiante() {
         response.data.error?.includes("reserva pendiente")
       ) {
         console.log(
-          "🔄 Detectada reserva pendiente, liberando forzadamente..."
+          "🔄 Detectada reserva pendiente, liberando forzadamente...",
         );
 
         try {
@@ -340,7 +340,7 @@ export default function CursosEstudiante() {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
-            }
+            },
           );
 
           // ✅ REINTENTAR VERIFICACIÓN DESPUÉS DE LIBERAR
@@ -357,7 +357,7 @@ export default function CursosEstudiante() {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
-            }
+            },
           );
 
           return retryResponse.data;
@@ -401,7 +401,7 @@ export default function CursosEstudiante() {
 
     const result = await verifyCoupon(
       couponModal.curso.id,
-      couponModal.codigoCupon
+      couponModal.codigoCupon,
     );
 
     if (result.success) {
@@ -490,7 +490,7 @@ export default function CursosEstudiante() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       Swal.close();
@@ -516,7 +516,7 @@ export default function CursosEstudiante() {
         });
 
         setCursos((prev) =>
-          prev.map((c) => (c.id === curso.id ? { ...c, inscrito: true } : c))
+          prev.map((c) => (c.id === curso.id ? { ...c, inscrito: true } : c)),
         );
         setAppliedCoupon(null);
       } else {
@@ -533,7 +533,7 @@ export default function CursosEstudiante() {
               cursoId: curso.id,
               codigoCupon: appliedCoupon.codigo,
               timestamp: Date.now(),
-            })
+            }),
           );
         }
       }
@@ -572,7 +572,7 @@ export default function CursosEstudiante() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.data.success) {
@@ -592,8 +592,8 @@ export default function CursosEstudiante() {
         // Actualizar estado del curso
         setCursos((prev) =>
           prev.map((c) =>
-            c.id === appliedCoupon?.cursoId ? { ...c, inscrito: true } : c
-          )
+            c.id === appliedCoupon?.cursoId ? { ...c, inscrito: true } : c,
+          ),
         );
         setAppliedCoupon(null);
       } else {
@@ -658,7 +658,7 @@ export default function CursosEstudiante() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       console.log("✅ Cupón liberado por transacción");
@@ -751,10 +751,10 @@ export default function CursosEstudiante() {
 
   const totalCoursesCount = cursos.length;
   const paidCoursesCount = cursos.filter(
-    (c) => c.precio > 0 && !isCourseExpired(c)
+    (c) => c.precio > 0 && !isCourseExpired(c),
   ).length;
   const freeCoursesCount = cursos.filter(
-    (c) => c.precio === 0 && !isCourseExpired(c)
+    (c) => c.precio === 0 && !isCourseExpired(c),
   ).length;
   const expiredCoursesCount = cursos.filter(isCourseExpired).length;
 
@@ -972,12 +972,12 @@ export default function CursosEstudiante() {
                 {searchTerm
                   ? "Intenta con otros términos de búsqueda"
                   : activeTab === "PAGADO"
-                  ? "No hay cursos premium disponibles"
-                  : activeTab === "GRATIS"
-                  ? "No hay cursos gratuitos disponibles"
-                  : activeTab === "FINALIZADOS"
-                  ? "No hay cursos finalizados"
-                  : "No hay cursos disponibles en este momento"}
+                    ? "No hay cursos premium disponibles"
+                    : activeTab === "GRATIS"
+                      ? "No hay cursos gratuitos disponibles"
+                      : activeTab === "FINALIZADOS"
+                        ? "No hay cursos finalizados"
+                        : "No hay cursos disponibles en este momento"}
               </p>
             </div>
           </div>
@@ -1211,10 +1211,51 @@ export default function CursosEstudiante() {
                             ⏰ Este curso ya ha finalizado
                           </div>
                         ) : curso.inscrito ? (
-                          <div className="text-green-600 dark:text-green-400 font-semibold text-center">
-                            <span className="inline-block px-2 py-1.5 md:px-3 md:py-2 rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 transition-colors duration-200 text-xs md:text-sm">
-                              ✅ Ya estás inscrito
-                            </span>
+                          <div className="space-y-2">
+                            <div className="text-green-600 dark:text-green-400 font-semibold text-center">
+                              <span className="inline-block px-2 py-1.5 md:px-3 md:py-2 rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 transition-colors duration-200 text-xs md:text-sm">
+                                ✅ Ya estás inscrito
+                              </span>
+                            </div>
+
+                            {/* 🔥 BOTÓN DE ACCESO AL CURSO - SIEMPRE VISIBLE SI HAY ENLACE */}
+                            {curso.link ? (
+                              <button
+                                onClick={() => {
+                                  window.open(
+                                    curso.link,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  );
+                                }}
+                                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-2 md:px-4 md:py-3 rounded-xl font-bold text-center block hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm"
+                              >
+                                {curso.tipo?.startsWith("ONLINE")
+                                  ? "🎓 IR A CLASE"
+                                  : "📍 VER UBICACIÓN"}
+                              </button>
+                            ) : (
+                              <div className="text-center bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 p-2 rounded-lg font-semibold text-xs border border-yellow-200 dark:border-yellow-700">
+                                ⏳ El enlace de clase será publicado
+                                próximamente por el profesor
+                              </div>
+                            )}
+
+                            {/* ✅ RECURSOS DEL CURSO - SOLO SI HAY RECURSOS */}
+                            {curso.recursosLink && (
+                              <button
+                                onClick={() => {
+                                  window.open(
+                                    curso.recursosLink,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  );
+                                }}
+                                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-2 md:px-4 md:py-3 rounded-xl font-bold text-center block hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm mt-2"
+                              >
+                                📚 RECURSOS DEL CURSO
+                              </button>
+                            )}
                           </div>
                         ) : curso.precio > 0 ? (
                           <>
@@ -1275,8 +1316,8 @@ export default function CursosEstudiante() {
                                         }
                                       />
                                       {curso.tieneCupones
-                                        ? "¿Tienes cupón?"
-                                        : "Sin cupones"}
+                                        ? "¿Tienes un cupón?"
+                                        : "Sin cupones disponibles"}
                                     </button>
                                   </div>
                                 )}
@@ -1289,8 +1330,8 @@ export default function CursosEstudiante() {
                                         prev.map((c) =>
                                           c.id === curso.id
                                             ? { ...c, inscrito: true }
-                                            : c
-                                        )
+                                            : c,
+                                        ),
                                       )
                                     }
                                   />

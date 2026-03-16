@@ -53,7 +53,7 @@ const useMisCursos = () => {
               "ngrok-skip-browser-warning": "true",
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         if (
@@ -75,7 +75,7 @@ const useMisCursos = () => {
 
         // Ordenar por fecha de creación (más recientes primero)
         const cursosOrdenados = cursos.sort(
-          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
         );
 
         setState({ misCursos: cursosOrdenados, loading: false, error: null });
@@ -105,7 +105,7 @@ const getTodayString = () => {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(today.getDate()).padStart(2, "0")}`;
 };
 
@@ -122,7 +122,7 @@ const isTomorrowCourse = (curso) => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = `${tomorrow.getFullYear()}-${String(
-    tomorrow.getMonth() + 1
+    tomorrow.getMonth() + 1,
   ).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
 
   return fechaStr === tomorrowStr;
@@ -138,7 +138,7 @@ const getDaysUntilCourse = (curso) => {
   const todayDate = new Date(
     today.getFullYear(),
     today.getMonth(),
-    today.getDate()
+    today.getDate(),
   );
 
   const daysDiff = Math.round((courseDate - todayDate) / (1000 * 60 * 60 * 24));
@@ -156,7 +156,7 @@ const DescriptionModal = React.memo(({ open, curso, onClose }) => {
     (e) => {
       if (e.target === e.currentTarget) onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   const handleContentClick = useCallback((e) => {
@@ -252,6 +252,38 @@ const DescriptionModal = React.memo(({ open, curso, onClose }) => {
                 {curso.precio > 0 ? `$${curso.precio} USD` : "Gratuito"}
               </div>
             </div>
+          </div>
+          {curso.recursosLink && (
+            <div className="mt-4 md:mt-6">
+              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-700 transition-colors duration-200">
+                <div className="font-semibold text-purple-800 dark:text-purple-300 mb-2 flex items-center gap-2">
+                  <span className="text-lg">📚</span>
+                  Recursos del Curso
+                </div>
+                <a
+                  href={curso.recursosLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 underline break-all text-sm block mb-3"
+                >
+                  {curso.recursosLink}
+                </a>
+                <div className="text-xs text-purple-600 dark:text-purple-400 bg-white/50 dark:bg-black/20 p-2 rounded border border-purple-200 dark:border-purple-600">
+                  💡 Haz clic en el enlace para acceder a documentos,
+                  presentaciones y materiales del curso (se abre en una nueva
+                  pestaña)
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Footer del Modal - SIEMPRE VISIBLE */}
+          <div className="border-t border-gray-200 dark:border-gray-700 p-3 md:p-4 bg-gray-50 dark:bg-gray-700 transition-colors duration-200 flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-2 md:py-3 rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-200 text-sm md:text-base"
+            >
+              Cerrar Descripción
+            </button>
           </div>
         </div>
 
@@ -510,18 +542,18 @@ const CursoCard = React.memo(({ curso }) => {
                 isExpired
                   ? "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                   : curso.activo
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                  : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
               }`}
             >
               {isExpired
                 ? "⏰ CURSO FINALIZADO"
                 : curso.activo
-                ? "✅ INSCRIPCIÓN ACTIVA"
-                : "❌ CURSO ARCHIVADO"}
+                  ? "✅ INSCRIPCIÓN ACTIVA"
+                  : "❌ CURSO ARCHIVADO"}
             </div>
 
-            {/* Acceso al curso */}
+            {/* Acceso al curso - MEJORADO: No muestra mensaje de "no disponible" si hay enlace */}
             {isExpired ? (
               <div className="text-center bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 p-3 rounded-xl font-semibold text-sm">
                 Curso finalizado - Ya no disponible
@@ -539,14 +571,31 @@ const CursoCard = React.memo(({ curso }) => {
                     : "📍 VER UBICACIÓN"}
                 </a>
               ) : (
+                // ✅ SOLO SE MUESTRA ESTO CUANDO REALMENTE NO HAY ENLACE
                 <div className="text-center bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 p-3 rounded-xl font-semibold text-sm border border-yellow-200 dark:border-yellow-700">
-                  ⚠️ Enlace no disponible temporalmente
+                  ⚠️ El enlace será publicado próximamente por el profesor
                 </div>
               )
             ) : (
               <div className="text-center bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 p-3 rounded-xl font-semibold text-sm border border-red-200 dark:border-red-700">
                 🔒 Curso archivado por el administrador
               </div>
+            )}
+
+            {/* ✅ RECURSOS DEL CURSO - YA ABRE EN NUEVA PESTAÑA (target="_blank") */}
+            {!isExpired && curso.recursosLink && (
+              <button
+                onClick={() => {
+                  window.open(
+                    curso.recursosLink,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                }}
+                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-3 rounded-xl font-bold text-center block hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg mt-2"
+              >
+                📚 VER RECURSOS DEL CURSO
+              </button>
             )}
           </div>
         </div>
@@ -644,10 +693,10 @@ export default function MisCursos() {
   // ✅ CALCULAR ESTADÍSTICAS CON useMemo
   const statistics = useMemo(() => {
     const cursosActivos = misCursos.filter(
-      (c) => c.activo && !isCourseExpired(c)
+      (c) => c.activo && !isCourseExpired(c),
     );
     const cursosInactivos = misCursos.filter(
-      (c) => !c.activo || isCourseExpired(c)
+      (c) => !c.activo || isCourseExpired(c),
     );
     const cursosGratis = misCursos.filter((c) => c.precio === 0);
     const cursosPagados = misCursos.filter((c) => c.precio > 0);
@@ -691,7 +740,7 @@ export default function MisCursos() {
             curso.descripcion.toLowerCase().includes(term)) ||
           (curso.profesorNombre &&
             curso.profesorNombre.toLowerCase().includes(term)) ||
-          (curso.asignatura && curso.asignatura.toLowerCase().includes(term))
+          (curso.asignatura && curso.asignatura.toLowerCase().includes(term)),
       );
     }
 

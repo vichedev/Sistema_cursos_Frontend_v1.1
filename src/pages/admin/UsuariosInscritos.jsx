@@ -13,11 +13,11 @@ import { useDebounce } from "use-debounce";
 // Lazy loading de modales
 const ModalVerUsuario = lazy(() => import("./modals/ModalVerUsuario"));
 const ModalEditarUsuario = lazy(() => import("./modals/ModalEditarUsuario"));
-const ModalEliminarUsuario = lazy(() =>
-  import("./modals/ModalEliminarUsuario")
+const ModalEliminarUsuario = lazy(
+  () => import("./modals/ModalEliminarUsuario"),
 );
-const ModalCrearUsuarioAdmin = lazy(() =>
-  import("./modals/ModalCrearUsuarioAdmin")
+const ModalCrearUsuarioAdmin = lazy(
+  () => import("./modals/ModalCrearUsuarioAdmin"),
 );
 
 // Importar componentes y hooks modularizados
@@ -88,6 +88,35 @@ export default function UsuariosInscritos() {
     setModalType("ver");
   }, []);
 
+  // Función para obtener la bandera del país
+  const getCountryFlag = (pais) => {
+    const flags = {
+      EC: "🇪🇨", // Ecuador
+      CO: "🇨🇴", // Colombia
+      AR: "🇦🇷", // Argentina
+      PE: "🇵🇪", // Perú
+      CL: "🇨🇱", // Chile
+      BO: "🇧🇴", // Bolivia
+      PY: "🇵🇾", // Paraguay
+      UY: "🇺🇾", // Uruguay
+      VE: "🇻🇪", // Venezuela
+      MX: "🇲🇽", // México
+      GT: "🇬🇹", // Guatemala
+      HN: "🇭🇳", // Honduras
+      SV: "🇸🇻", // El Salvador
+      NI: "🇳🇮", // Nicaragua
+      CR: "🇨🇷", // Costa Rica
+      PA: "🇵🇦", // Panamá
+      DO: "🇩🇴", // República Dominicana
+      CU: "🇨🇺", // Cuba
+      BR: "🇧🇷", // Brasil
+      PR: "🇵🇷", // Puerto Rico
+      US: "🇺🇸", // Estados Unidos
+      ES: "🇪🇸", // España
+    };
+    return flags[pais] || "🌎";
+  };
+
   const handleEdit = useCallback((user) => {
     setModalUser(user);
     setModalType("editar");
@@ -135,7 +164,7 @@ export default function UsuariosInscritos() {
         dataToSend,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       closeModal();
@@ -160,7 +189,7 @@ export default function UsuariosInscritos() {
         `${import.meta.env.VITE_BACKEND_URL}/api/users/${userToDelete.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       // ✅ NUEVO: Manejar la respuesta estructurada del backend
@@ -206,7 +235,7 @@ export default function UsuariosInscritos() {
         newUser,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       // No cierres aquí: el hijo cierra el modal al éxito.
@@ -242,7 +271,7 @@ export default function UsuariosInscritos() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (response.data && response.data.success) {
@@ -251,7 +280,7 @@ export default function UsuariosInscritos() {
         return { success: true, message: response.data.message };
       } else {
         throw new Error(
-          response.data?.message || "Error al verificar la cuenta"
+          response.data?.message || "Error al verificar la cuenta",
         );
       }
     } catch (err) {
@@ -273,7 +302,7 @@ export default function UsuariosInscritos() {
   const handleExportToExcel = () => {
     exportToExcel(
       activeTab === "estudiantes" ? data.estudiantes : data.administradores,
-      activeTab
+      activeTab,
     );
   };
 
@@ -544,7 +573,7 @@ export default function UsuariosInscritos() {
                               onChange={(e) => setFilterCiudad(e.target.value)}
                             >
                               <option value="">Todas las ciudades</option>
-                              {filterOptions?.ciudades.map((ciudad) => (
+                              {(filterOptions?.ciudades || []).map((ciudad) => (
                                 <option key={ciudad} value={ciudad}>
                                   {ciudad}
                                 </option>
@@ -561,11 +590,13 @@ export default function UsuariosInscritos() {
                               onChange={(e) => setFilterEmpresa(e.target.value)}
                             >
                               <option value="">Todas las empresas</option>
-                              {filterOptions?.empresas.map((empresa) => (
-                                <option key={empresa} value={empresa}>
-                                  {empresa}
-                                </option>
-                              ))}
+                              {(filterOptions?.empresas || []).map(
+                                (empresa) => (
+                                  <option key={empresa} value={empresa}>
+                                    {empresa}
+                                  </option>
+                                ),
+                              )}
                             </select>
                           </div>
                           <div>
@@ -578,7 +609,7 @@ export default function UsuariosInscritos() {
                               onChange={(e) => setFilterCurso(e.target.value)}
                             >
                               <option value="">Todos los cursos</option>
-                              {filterOptions?.cursos.map((titulo) => (
+                              {(filterOptions?.cursos || []).map((titulo) => (
                                 <option key={titulo} value={titulo}>
                                   {titulo}
                                 </option>
@@ -704,6 +735,9 @@ export default function UsuariosInscritos() {
                               Cédula
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              País
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Nombre
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -727,7 +761,7 @@ export default function UsuariosInscritos() {
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {paginatedUsers.length === 0 ? (
+                          {(paginatedUsers || []).length === 0 ? (
                             <tr>
                               <td
                                 colSpan="9"
@@ -739,7 +773,7 @@ export default function UsuariosInscritos() {
                               </td>
                             </tr>
                           ) : (
-                            paginatedUsers.map((user) => (
+                            (paginatedUsers || []).map((user) => (
                               <tr
                                 key={user.id}
                                 className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
@@ -751,6 +785,18 @@ export default function UsuariosInscritos() {
                                   {user.cedula && user.cedula.trim() !== ""
                                     ? user.cedula
                                     : "No especificada"}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                  {user.pais ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-lg">
+                                        {getCountryFlag(user.pais)}
+                                      </span>
+                                      <span>{user.pais}</span>
+                                    </div>
+                                  ) : (
+                                    "-"
+                                  )}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
                                   {user.nombres} {user.apellidos}

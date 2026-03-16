@@ -1,3 +1,4 @@
+// src/pages/admin/modals/ModalVerUsuario.jsx
 import React, { useState } from "react";
 import Modal from "./Modal";
 
@@ -105,7 +106,7 @@ export default function ModalVerUsuario({
     if (cleaned.length === 10) {
       return `+593 ${cleaned.substring(1, 3)} ${cleaned.substring(
         3,
-        6
+        6,
       )} ${cleaned.substring(6)}`;
     }
 
@@ -113,14 +114,14 @@ export default function ModalVerUsuario({
     if (cleaned.length === 12 && cleaned.startsWith("593")) {
       return `+593 ${cleaned.substring(3, 5)} ${cleaned.substring(
         5,
-        8
+        8,
       )} ${cleaned.substring(8)}`;
     }
 
     // Si no coincide con ningún formato, devolver el original
     return phone;
   };
-  
+
   // Estado de verificación con íconos y colores
   const getVerificationStatus = () => {
     if (user.emailVerified) {
@@ -215,6 +216,56 @@ export default function ModalVerUsuario({
     }
   };
 
+  // Función para obtener la bandera del país
+  const getCountryFlag = (pais) => {
+    const flags = {
+      EC: "🇪🇨",
+      CO: "🇨🇴",
+      AR: "🇦🇷",
+      PE: "🇵🇪",
+      CL: "🇨🇱",
+      BO: "🇧🇴",
+      PY: "🇵🇾",
+      UY: "🇺🇾",
+      VE: "🇻🇪",
+      MX: "🇲🇽",
+      GT: "🇬🇹",
+      HN: "🇭🇳",
+      SV: "🇸🇻",
+      NI: "🇳🇮",
+      CR: "🇨🇷",
+      PA: "🇵🇦",
+      DO: "🇩🇴",
+      CU: "🇨🇺",
+    };
+    return flags[pais] || "🌎";
+  };
+
+  // Función para obtener nombre completo del país
+  const getCountryName = (pais) => {
+    const names = {
+      EC: "Ecuador",
+      CO: "Colombia",
+      AR: "Argentina",
+      PE: "Perú",
+      CL: "Chile",
+      BO: "Bolivia",
+      PY: "Paraguay",
+      UY: "Uruguay",
+      VE: "Venezuela",
+      MX: "México",
+      GT: "Guatemala",
+      HN: "Honduras",
+      SV: "El Salvador",
+      NI: "Nicaragua",
+      CR: "Costa Rica",
+      PA: "Panamá",
+      DO: "República Dominicana",
+      CU: "Cuba",
+    };
+    return names[pais] || "No especificado";
+  };
+
   const fields = [
     { label: "ID", value: user.id },
     { label: "Nombres", value: user.nombres },
@@ -236,6 +287,20 @@ export default function ModalVerUsuario({
       ),
     },
     { label: "Cédula", value: user.cedula || "-" },
+    // ✅ NUEVO: Campo País
+    {
+      label: "País",
+      value: user.pais ? (
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{getCountryFlag(user.pais)}</span>
+          <span>
+            {getCountryName(user.pais)} ({user.pais})
+          </span>
+        </div>
+      ) : (
+        "No especificado"
+      ),
+    },
     { label: "Ciudad", value: user.ciudad || "-" },
     { label: "Empresa", value: user.empresa || "-" },
     { label: "Cargo", value: user.cargo || "-" },

@@ -33,6 +33,7 @@ export default function CrearCurso() {
     tipo: "ONLINE_GRATIS",
     cupos: 1,
     link: "",
+    recursosLink: "",
     precio: 0,
     fecha: "",
     hora: "",
@@ -456,6 +457,7 @@ export default function CrearCurso() {
         tipo: "ONLINE_GRATIS",
         cupos: 1,
         link: "",
+        recursosLink: "",
         precio: 0,
         fecha: "",
         hora: "",
@@ -938,6 +940,24 @@ export default function CrearCurso() {
                   ⚠️ {errors.link}
                 </p>
               )}
+            </div>
+            {/* Link de recursos */}
+            <div>
+              <label className="block mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="text-blue-600 dark:text-blue-400">📚</span>
+                Link de Recursos del Curso
+              </label>
+              <input
+                name="recursosLink"
+                value={form.recursosLink || ""}
+                onChange={handleChange}
+                className="w-full px-5 py-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm"
+                placeholder="https://drive.google.com/... o https://dropbox.com/..."
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Enlace a documentos, presentaciones, materiales del curso
+                (Google Drive, Dropbox, etc.)
+              </p>
             </div>
           </div>
 

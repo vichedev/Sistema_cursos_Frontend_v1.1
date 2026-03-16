@@ -46,54 +46,46 @@ export function useUsuarios() {
           return [];
         };
 
-        const estudiantes = convertirAArray(res.data.estudiantes);
-        const administradores = convertirAArray(res.data.administradores);
-
-        setData({
-          estudiantes: estudiantes.map((user) => ({
-            ...user,
-            cursos: user.cursos || [],
-          })),
-          administradores: administradores,
+        // Normalización agresiva: garantizamos estructura mínima en cada objeto
+        const normalizarUsuario = (u) => ({
+          ...u,
+          nombres: u.nombres || "",
+          apellidos: u.apellidos || "",
+          correo: u.correo || "",
+          ciudad: u.ciudad || "",
+          empresa: u.empresa || "",
+          cargo: u.cargo || "",
+          cedula: u.cedula || "",
+          cursos: Array.isArray(u.cursos) ? u.cursos : [],
         });
+
+        const estudiantes = convertirAArray(res.data.estudiantes).map(
+          normalizarUsuario,
+        );
+        const administradores = convertirAArray(res.data.administradores).map(
+          normalizarUsuario,
+        );
+
+        setData({ estudiantes, administradores });
       })
       .catch((error) => {
-        console.error("❌ Error completo:", error);
-        if (error.code === "ECONNABORTED") {
-          setError("Timeout - El servidor tardó demasiado en responder");
-        } else if (error.response) {
-          if (error.response.status === 401) {
-            setError("No autorizado - Tu sesión ha expirado");
-          } else if (error.response.status === 403) {
-            setError("Acceso denegado - No tienes permisos para ver usuarios");
-          } else {
-            setError(`Error del servidor (${error.response.status})`);
-          }
-        } else if (error.request) {
-          setError("No se pudo conectar con el servidor");
-        } else {
-          setError("Error de configuración: " + error.message);
-        }
+        console.error("❌ Error al cargar usuarios:", error);
+        setError("No se pudieron cargar los usuarios. Intente nuevamente.");
       })
       .finally(() => setLoading(false));
   };
 
+  // El filtro de opciones ahora es mucho más seguro al depender de datos normalizados
   const filterOptions = useMemo(() => {
     if (activeTab !== "estudiantes") return null;
 
-    const estudiantes = data.estudiantes;
+    const est = data.estudiantes;
     return {
-      ciudades: [
-        ...new Set(estudiantes.map((u) => u.ciudad).filter(Boolean)),
-      ].sort(),
-      empresas: [
-        ...new Set(estudiantes.map((u) => u.empresa).filter(Boolean)),
-      ].sort(),
+      ciudades: [...new Set(est.map((u) => u.ciudad).filter(Boolean))].sort(),
+      empresas: [...new Set(est.map((u) => u.empresa).filter(Boolean))].sort(),
       cursos: [
         ...new Set(
-          estudiantes.flatMap((u) =>
-            Array.isArray(u.cursos) ? u.cursos.map((c) => c.titulo) : []
-          )
+          est.flatMap((u) => u.cursos.map((c) => c.titulo || "Sin título")),
         ),
       ].sort(),
     };
@@ -101,52 +93,29 @@ export function useUsuarios() {
 
   const filteredUsers = useCallback(
     (users) => {
+      if (!Array.isArray(users)) return [];
+
       return users.filter((user) => {
+        const term = debouncedSearchTerm.toLowerCase();
         const matchesSearch =
-          !debouncedSearchTerm ||
-          user.nombres
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLowerCase()) ||
-          user.apellidos
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLowerCase()) ||
-          user.correo
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLowerCase()) ||
-          (user.ciudad &&
-            user.ciudad
-              .toLowerCase()
-              .includes(debouncedSearchTerm.toLowerCase())) ||
-          (user.empresa &&
-            user.empresa
-              .toLowerCase()
-              .includes(debouncedSearchTerm.toLowerCase())) ||
-          (user.cargo &&
-            user.cargo
-              .toLowerCase()
-              .includes(debouncedSearchTerm.toLowerCase())) ||
-          (user.usuario &&
-            user.usuario
-              .toLowerCase()
-              .includes(debouncedSearchTerm.toLowerCase())) ||
-          (user.cedula &&
-            user.cedula
-              .toLowerCase()
-              .includes(debouncedSearchTerm.toLowerCase()));
+          !term ||
+          user.nombres.toLowerCase().includes(term) ||
+          user.apellidos.toLowerCase().includes(term) ||
+          user.correo.toLowerCase().includes(term) ||
+          user.ciudad.toLowerCase().includes(term) ||
+          user.empresa.toLowerCase().includes(term) ||
+          user.cargo.toLowerCase().includes(term) ||
+          user.cedula.toLowerCase().includes(term);
 
         if (activeTab === "estudiantes") {
-          const matchesCiudad =
-            !filterCiudad || (user.ciudad && user.ciudad === filterCiudad);
+          const matchesCiudad = !filterCiudad || user.ciudad === filterCiudad;
           const matchesEmpresa =
-            !filterEmpresa || (user.empresa && user.empresa === filterEmpresa);
+            !filterEmpresa || user.empresa === filterEmpresa;
           const matchesCurso =
-            !filterCurso ||
-            (user.cursos &&
-              user.cursos.some((curso) => curso.titulo === filterCurso));
+            !filterCurso || user.cursos.some((c) => c.titulo === filterCurso);
           const matchesCedula =
             !filterCedula ||
-            (user.cedula &&
-              user.cedula.toLowerCase().includes(filterCedula.toLowerCase()));
+            user.cedula.toLowerCase().includes(filterCedula.toLowerCase());
 
           return (
             matchesSearch &&
@@ -167,23 +136,21 @@ export function useUsuarios() {
       filterCurso,
       filterCedula,
       activeTab,
-    ]
+    ],
   );
 
   const paginatedUsers = useMemo(() => {
-    const users = filteredUsers(
-      activeTab === "estudiantes" ? data.estudiantes : data.administradores
-    );
-
+    const list =
+      activeTab === "estudiantes" ? data.estudiantes : data.administradores;
+    const users = filteredUsers(list);
     const startIndex = (currentPage - 1) * itemsPerPage;
     return users.slice(startIndex, startIndex + itemsPerPage);
   }, [currentPage, itemsPerPage, activeTab, data, filteredUsers]);
 
   const totalItems = useMemo(() => {
-    const users = filteredUsers(
-      activeTab === "estudiantes" ? data.estudiantes : data.administradores
-    );
-    return users.length;
+    const list =
+      activeTab === "estudiantes" ? data.estudiantes : data.administradores;
+    return filteredUsers(list).length;
   }, [activeTab, data, filteredUsers]);
 
   return {
@@ -206,19 +173,9 @@ export function useUsuarios() {
     setCurrentPage,
     itemsPerPage,
     setItemsPerPage,
-    modalCallbacks: null, 
-    modalType: null,
-    setModalType: null,
-    modalUser: null,
-    setModalUser: null,
-    modalLoading: null,
-    setModalLoading: null,
-    modalError: null,
-    setModalError: null,
     fetchUsuarios,
     filterOptions,
     paginatedUsers,
     totalItems,
-    filteredUsers,
   };
 }

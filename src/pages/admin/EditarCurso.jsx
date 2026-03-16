@@ -18,6 +18,7 @@ import {
   FaCopy,
   FaTrash,
   FaPlus,
+  FaFileAlt,
 } from "react-icons/fa";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
 
@@ -32,6 +33,7 @@ export default function EditarCurso() {
     tipo: "ONLINE_GRATIS",
     cupos: 1,
     link: "",
+    recursosLink: "",
     precio: 0,
     fecha: "",
     hora: "",
@@ -76,7 +78,7 @@ export default function EditarCurso() {
           profesoresData = res.data;
         } else if (res.data && typeof res.data === "object") {
           const possibleArrays = Object.values(res.data).filter((item) =>
-            Array.isArray(item)
+            Array.isArray(item),
           );
           profesoresData = possibleArrays.length > 0 ? possibleArrays[0] : [];
         }
@@ -103,8 +105,8 @@ export default function EditarCurso() {
           curso.profesorId ||
           curso.profesor?.id ||
           curso.Profesor?.id ||
-          curso.userId || // a veces viene como userId
-          curso.teacherId; // o teacherId
+          curso.userId ||
+          curso.teacherId;
 
         setForm({
           titulo: curso.titulo || "",
@@ -113,6 +115,7 @@ export default function EditarCurso() {
           tipo: curso.tipo || "ONLINE_GRATIS",
           cupos: cuposValue,
           link: curso.link || "",
+          recursosLink: curso.recursosLink || "",
           precio: precioValue,
           fecha: curso.fecha || "",
           hora: curso.hora || "",
@@ -146,15 +149,14 @@ export default function EditarCurso() {
         `${import.meta.env.VITE_BACKEND_URL}/api/coupons/course/${cursoId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (response.data && Array.isArray(response.data)) {
         const cuponesConId = response.data.map((cupon) => ({
           ...cupon,
-          id: cupon.id, // Usar el ID real del backend
+          id: cupon.id,
           precioFinal: calcularPrecioConDescuento(cupon.tipo),
-          // 🆕 AGREGAR MARCADOR PARA IDENTIFICAR CUPONES EXISTENTES
           _esExistente: true,
         }));
         setCupones(cuponesConId);
@@ -164,7 +166,7 @@ export default function EditarCurso() {
     }
   };
 
-  // 🎁 FUNCIONES PARA CUPONES (igual que en CrearCurso)
+  // 🎁 FUNCIONES PARA CUPONES
   const generarCodigoCupon = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let codigo = "";
@@ -204,7 +206,7 @@ export default function EditarCurso() {
 
     const cuponConId = {
       ...nuevoCupon,
-      id: Date.now(), // ID temporal para el frontend
+      id: Date.now(),
       precioFinal: calcularPrecioConDescuento(nuevoCupon.tipo),
     };
 
@@ -321,7 +323,6 @@ export default function EditarCurso() {
         fechaExpiracion: cupon.fechaExpiracion || null,
       };
 
-      // 🆕 SI ES UN CUPÓN EXISTENTE, INCLUIR EL ID
       if (cupon._esExistente && cupon.id) {
         cuponData.id = cupon.id;
       }
@@ -330,7 +331,7 @@ export default function EditarCurso() {
     });
   };
 
-  // ✅ FUNCIÓN PARA GENERAR DESCRIPCIÓN CON IA (igual que en CrearCurso)
+  // ✅ FUNCIÓN PARA GENERAR DESCRIPCIÓN CON IA
   const generateDescription = async () => {
     if (!form.titulo.trim()) {
       Swal.fire({
@@ -353,7 +354,7 @@ export default function EditarCurso() {
         {
           params: { titulo: form.titulo },
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (response.data.success) {
@@ -371,7 +372,7 @@ export default function EditarCurso() {
         });
       } else {
         throw new Error(
-          response.data.message || "Error al generar descripción"
+          response.data.message || "Error al generar descripción",
         );
       }
     } catch (error) {
@@ -503,11 +504,18 @@ export default function EditarCurso() {
       data.append("tipo", form.tipo);
       data.append("cupos", form.cupos);
       data.append("link", form.link);
-      data.append("precio", form.precio);
+      data.append("recursosLink", form.recursosLink);
+
+      // 🔥 CORRECCIÓN: Forzar precio a 0 si el curso es GRATIS
+      if (form.tipo.endsWith("GRATIS")) {
+        data.append("precio", "0");
+      } else {
+        data.append("precio", form.precio.toString());
+      }
+
       data.append("fecha", form.fecha);
       data.append("hora", form.hora);
 
-      // 🆕 USAR LA NUEVA FUNCIÓN PARA PREPARAR CUPONES
       if (cupones.length > 0) {
         const cuponesParaEnviar = prepararCuponesParaEnvio();
         data.append("cupones", JSON.stringify(cuponesParaEnviar));
@@ -525,7 +533,7 @@ export default function EditarCurso() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       Swal.fire({
@@ -551,7 +559,7 @@ export default function EditarCurso() {
         "Error",
         err.response?.data?.message ||
           "No se pudo editar el curso. Verifica la consola para más detalles.",
-        "error"
+        "error",
       );
     } finally {
       setIsSubmitting(false);
@@ -1068,6 +1076,27 @@ export default function EditarCurso() {
                   </p>
                 )}
               </div>
+
+              {/* NUEVO CAMPO: Link de Recursos */}
+              <div>
+                <label className="block mb-2 md:mb-3 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-indigo-600 dark:text-indigo-400">
+                    <FaFileAlt className="text-sm md:text-base" />
+                  </span>
+                  Link de Recursos del Curso
+                </label>
+                <input
+                  name="recursosLink"
+                  value={form.recursosLink}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 md:px-5 md:py-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-gray-800 dark:text-white shadow-sm text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
+                  placeholder="https://drive.google.com/... o https://notion.so/..."
+                />
+                <p className="mt-1 md:mt-2 text-xs md:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  💡 Enlace a materiales, presentaciones, documentos del curso
+                  (Google Drive, Notion, etc.)
+                </p>
+              </div>
             </div>
 
             {/* Columna Derecha - Cupones y Botón Guardar */}
@@ -1133,7 +1162,7 @@ export default function EditarCurso() {
                         <span className="text-xs md:text-sm font-medium text-amber-800 dark:text-amber-200">
                           Precio final: $
                           {calcularPrecioConDescuento(
-                            tipoCuponSeleccionado
+                            tipoCuponSeleccionado,
                           ).toFixed(2)}
                         </span>
                       </div>
@@ -1165,9 +1194,9 @@ export default function EditarCurso() {
                           <div
                             key={cupon.id}
                             className={`flex justify-between items-center p-2 md:p-3 bg-white dark:bg-gray-800 rounded-lg border border-${getColorTipoCupon(
-                              cupon.tipo
+                              cupon.tipo,
                             )}-100 dark:border-${getColorTipoCupon(
-                              cupon.tipo
+                              cupon.tipo,
                             )}-800`}
                           >
                             <div className="flex-1">
@@ -1177,13 +1206,13 @@ export default function EditarCurso() {
                                 </span>
                                 <span
                                   className={`text-xs px-1 md:px-2 py-1 rounded-full bg-${getColorTipoCupon(
-                                    cupon.tipo
+                                    cupon.tipo,
                                   )}-100 dark:bg-${getColorTipoCupon(
-                                    cupon.tipo
+                                    cupon.tipo,
                                   )}-800 text-${getColorTipoCupon(
-                                    cupon.tipo
+                                    cupon.tipo,
                                   )}-800 dark:text-${getColorTipoCupon(
-                                    cupon.tipo
+                                    cupon.tipo,
                                   )}-200`}
                                 >
                                   {getTipoCuponTexto(cupon.tipo)}
@@ -1194,7 +1223,7 @@ export default function EditarCurso() {
                                 {cupon.usosMaximos !== 1 ? "s" : ""} •
                                 {cupon.fechaExpiracion
                                   ? ` Vence: ${new Date(
-                                      cupon.fechaExpiracion
+                                      cupon.fechaExpiracion,
                                     ).toLocaleDateString()}`
                                   : " Sin expiración"}
                               </div>
@@ -1273,7 +1302,7 @@ export default function EditarCurso() {
         </form>
       </div>
 
-      {/* 🎁 MODAL PARA CREAR CUPÓN (igual que en CrearCurso) */}
+      {/* 🎁 MODAL PARA CREAR CUPÓN */}
       {showCouponModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl md:rounded-2xl w-full max-w-md">

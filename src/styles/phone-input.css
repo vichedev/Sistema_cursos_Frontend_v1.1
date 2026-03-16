@@ -1,0 +1,23 @@
+/* src/styles/phone-input.css */
+
+.max-h-60::-webkit-scrollbar {
+    width: 4px;
+}
+
+.max-h-60::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.dark .max-h-60::-webkit-scrollbar-track {
+    background: #374151;
+}
+
+.max-h-60::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.dark .max-h-60::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
