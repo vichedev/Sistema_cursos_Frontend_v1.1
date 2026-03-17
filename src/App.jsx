@@ -10,6 +10,10 @@ import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import LandingPage from "./pages/LandingPage";
 
+// ✅ RECUPERACIÓN DE CONTRASEÑA
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 // ADMIN - Importa el layout y las páginas
 import AdminLayout from "./layouts/AdminLayout";
 import DashboardAdmin from "./pages/admin/DashboardAdmin";
@@ -45,6 +49,10 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
 
+            {/* ✅ RECUPERACIÓN DE CONTRASEÑA */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
             {/* ADMIN */}
             <Route path="/admin/*" element={<AdminLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
@@ -60,8 +68,7 @@ function App() {
                 path="usuarios-inscritos"
                 element={<UsuariosInscritos />}
               />
-              <Route path="gestionar-cupones" element={<GestionarCupones />} />{" "}
-              {/* ✅ NUEVA RUTA */}
+              <Route path="gestionar-cupones" element={<GestionarCupones />} />
             </Route>
 
             {/* ESTUDIANTE */}

@@ -3,7 +3,7 @@ const Footer = () => {
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -41,28 +41,28 @@ const Footer = () => {
             </h4>
             <nav className="flex flex-col space-y-3 text-sm">
               <button
-                onClick={() => scrollToSection('hero')}
+                onClick={() => scrollToSection("hero")}
                 className="hover:text-white transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group text-left"
               >
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full group-hover:scale-125 transition-transform"></div>
                 Inicio
               </button>
               <button
-                onClick={() => scrollToSection('sobre-nosotros')}
+                onClick={() => scrollToSection("sobre-nosotros")}
                 className="hover:text-white transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group text-left"
               >
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full group-hover:scale-125 transition-transform"></div>
                 Sobre Nosotros
               </button>
               <button
-                onClick={() => scrollToSection('cursos')}
+                onClick={() => scrollToSection("cursos")}
                 className="hover:text-white transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group text-left"
               >
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full group-hover:scale-125 transition-transform"></div>
                 Cursos Disponibles
               </button>
               <button
-                onClick={() => scrollToSection('contacto')}
+                onClick={() => scrollToSection("contacto")}
                 className="hover:text-white transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group text-left"
               >
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full group-hover:scale-125 transition-transform"></div>
@@ -101,7 +101,7 @@ const Footer = () => {
 
               {/* WhatsApp */}
               <a
-                href="https://wa.me/593999999999"
+                href="https://wa.link/zj2s6q"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-xl border border-green-500/30 hover:border-green-400 transition-all duration-300 group"
@@ -133,7 +133,6 @@ const Footer = () => {
                 reservados.
               </p>
             </div>
-           
           </div>
         </div>
       </div>

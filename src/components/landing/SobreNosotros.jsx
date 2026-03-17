@@ -31,8 +31,7 @@ const Nosotros = () => {
           </h2>
           <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             Formamos a los próximos expertos en redes, telecomunicaciones y
-            seguridad informática con metodología práctica y certificaciones
-            reconocidas a nivel internacional.
+            seguridad informática con metodología práctica.
           </p>
         </div>
 
@@ -132,15 +131,14 @@ const Nosotros = () => {
             <div className="space-y-4 text-gray-700 leading-relaxed">
               <p>
                 <strong>MAAT ACADEMY</strong> nace de la experiencia de más de
-                15 años en el sector de redes y telecomunicaciones,
+                12 años en el sector de redes y telecomunicaciones,
                 identificando la necesidad de formación especializada y práctica
                 en Ecuador.
               </p>
               <p>
-                Somos un equipo de ingenieros certificados en MikroTik y
-                seguridad informática que decidimos compartir nuestro
-                conocimiento para formar a la próxima generación de
-                profesionales en telecomunicaciones.
+                Somos un equipo de ingenieros certificados en MikroTik que
+                decidimos compartir nuestro conocimiento para formar a la
+                próxima generación de profesionales en telecomunicaciones.
               </p>
               <p>
                 Nuestro nombre <strong>MAAT</strong> representa el equilibrio y
@@ -299,7 +297,7 @@ const Nosotros = () => {
               Ver Cursos Disponibles
             </a>
             <a
-              href="https://wa.link/by3a5o"
+              href="https://wa.link/zj2s6q"
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-4 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center justify-center"

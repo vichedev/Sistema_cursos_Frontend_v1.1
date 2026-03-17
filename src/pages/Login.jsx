@@ -66,7 +66,7 @@ export default function Login() {
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
-        form
+        form,
       );
 
       localStorage.setItem("token", res.data.token);
@@ -114,7 +114,7 @@ export default function Login() {
         if (Array.isArray(errorData)) {
           errorMessage = errorData
             .map((error) =>
-              typeof error === "object" ? error.message : String(error)
+              typeof error === "object" ? error.message : String(error),
             )
             .join(", ");
         }
@@ -122,7 +122,7 @@ export default function Login() {
         else if (Array.isArray(errorData.message)) {
           errorMessage = errorData.message
             .map((item) =>
-              typeof item === "object" ? item.message : String(item)
+              typeof item === "object" ? item.message : String(item),
             )
             .join(", ");
         }
@@ -140,8 +140,8 @@ export default function Login() {
             } else if (Array.isArray(errorData[key])) {
               messages.push(
                 ...errorData[key].map((msg) =>
-                  typeof msg === "object" ? msg.message : String(msg)
-                )
+                  typeof msg === "object" ? msg.message : String(msg),
+                ),
               );
             }
           }
@@ -212,7 +212,7 @@ export default function Login() {
     try {
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/resend-verification`,
-        { email: emailToResend }
+        { email: emailToResend },
       );
       Swal.fire({
         title: "¡Correo reenviado!",
@@ -326,12 +326,20 @@ export default function Login() {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-blue-800 dark:text-blue-200 mb-1"
-              >
-                Contraseña
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-blue-800 dark:text-blue-200"
+                >
+                  Contraseña
+                </label>
+                <a
+                  href="/forgot-password"
+                  className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </a>
+              </div>
               <input
                 id="password"
                 name="password"
