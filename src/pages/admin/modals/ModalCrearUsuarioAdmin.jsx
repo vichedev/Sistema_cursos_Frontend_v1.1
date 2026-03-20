@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// src/pages/admin/modals/ModalCrearUsuarioAdmin.jsx
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import {
   FaUserPlus,
@@ -8,6 +9,10 @@ import {
   FaPhone,
   FaLock,
   FaBook,
+  FaEye,
+  FaEyeSlash,
+  FaCheckCircle,
+  FaTimesCircle,
 } from "react-icons/fa";
 import {
   sanitizeInput,
@@ -17,24 +22,30 @@ import {
   sanitizeUsername,
 } from "../../../utils/sanitize";
 
-function Modal({ children, onClose }) {
+// ─── Constantes Ecuador ───────────────────────────────────────────────────────
+const EC_DIAL = "+593";
+const EC_DIGITS = 9; // dígitos SIN el 0 inicial (ej: 991234567)
+const EC_FLAG = "🇪🇨";
+
+// ─── Modal base — NO cierra al clickear el fondo ──────────────────────────────
+function ModalBase({ children, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-gray-10 bg-opacity-70 dark:bg-gray dark:bg-opacity-80 backdrop-blur-md"
-      onClick={onClose}
-      aria-modal="true"
-      role="dialog"
-      tabIndex={-1}
-    >
-      <div
-        className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-8"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-900/70 backdrop-blur-sm">
+      {/* ✅ Sin onClick en el backdrop — nunca cierra por accidente */}
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
         <button
           onClick={onClose}
-          aria-label="Cerrar modal"
-          className="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-500 dark:hover:bg-blue-600 hover:text-white transition-colors duration-200"
           type="button"
+          aria-label="Cerrar modal"
+          className="absolute top-4 right-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/40 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 text-xl font-bold leading-none"
         >
           ×
         </button>
@@ -44,13 +55,46 @@ function Modal({ children, onClose }) {
   );
 }
 
-export default function ModalCrearUsuario({
+// ─── Field wrapper con label, error y hint ────────────────────────────────────
+function Field({ label, required, error, success, hint, children }) {
+  return (
+    <div>
+      <label className="flex items-center gap-1 mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+        {success && <FaCheckCircle className="text-green-500 text-xs ml-0.5" />}
+      </label>
+      {children}
+      {hint && !error && (
+        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{hint}</p>
+      )}
+      {error && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+          <FaTimesCircle className="flex-shrink-0" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+const inputCls = (error) =>
+  `w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition
+   bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
+   ${
+     error
+       ? "border-red-400 dark:border-red-500"
+       : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+   }`;
+
+// ─── Componente principal ─────────────────────────────────────────────────────
+export default function ModalCrearUsuarioAdmin({
   onClose,
   onCreate,
   loading,
   error,
 }) {
-  const [form, setForm] = useState({
+  const emptyForm = {
     nombres: "",
     apellidos: "",
     correo: "",
@@ -59,397 +103,528 @@ export default function ModalCrearUsuario({
     celular: "",
     password: "",
     rol: "ADMIN",
+    pais: "EC",
     asignatura: "",
-  });
+  };
 
-  const [validationError, setValidationError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({
-    correo: "",
-    usuario: "",
-    cedula: "",
-    celular: "",
-  });
+  const [form, setForm] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [generalError, setGeneralError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState({});
+  const firstInputRef = useRef(null);
 
+  // Foco al abrir
+  useEffect(() => {
+    firstInputRef.current?.focus();
+  }, []);
+
+  // Propagar errores del backend a campos
+  useEffect(() => {
+    if (!error) return;
+    const e = error.toLowerCase();
+    if (e.includes("correo"))
+      setFieldErrors((p) => ({
+        ...p,
+        correo: "Este correo ya está registrado",
+      }));
+    else if (e.includes("usuario"))
+      setFieldErrors((p) => ({ ...p, usuario: "Este usuario ya está en uso" }));
+    else if (e.includes("cédula") || e.includes("cedula"))
+      setFieldErrors((p) => ({
+        ...p,
+        cedula: "Esta cédula ya está registrada",
+      }));
+    else if (e.includes("celular") || e.includes("teléfono"))
+      setFieldErrors((p) => ({
+        ...p,
+        celular: "Este número ya está registrado",
+      }));
+    else setGeneralError(error);
+  }, [error]);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
-    let sanitizedValue = value;
-
+    let v = value;
     switch (name) {
       case "nombres":
       case "apellidos":
-        sanitizedValue = sanitizeName(value);
+        v = sanitizeName(value);
         break;
       case "correo":
-        sanitizedValue = sanitizeEmail(value);
+        v = sanitizeEmail(value);
         break;
       case "usuario":
-        sanitizedValue = sanitizeUsername(value);
+        v = sanitizeUsername(value);
         break;
       case "cedula":
+        v = sanitizeNumber(value);
+        break;
       case "celular":
-        sanitizedValue = sanitizeNumber(value);
-        break;
-      case "password":
-        sanitizedValue = sanitizeInput(value);
-        break;
-      case "asignatura":
-        sanitizedValue = sanitizeInput(value);
+        v = value.replace(/\D/g, "").slice(0, EC_DIGITS);
         break;
       default:
-        sanitizedValue = sanitizeInput(value);
+        v = sanitizeInput(value);
     }
-
-    setForm((f) => ({ ...f, [name]: sanitizedValue }));
-    if (validationError) setValidationError("");
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    setForm((f) => ({ ...f, [name]: v }));
+    setTouched((t) => ({ ...t, [name]: true }));
+    if (fieldErrors[name]) setFieldErrors((p) => ({ ...p, [name]: "" }));
+    if (generalError) setGeneralError("");
   };
 
-  const isValidEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const handleBlur = (name) => {
+    setTouched((t) => ({ ...t, [name]: true }));
+    validateField(name, form[name]);
   };
 
-  const validateForm = () => {
-    if (!form.nombres.trim() || !form.apellidos.trim()) {
-      return "Los nombres y apellidos son obligatorios.";
+  // ── Validación por campo ──────────────────────────────────────────────────
+  const validateField = (name, value) => {
+    let err = "";
+    switch (name) {
+      case "nombres":
+        if (!value.trim()) err = "Los nombres son obligatorios";
+        else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value))
+          err = "Solo letras y espacios";
+        break;
+      case "apellidos":
+        if (!value.trim()) err = "Los apellidos son obligatorios";
+        else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value))
+          err = "Solo letras y espacios";
+        break;
+      case "correo":
+        if (!value.trim()) err = "El correo es obligatorio";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+          err = "Correo electrónico inválido";
+        break;
+      case "usuario":
+        if (!value.trim()) err = "El usuario es obligatorio";
+        else if (value.length < 3) err = "Mínimo 3 caracteres";
+        break;
+      case "cedula":
+        if (!value.trim()) err = "La cédula es obligatoria";
+        else if (value.length !== 10) err = "Debe tener exactamente 10 dígitos";
+        break;
+      case "celular":
+        if (!value.trim()) err = "El celular es obligatorio";
+        else if (value.length !== EC_DIGITS)
+          err = `Debe tener ${EC_DIGITS} dígitos (sin el 0 inicial)`;
+        break;
+      case "password":
+        if (!value.trim()) err = "La contraseña es obligatoria";
+        else if (value.length < 6) err = "Mínimo 6 caracteres";
+        break;
     }
-
-    if (!form.correo.trim() || !isValidEmail(form.correo)) {
-      return "Por favor, ingresa un correo electrónico válido.";
-    }
-
-    if (!form.usuario.trim() || form.usuario.length < 3) {
-      return "El usuario debe tener al menos 3 caracteres.";
-    }
-
-    if (!form.cedula.trim() || form.cedula.length !== 10) {
-      return "La cédula debe tener 10 dígitos.";
-    }
-
-    if (!form.celular.trim() || form.celular.length !== 10) {
-      return "El celular debe tener 10 dígitos.";
-    }
-
-    if (!form.password.trim() || form.password.length < 6) {
-      return "La contraseña debe tener al menos 6 caracteres.";
-    }
-
-    return null;
+    if (err) setFieldErrors((p) => ({ ...p, [name]: err }));
+    return err;
   };
 
-  useEffect(() => {
-    if (error) {
-      if (error.includes("correo") || error.includes("Correo")) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          correo: "Este correo ya está registrado",
-        }));
-      } else if (error.includes("usuario") || error.includes("Usuario")) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          usuario: "Este usuario ya existe",
-        }));
-      } else if (error.includes("cédula") || error.includes("cedula")) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          cedula: "Esta cédula ya está registrada",
-        }));
-      } else if (error.includes("celular") || error.includes("teléfono")) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          celular: "Este número ya está registrado",
-        }));
-      } else {
-        setValidationError(error);
-      }
-    }
-  }, [error]);
+  const validateAll = () => {
+    const required = [
+      "nombres",
+      "apellidos",
+      "correo",
+      "usuario",
+      "cedula",
+      "celular",
+      "password",
+    ];
+    const errors = {};
+    required.forEach((f) => {
+      const e = validateField(f, form[f]);
+      if (e) errors[f] = e;
+    });
+    setTouched(Object.fromEntries(required.map((f) => [f, true])));
+    setFieldErrors((p) => ({ ...p, ...errors }));
+    return Object.keys(errors).length === 0;
+  };
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setValidationError("");
-    setFieldErrors({ correo: "", usuario: "", cedula: "", celular: "" });
+    setGeneralError("");
+    if (!validateAll()) return;
 
-    const validationErrorMsg = validateForm();
-    if (validationErrorMsg) {
-      // Solo validación local: no mostrar Swal aquí
-      setValidationError(validationErrorMsg);
-      return;
-    }
+    const celularCompleto = `${EC_DIAL}${form.celular}`;
 
     try {
-      // NO muestres "Creando usuario..." aquí.
-      // Deja que el botón muestre su spinner usando `loading` del padre.
-      await onCreate(form);
-
-      // Éxito: cierra el modal primero
+      await onCreate({ ...form, celular: celularCompleto });
       onClose();
-
-      // Luego muestra confirmación
-      await Swal.fire({
+      Swal.fire({
         icon: "success",
-        title: "¡Éxito!",
-        text: `El usuario ${form.nombres} ${form.apellidos} ha sido creado correctamente`,
-        timer: 1800,
+        title: "¡Creado!",
+        text: `${form.nombres} ${form.apellidos} fue agregado correctamente`,
+        timer: 2000,
         showConfirmButton: false,
         background: document.documentElement.classList.contains("dark")
           ? "#1f2937"
           : "#ffffff",
         color: document.documentElement.classList.contains("dark")
           ? "#ffffff"
-          : "#000000",
+          : "#111827",
       });
-
-      // Limpia estado local (opcional)
-      setForm({
-        nombres: "",
-        apellidos: "",
-        correo: "",
-        usuario: "",
-        cedula: "",
-        celular: "",
-        password: "",
-        rol: "ADMIN",
-        asignatura: "",
-      });
-    } catch (err) {
-      // No muestres Swal de error.
-      // El padre setea modalError y tu useEffect lo distribuye a fieldErrors/validationError.
-      // No hagas nada aquí.
+    } catch {
+      // El error llega por la prop `error` → useEffect lo distribuye
     }
   };
+
+  // ── Cerrar con confirmación si hay datos escritos ─────────────────────────
   const handleClose = () => {
-    setForm({
-      nombres: "",
-      apellidos: "",
-      correo: "",
-      usuario: "",
-      cedula: "",
-      celular: "",
-      password: "",
-      rol: "ADMIN",
-      asignatura: "",
-    });
-    setValidationError("");
-    setFieldErrors({
-      correo: "",
-      usuario: "",
-      cedula: "",
-      celular: "",
-    });
-    onClose();
+    const dirty = Object.entries(form).some(
+      ([k, v]) => !["rol", "pais"].includes(k) && v !== "",
+    );
+    if (dirty) {
+      Swal.fire({
+        title: "¿Descartar cambios?",
+        text: "Hay información sin guardar. ¿Quieres cerrar de todas formas?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cerrar",
+        cancelButtonText: "Seguir editando",
+        confirmButtonColor: "#ef4444",
+        background: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#ffffff",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#111827",
+      }).then(({ isConfirmed }) => {
+        if (isConfirmed) onClose();
+      });
+    } else {
+      onClose();
+    }
   };
 
+  // ── Indicador de fortaleza de contraseña ──────────────────────────────────
+  const passwordStrength = (() => {
+    const p = form.password;
+    if (!p) return null;
+    let s = 0;
+    if (p.length >= 6) s++;
+    if (p.length >= 10) s++;
+    if (/[A-Z]/.test(p)) s++;
+    if (/[0-9]/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    if (s <= 1) return { label: "Débil", color: "bg-red-500", w: "w-1/4" };
+    if (s <= 2) return { label: "Regular", color: "bg-yellow-500", w: "w-2/4" };
+    if (s <= 3) return { label: "Buena", color: "bg-blue-500", w: "w-3/4" };
+    return { label: "Fuerte", color: "bg-green-500", w: "w-full" };
+  })();
+
+  const ok = (name) => touched[name] && !fieldErrors[name] && form[name];
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <Modal onClose={handleClose}>
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
-          <FaUserPlus className="text-white w-8 h-8" />
+    <ModalBase onClose={handleClose}>
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4 flex-shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-md flex-shrink-0">
+          <FaUserPlus className="text-white text-xl" />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-          Agregar Administrador/Docente
-        </h2>
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Agregar Administrador / Docente
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Los campos marcados con{" "}
+            <span className="text-red-500 font-bold">*</span> son obligatorios
+          </p>
+        </div>
       </div>
 
-      {validationError && (
-        <div className="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-lg border border-yellow-300 dark:border-yellow-700 flex items-center gap-3">
-          <svg
-            className="w-6 h-6 flex-shrink-0"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M8.257 3.099c.765-1.36 2.681-1.36 3.446 0l6.518 11.59c.75 1.334-.213 2.98-1.723 2.98H3.462c-1.51 0-2.473-1.646-1.723-2.98l6.518-11.59zM11 13a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-.993.883L9 6v4a1 1 0 001.993.117L11 10V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span>{validationError}</span>
+      {/* Error general del backend */}
+      {generalError && (
+        <div className="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl flex items-start gap-2 text-sm text-red-700 dark:text-red-300 flex-shrink-0">
+          <FaTimesCircle className="mt-0.5 flex-shrink-0" />
+          {generalError}
         </div>
       )}
 
+      {/* Formulario scrolleable */}
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 max-h-[65vh] overflow-y-auto px-2"
+        noValidate
+        className="overflow-y-auto flex-1 px-6 py-5 space-y-4"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField
-            icon={<FaUser className="text-blue-600 dark:text-blue-400" />}
+        {/* ── Nombres y Apellidos ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
             label="Nombres"
-            name="nombres"
-            value={form.nombres}
-            onChange={handleChange}
-            placeholder="Nombres"
             required
-          />
-          <InputField
-            icon={<FaUser className="text-blue-600 dark:text-blue-400" />}
+            error={fieldErrors.nombres}
+            success={ok("nombres")}
+          >
+            <div className="relative">
+              <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+              <input
+                ref={firstInputRef}
+                name="nombres"
+                value={form.nombres}
+                onChange={handleChange}
+                onBlur={() => handleBlur("nombres")}
+                placeholder="Ej: Juan Carlos"
+                className={`${inputCls(fieldErrors.nombres)} pl-9`}
+              />
+            </div>
+          </Field>
+          <Field
             label="Apellidos"
-            name="apellidos"
-            value={form.apellidos}
-            onChange={handleChange}
-            placeholder="Apellidos"
             required
-          />
+            error={fieldErrors.apellidos}
+            success={ok("apellidos")}
+          >
+            <div className="relative">
+              <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+              <input
+                name="apellidos"
+                value={form.apellidos}
+                onChange={handleChange}
+                onBlur={() => handleBlur("apellidos")}
+                placeholder="Ej: Pérez García"
+                className={`${inputCls(fieldErrors.apellidos)} pl-9`}
+              />
+            </div>
+          </Field>
         </div>
 
-        <InputField
-          icon={<FaEnvelope className="text-blue-600 dark:text-blue-400" />}
+        {/* ── Correo ── */}
+        <Field
           label="Correo electrónico"
-          name="correo"
-          type="email"
-          value={form.correo}
-          onChange={handleChange}
-          placeholder="correo@ejemplo.com"
           required
           error={fieldErrors.correo}
-        />
+          success={ok("correo")}
+        >
+          <div className="relative">
+            <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+            <input
+              name="correo"
+              type="email"
+              value={form.correo}
+              onChange={handleChange}
+              onBlur={() => handleBlur("correo")}
+              placeholder="correo@ejemplo.com"
+              className={`${inputCls(fieldErrors.correo)} pl-9`}
+            />
+          </div>
+        </Field>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField
-            icon={<FaUser className="text-blue-600 dark:text-blue-400" />}
+        {/* ── Usuario y Contraseña ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
             label="Usuario"
-            name="usuario"
-            value={form.usuario}
-            onChange={handleChange}
-            placeholder="Nombre de usuario"
             required
             error={fieldErrors.usuario}
-          />
-          <InputField
-            icon={<FaLock className="text-blue-600 dark:text-blue-400" />}
-            label="Contraseña"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            placeholder="••••••••"
-            required
-          />
-        </div>
+            success={ok("usuario")}
+            hint="Mín. 3 caracteres. Letras, números, @.-_"
+          >
+            <div className="relative">
+              <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+              <input
+                name="usuario"
+                value={form.usuario}
+                onChange={handleChange}
+                onBlur={() => handleBlur("usuario")}
+                placeholder="usuario123"
+                className={`${inputCls(fieldErrors.usuario)} pl-9`}
+              />
+            </div>
+          </Field>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField
-            icon={<FaIdCard className="text-blue-600 dark:text-blue-400" />}
-            label="Cédula"
-            name="cedula"
-            value={form.cedula}
-            onChange={handleChange}
-            placeholder="Número de cédula"
-            required
-            error={fieldErrors.cedula}
-          />
-          <InputField
-            icon={<FaPhone className="text-blue-600 dark:text-blue-400" />}
-            label="Celular"
-            name="celular"
-            value={form.celular}
-            onChange={handleChange}
-            placeholder="Número de celular"
-            required
-            error={fieldErrors.celular}
-          />
-        </div>
-
-        <InputField
-          icon={<FaBook className="text-blue-600 dark:text-blue-400" />}
-          label="Asignatura que imparte"
-          name="asignatura"
-          value={form.asignatura}
-          onChange={handleChange}
-          placeholder="Ej: Matemáticas, Ciencias, etc."
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 flex items-center justify-center gap-3
-            ${
-              loading
-                ? "bg-blue-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-blue-300 dark:hover:shadow-blue-900"
-            }`}
-        >
-          {loading ? (
-            <>
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
+          <Field label="Contraseña" required error={fieldErrors.password}>
+            <div className="relative">
+              <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={handleChange}
+                onBlur={() => handleBlur("password")}
+                placeholder="Mín. 6 caracteres"
+                className={`${inputCls(fieldErrors.password)} pl-9 pr-10`}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Creando...
-            </>
-          ) : (
-            <>
-              <FaUserPlus className="w-5 h-5" />
-              Crear Administrador
-            </>
-          )}
-        </button>
-      </form>
-    </Modal>
-  );
-}
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+            {/* Barra de fortaleza */}
+            {passwordStrength && (
+              <div className="mt-1.5 space-y-0.5">
+                <div className="h-1 w-full bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color} ${passwordStrength.w}`}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Seguridad:{" "}
+                  <span className="font-semibold">
+                    {passwordStrength.label}
+                  </span>
+                </p>
+              </div>
+            )}
+          </Field>
+        </div>
 
-function InputField({
-  icon,
-  label,
-  name,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  required = false,
-  error = "",
-}) {
-  return (
-    <div>
-      <label className="flex items-center gap-2 mb-2 font-semibold text-gray-700 dark:text-gray-300">
-        {icon}
-        {label}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        className={`w-full px-5 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-800 dark:text-white dark:bg-gray-700 shadow-sm
-          ${
-            error
-              ? "border-red-500 dark:border-red-400"
-              : "border-gray-300 dark:border-gray-600"
-          }`}
-      />
-      {error && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clipRule="evenodd"
+        {/* ── Cédula ── */}
+        <Field
+          label="Cédula"
+          required
+          error={fieldErrors.cedula}
+          success={ok("cedula") && form.cedula.length === 10}
+          hint="10 dígitos — solo números"
+        >
+          <div className="relative">
+            <FaIdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+            <input
+              name="cedula"
+              value={form.cedula}
+              onChange={handleChange}
+              onBlur={() => handleBlur("cedula")}
+              placeholder="1234567890"
+              maxLength={10}
+              inputMode="numeric"
+              className={`${inputCls(fieldErrors.cedula)} pl-9 pr-14`}
             />
-          </svg>
-          {error}
-        </p>
-      )}
-    </div>
+            <span
+              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono tabular-nums
+              ${form.cedula.length === 10 ? "text-green-500" : "text-gray-400"}`}
+            >
+              {form.cedula.length}/10
+            </span>
+          </div>
+        </Field>
+
+        {/* ── Celular Ecuador ── */}
+        <Field
+          label="Celular"
+          required
+          error={fieldErrors.celular}
+          success={ok("celular") && form.celular.length === EC_DIGITS}
+          hint={`${EC_DIGITS} dígitos sin el 0 inicial — ej: 991234567`}
+        >
+          <div className="flex">
+            {/* Prefijo fijo Ecuador */}
+            <div className="flex items-center gap-2 px-3 border border-r-0 border-gray-300 dark:border-gray-600 rounded-l-xl bg-gray-50 dark:bg-gray-700/60 select-none flex-shrink-0">
+              <span className="text-base leading-none">{EC_FLAG}</span>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                {EC_DIAL}
+              </span>
+            </div>
+            {/* Input dígitos */}
+            <div className="relative flex-1">
+              <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+              <input
+                name="celular"
+                value={form.celular}
+                onChange={handleChange}
+                onBlur={() => handleBlur("celular")}
+                placeholder="991234567"
+                maxLength={EC_DIGITS}
+                inputMode="numeric"
+                className={`w-full pl-9 pr-14 py-2.5 text-sm border rounded-r-xl rounded-l-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition
+                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400
+                  ${
+                    fieldErrors.celular
+                      ? "border-red-400 dark:border-red-500"
+                      : "border-gray-300 dark:border-gray-600 hover:border-gray-400"
+                  }`}
+              />
+              <span
+                className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono tabular-nums
+                ${form.celular.length === EC_DIGITS ? "text-green-500" : "text-gray-400"}`}
+              >
+                {form.celular.length}/{EC_DIGITS}
+              </span>
+            </div>
+          </div>
+          {/* Preview número completo */}
+          {form.celular.length > 0 && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Número completo:{" "}
+              <span
+                className={`font-mono font-medium ${form.celular.length === EC_DIGITS ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-300"}`}
+              >
+                {EC_DIAL}
+                {form.celular}
+              </span>
+            </p>
+          )}
+        </Field>
+
+        {/* ── Asignatura (opcional) ── */}
+        <Field
+          label="Asignatura que imparte"
+          hint="Opcional — puedes completarlo después"
+        >
+          <div className="relative">
+            <FaBook className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+            <input
+              name="asignatura"
+              value={form.asignatura}
+              onChange={handleChange}
+              placeholder="Ej: Matemáticas, Seguridad Industrial…"
+              className={`${inputCls("")} pl-9`}
+            />
+          </div>
+        </Field>
+
+        {/* ── Botones ── */}
+        <div className="flex gap-3 pt-2 pb-1">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className={`flex-[2] py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200
+              ${
+                loading
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-blue-300/40 active:scale-[0.98]"
+              }`}
+          >
+            {loading ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Creando...
+              </>
+            ) : (
+              <>
+                <FaUserPlus />
+                Crear Administrador
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </ModalBase>
   );
 }

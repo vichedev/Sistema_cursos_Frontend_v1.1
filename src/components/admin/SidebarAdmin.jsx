@@ -56,40 +56,10 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
       </div>
 
       {/* Info usuario */}
-      <div className="px-6 py-4 bg-white mx-4 rounded-xl mb-4 border border-indigo-100 shadow-md relative overflow-hidden dark:bg-gray-800 dark:border-indigo-900">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full dark:bg-indigo-900/20"></div>
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="p-3 bg-indigo-100 border-2 border-indigo-200 rounded-full dark:bg-indigo-900/30 dark:border-indigo-700">
-            <FiUser className="text-indigo-600 text-lg dark:text-indigo-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-800 truncate text-lg mb-1 dark:text-white">
-              {userData.nombres || userData.usuario}
-            </p>
-            <p className="text-sm text-gray-500 mb-2 dark:text-gray-400">
-              @{userData.usuario}
-            </p>
-            <div className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-md text-xs font-semibold border border-indigo-200 inline-flex items-center gap-1 mb-2 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700">
-              <span>🎓</span>
-              <span>Docente Administrador</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-gray-500 mt-2 dark:text-gray-400">
-              <span className="flex items-center gap-1">
-                <svg
-                  className="w-3 h-3 text-indigo-500 dark:text-indigo-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                Privilegios completos
-              </span>
-            </div>
-          </div>
+      <div className="flex justify-center my-2">
+        <div className="bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-sm font-medium inline-flex items-center gap-2 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700">
+          <span>🎓</span>
+          <span>Docente Administrador</span>
         </div>
       </div>
 
@@ -170,7 +140,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
       <div className="mt-auto px-6 py-6 border-t border-gray-200 dark:border-gray-700">
         <div className="mb-4 text-center">
           <p className="text-xs text-gray-400 select-none dark:text-gray-500">
-            Versión 1.2.0
+            Versión 2.0.0
           </p>
         </div>
         <button

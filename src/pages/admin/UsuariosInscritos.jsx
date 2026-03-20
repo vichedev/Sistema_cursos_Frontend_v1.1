@@ -8,6 +8,7 @@ import React, {
   Suspense,
 } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { useDebounce } from "use-debounce";
 
 // Lazy loading de modales
@@ -25,7 +26,7 @@ import { useUsuarios } from "./utils/usuarios-inscritos/useUsuarios";
 import { exportToExcel } from "./utils/usuarios-inscritos/exportHelpers";
 import CursosDesplegable from "./utils/usuarios-inscritos/components/CursosDesplegable";
 import UserCard from "./utils/usuarios-inscritos/components/UserCard";
-import VirtualizedTable from "./utils/usuarios-inscritos/components/VirtualizedTable";
+import SmartTable from "./utils/usuarios-inscritos/components/SmartTable";
 
 import {
   FaArrowLeft,
@@ -44,8 +45,269 @@ import {
   FaSearch,
 } from "react-icons/fa";
 
+// ─── Función helper: banderas de países ───────────────────────────────────────
+const getCountryFlag = (pais) => {
+  const flags = {
+    EC: "🇪🇨",
+    CO: "🇨🇴",
+    AR: "🇦🇷",
+    PE: "🇵🇪",
+    CL: "🇨🇱",
+    BO: "🇧🇴",
+    PY: "🇵🇾",
+    UY: "🇺🇾",
+    VE: "🇻🇪",
+    MX: "🇲🇽",
+    GT: "🇬🇹",
+    HN: "🇭🇳",
+    SV: "🇸🇻",
+    NI: "🇳🇮",
+    CR: "🇨🇷",
+    PA: "🇵🇦",
+    DO: "🇩🇴",
+    CU: "🇨🇺",
+    BR: "🇧🇷",
+    PR: "🇵🇷",
+    US: "🇺🇸",
+    ES: "🇪🇸",
+  };
+  return flags[pais] || "🌎";
+};
+
+// ─── Definición de columnas para SmartTable ───────────────────────────────────
+
+const ESTUDIANTES_COLUMNS = [
+  {
+    key: "id",
+    label: "ID",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="font-medium text-blue-700 dark:text-blue-300">
+        {val}
+      </span>
+    ),
+  },
+  {
+    key: "cedula",
+    label: "Cédula",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="text-gray-700 dark:text-gray-300">
+        {val && val.trim() !== "" ? val : "No especificada"}
+      </span>
+    ),
+  },
+  {
+    key: "pais",
+    label: "País",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) =>
+      val ? (
+        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+          <span className="text-lg">{getCountryFlag(val)}</span>
+          <span>{val}</span>
+        </div>
+      ) : (
+        <span className="text-gray-400">—</span>
+      ),
+  },
+  {
+    key: "nombres",
+    label: "Nombre",
+    sortable: true,
+    defaultVisible: true,
+    render: (_val, row) => (
+      <span className="font-semibold text-gray-900 dark:text-white">
+        {row.nombres} {row.apellidos}
+      </span>
+    ),
+  },
+  {
+    key: "correo",
+    label: "Correo",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="text-gray-700 dark:text-gray-300">{val}</span>
+    ),
+  },
+  {
+    key: "ciudad",
+    label: "Ciudad",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="text-gray-600 dark:text-gray-400">{val || "—"}</span>
+    ),
+  },
+  {
+    key: "empresa",
+    label: "Empresa",
+    sortable: true,
+    defaultVisible: false,
+    render: (val) => (
+      <span className="text-gray-600 dark:text-gray-400">{val || "—"}</span>
+    ),
+  },
+  {
+    key: "cargo",
+    label: "Cargo",
+    sortable: true,
+    defaultVisible: false,
+    render: (val) => (
+      <span className="text-gray-600 dark:text-gray-400">{val || "—"}</span>
+    ),
+  },
+  {
+    key: "emailVerified",
+    label: "Verificado",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) =>
+      val ? (
+        <span className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full text-xs font-semibold">
+          ✓ Sí
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold">
+          ✗ No
+        </span>
+      ),
+  },
+  {
+    key: "cursos",
+    label: "Cursos",
+    sortable: false,
+    defaultVisible: true,
+    render: (val) => (
+      <CursosDesplegable cursos={Array.isArray(val) ? val : []} />
+    ),
+  },
+];
+
+const ADMIN_COLUMNS = [
+  {
+    key: "id",
+    label: "ID",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="font-medium text-blue-700 dark:text-blue-300">
+        {val}
+      </span>
+    ),
+  },
+  {
+    key: "nombres",
+    label: "Nombre",
+    sortable: true,
+    defaultVisible: true,
+    render: (_val, row) => (
+      <div className="flex flex-col">
+        <span className="font-semibold text-gray-900 dark:text-white">
+          {row.nombres} {row.apellidos}
+          {row.id === 1 && (
+            <span className="ml-2 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs font-semibold px-2 py-0.5 rounded-full">
+              MASTER
+            </span>
+          )}
+        </span>
+        {row.asignatura && (
+          <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            📚 {row.asignatura}
+          </span>
+        )}
+      </div>
+    ),
+  },
+  {
+    key: "correo",
+    label: "Correo",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="text-gray-700 dark:text-gray-300">{val}</span>
+    ),
+  },
+  {
+    key: "usuario",
+    label: "Usuario",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="text-gray-600 dark:text-gray-400">{val}</span>
+    ),
+  },
+  {
+    key: "pais",
+    label: "País",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) =>
+      val ? (
+        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+          <span className="text-lg">{getCountryFlag(val)}</span>
+          <span>{val}</span>
+        </div>
+      ) : (
+        <span className="text-gray-400">—</span>
+      ),
+  },
+  {
+    key: "celular",
+    label: "Celular",
+    sortable: false,
+    defaultVisible: false,
+    render: (val) => (
+      <span className="text-gray-600 dark:text-gray-400 font-mono text-xs">
+        {val || "—"}
+      </span>
+    ),
+  },
+  {
+    key: "asignatura",
+    label: "Asignatura",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="text-gray-600 dark:text-gray-400">{val || "—"}</span>
+    ),
+  },
+  {
+    key: "rol",
+    label: "Rol",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => (
+      <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-0.5 rounded-full text-xs font-semibold">
+        {val}
+      </span>
+    ),
+  },
+  {
+    key: "emailVerified",
+    label: "Verificado",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) =>
+      val ? (
+        <span className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full text-xs font-semibold">
+          ✓ Sí
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold">
+          ✗ No
+        </span>
+      ),
+  },
+];
+
+// ─── Componente principal ─────────────────────────────────────────────────────
+
 export default function UsuariosInscritos() {
-  // Usar el hook personalizado para la gestión de usuarios
   const {
     data,
     loading,
@@ -73,7 +335,6 @@ export default function UsuariosInscritos() {
     filteredUsers,
   } = useUsuarios();
 
-  // Estados locales específicos del componente
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Estados para modales
@@ -82,40 +343,10 @@ export default function UsuariosInscritos() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
 
-  // Funciones para manejar modales
   const handleView = useCallback((user) => {
     setModalUser(user);
     setModalType("ver");
   }, []);
-
-  // Función para obtener la bandera del país
-  const getCountryFlag = (pais) => {
-    const flags = {
-      EC: "🇪🇨", // Ecuador
-      CO: "🇨🇴", // Colombia
-      AR: "🇦🇷", // Argentina
-      PE: "🇵🇪", // Perú
-      CL: "🇨🇱", // Chile
-      BO: "🇧🇴", // Bolivia
-      PY: "🇵🇾", // Paraguay
-      UY: "🇺🇾", // Uruguay
-      VE: "🇻🇪", // Venezuela
-      MX: "🇲🇽", // México
-      GT: "🇬🇹", // Guatemala
-      HN: "🇭🇳", // Honduras
-      SV: "🇸🇻", // El Salvador
-      NI: "🇳🇮", // Nicaragua
-      CR: "🇨🇷", // Costa Rica
-      PA: "🇵🇦", // Panamá
-      DO: "🇩🇴", // República Dominicana
-      CU: "🇨🇺", // Cuba
-      BR: "🇧🇷", // Brasil
-      PR: "🇵🇷", // Puerto Rico
-      US: "🇺🇸", // Estados Unidos
-      ES: "🇪🇸", // España
-    };
-    return flags[pais] || "🌎";
-  };
 
   const handleEdit = useCallback((user) => {
     setModalUser(user);
@@ -149,6 +380,7 @@ export default function UsuariosInscritos() {
         apellidos: updatedUser.apellidos,
         correo: updatedUser.correo,
         usuario: updatedUser.usuario,
+        pais: updatedUser.pais,
         ciudad: updatedUser.ciudad,
         empresa: updatedUser.empresa,
         cargo: updatedUser.cargo,
@@ -162,13 +394,36 @@ export default function UsuariosInscritos() {
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/${updatedUser.id}`,
         dataToSend,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       closeModal();
       fetchUsuarios();
+
+      const isDark = document.documentElement.classList.contains("dark");
+      Swal.fire({
+        icon: "success",
+        title: "¡Actualizado!",
+        html: `
+          <div style="text-align:center;">
+            <p style="margin:0; font-size:0.95rem; color:${isDark ? "#d1d5db" : "#374151"};">
+              Los datos de <strong style="color:${isDark ? "#93c5fd" : "#2563eb"};">
+                ${updatedUser.nombres} ${updatedUser.apellidos}
+              </strong> fueron actualizados correctamente.
+            </p>
+          </div>
+        `,
+        timer: 2500,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        background: isDark ? "#1f2937" : "#ffffff",
+        color: isDark ? "#f9fafb" : "#111827",
+        iconColor: "#22c55e",
+        customClass: {
+          popup: "rounded-2xl shadow-2xl",
+          title: "font-bold text-lg",
+        },
+      });
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Error al actualizar usuario";
@@ -179,7 +434,6 @@ export default function UsuariosInscritos() {
     }
   };
 
-  // En UsuariosInscritos.jsx - modificar la función handleDeleteUser
   const handleDeleteUser = async (userToDelete) => {
     setModalLoading(true);
     setModalError(null);
@@ -187,34 +441,26 @@ export default function UsuariosInscritos() {
       const token = localStorage.getItem("token");
       const response = await axios.delete(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/${userToDelete.id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      // ✅ NUEVO: Manejar la respuesta estructurada del backend
       if (response.data && response.data.success) {
-        // Éxito - el backend retornó { success: true, message: "..." }
         closeModal();
         fetchUsuarios();
         return { success: true, message: response.data.message };
       } else {
-        // El backend no retornó la estructura esperada
         return {
           success: false,
           message: response.data?.message || "Error al eliminar usuario",
         };
       }
     } catch (err) {
-      // ✅ NUEVO: Manejar errores estructurados del backend
       if (err.response?.data?.success === false) {
-        // El backend retornó { success: false, message: "..." }
         const errorMessage =
           err.response.data.message || "No se puede eliminar el usuario";
         setModalError(errorMessage);
         return { success: false, message: errorMessage };
       } else {
-        // Error tradicional
         const errorMessage =
           err.response?.data?.message || "Error al eliminar usuario";
         setModalError(errorMessage);
@@ -233,13 +479,8 @@ export default function UsuariosInscritos() {
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/users`,
         newUser,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-
-      // No cierres aquí: el hijo cierra el modal al éxito.
-      // Refresca la lista
       setTimeout(() => {
         fetchUsuarios();
       }, 200);
@@ -248,23 +489,18 @@ export default function UsuariosInscritos() {
         err?.response?.data?.message ||
         err?.message ||
         "Error al crear usuario";
-      // Pasa el error al hijo para que lo convierta en fieldErrors (correo/usuario/cedula/celular)
       setModalError(backendMsg);
-      // Importante: relanza para que el hijo entre al catch sin SweetAlert
       throw err;
     } finally {
       setModalLoading(false);
     }
   };
 
-  // Función para verificar cuenta de usuario
   const handleVerifyAccount = async (userId) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/auth/admin/verify-user/${userId}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/admin/verify-user/${userId}`,
         {},
         {
           headers: {
@@ -275,7 +511,6 @@ export default function UsuariosInscritos() {
       );
 
       if (response.data && response.data.success) {
-        // Éxito - refrescar la lista de usuarios
         fetchUsuarios();
         return { success: true, message: response.data.message };
       } else {
@@ -298,13 +533,83 @@ export default function UsuariosInscritos() {
     setModalError(null);
   };
 
-  // Función para exportar a Excel
   const handleExportToExcel = () => {
     exportToExcel(
       activeTab === "estudiantes" ? data.estudiantes : data.administradores,
       activeTab,
     );
   };
+
+  // ── Acciones reutilizables para SmartTable ──────────────────────────────────
+
+  const estudiantesActions = useCallback(
+    (user) => (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleView(user)}
+          className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
+          title="Ver"
+        >
+          <FaEye />
+        </button>
+        <button
+          onClick={() => handleEdit(user)}
+          className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
+          title="Editar"
+        >
+          <FaEdit />
+        </button>
+        <button
+          onClick={() => handleDelete(user)}
+          className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
+          title="Eliminar"
+        >
+          <FaTrash />
+        </button>
+      </div>
+    ),
+    [handleView, handleEdit, handleDelete],
+  );
+
+  const adminActions = useCallback(
+    (admin) => (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleView(admin)}
+          className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
+          title="Ver"
+        >
+          <FaEye />
+        </button>
+        <button
+          onClick={() => handleEdit(admin)}
+          className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
+          title="Editar"
+        >
+          <FaEdit />
+        </button>
+        {admin.id !== 1 ? (
+          <button
+            onClick={() => handleDelete(admin)}
+            className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
+            title="Eliminar"
+          >
+            <FaTrash />
+          </button>
+        ) : (
+          <span
+            className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed text-sm"
+            title="El administrador principal no puede ser eliminado"
+          >
+            <FaTrash />
+          </span>
+        )}
+      </div>
+    ),
+    [handleView, handleEdit, handleDelete],
+  );
+
+  // ── Loading ─────────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -318,6 +623,8 @@ export default function UsuariosInscritos() {
       </div>
     );
   }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6 transition-colors duration-200">
@@ -348,6 +655,7 @@ export default function UsuariosInscritos() {
         </div>
       </div>
 
+      {/* Cuerpo principal */}
       <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 transition-colors duration-200 min-h-[800px] sm:min-h-[900px] md:min-h-[700px]">
         {error ? (
           <div className="text-center p-4 sm:p-6 md:p-8 bg-red-50 dark:bg-red-900/20 rounded-lg sm:rounded-xl border border-red-200 dark:border-red-800 transition-colors duration-200">
@@ -366,7 +674,7 @@ export default function UsuariosInscritos() {
           </div>
         ) : (
           <>
-            {/* Tabs */}
+            {/* ── Tabs ── */}
             <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4 sm:mb-6 md:mb-8 overflow-x-auto scrollbar-thin -mx-1 px-1">
               <button
                 className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 font-semibold transition whitespace-nowrap text-xs sm:text-sm md:text-base ${
@@ -399,9 +707,9 @@ export default function UsuariosInscritos() {
               </button>
             </div>
 
-            {/* Barra de búsqueda, filtros y controles */}
+            {/* ── Barra de búsqueda, filtros y controles ── */}
             <div className="space-y-4 mb-6">
-              {/* Primera fila: Búsqueda y botones principales */}
+              {/* Primera fila: Búsqueda y botones */}
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <div className="relative flex-1 min-w-0 sm:max-w-md lg:max-w-lg">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -457,7 +765,7 @@ export default function UsuariosInscritos() {
                 </div>
               </div>
 
-              {/* Segunda fila: Filtros activos y filtros avanzados */}
+              {/* Segunda fila: Filtros activos y avanzados (solo estudiantes) */}
               {(filterCiudad ||
                 filterEmpresa ||
                 filterCurso ||
@@ -465,7 +773,7 @@ export default function UsuariosInscritos() {
                 isFilterOpen) &&
                 activeTab === "estudiantes" && (
                   <div className="space-y-3">
-                    {/* Filtros activos - siempre visibles cuando hay filtros aplicados */}
+                    {/* Filtros activos */}
                     {(filterCiudad ||
                       filterEmpresa ||
                       filterCurso ||
@@ -542,7 +850,7 @@ export default function UsuariosInscritos() {
                       </div>
                     )}
 
-                    {/* Filtros avanzados - panel expandible */}
+                    {/* Filtros avanzados */}
                     {isFilterOpen && (
                       <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600 transition-colors duration-200">
                         <div className="flex justify-between items-center mb-3">
@@ -635,52 +943,9 @@ export default function UsuariosInscritos() {
                 )}
             </div>
 
-            {/* Controles de paginación */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
-              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs sm:text-sm"
-                >
-                  <option value={10}>10 por página</option>
-                  <option value={20}>20 por página</option>
-                  <option value={50}>50 por página</option>
-                  <option value={100}>100 por página</option>
-                </select>
-
-                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                  Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                  {Math.min(currentPage * itemsPerPage, totalItems)} de{" "}
-                  {totalItems}
-                </span>
-              </div>
-
-              <div className="flex gap-1 w-full sm:w-auto justify-center sm:justify-end">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex-1 sm:flex-none text-center"
-                >
-                  Anterior
-                </button>
-                <button
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
-                  disabled={currentPage * itemsPerPage >= totalItems}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex-1 sm:flex-none text-center"
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
-
-            {/* Contenido con virtualización */}
+            {/* ── Contenido por tab ── */}
             <div className="w-full">
+              {/* ════ TAB ESTUDIANTES ════ */}
               {activeTab === "estudiantes" && (
                 <section>
                   {/* Vista móvil (tarjetas) */}
@@ -713,154 +978,25 @@ export default function UsuariosInscritos() {
                     )}
                   </div>
 
-                  {/* Vista desktop con virtualización para muchos datos */}
-                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
-                    {totalItems > 50 ? (
-                      <VirtualizedTable
-                        users={paginatedUsers}
-                        rowHeight={80}
-                        onView={handleView}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
-                    ) : (
-                      /* Tabla normal para pocos datos */
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              ID
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Cédula
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              País
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Nombre
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Correo
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Ciudad
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Empresa
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Cargo
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Cursos
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                              Acciones
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {(paginatedUsers || []).length === 0 ? (
-                            <tr>
-                              <td
-                                colSpan="9"
-                                className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                              >
-                                {searchTerm
-                                  ? "No se encontraron estudiantes con esos criterios"
-                                  : "No hay estudiantes registrados"}
-                              </td>
-                            </tr>
-                          ) : (
-                            (paginatedUsers || []).map((user) => (
-                              <tr
-                                key={user.id}
-                                className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
-                              >
-                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">
-                                  {user.id}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                  {user.cedula && user.cedula.trim() !== ""
-                                    ? user.cedula
-                                    : "No especificada"}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                  {user.pais ? (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-lg">
-                                        {getCountryFlag(user.pais)}
-                                      </span>
-                                      <span>{user.pais}</span>
-                                    </div>
-                                  ) : (
-                                    "-"
-                                  )}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                                  {user.nombres} {user.apellidos}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                  {user.correo}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                  {user.ciudad || "-"}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                  {user.empresa || "-"}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                  {user.cargo || "-"}
-                                </td>
-
-                                {/* Celda de cursos */}
-                                <td className="px-4 py-4">
-                                  <CursosDesplegable
-                                    cursos={
-                                      Array.isArray(user.cursos)
-                                        ? user.cursos
-                                        : []
-                                    }
-                                  />
-                                </td>
-
-                                {/* Celda de acciones */}
-                                <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => handleView(user)}
-                                      className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
-                                      title="Ver"
-                                    >
-                                      <FaEye />
-                                    </button>
-                                    <button
-                                      onClick={() => handleEdit(user)}
-                                      className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
-                                      title="Editar"
-                                    >
-                                      <FaEdit />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDelete(user)}
-                                      className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
-                                      title="Eliminar"
-                                    >
-                                      <FaTrash />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    )}
+                  {/* Vista desktop — SmartTable */}
+                  <div className="hidden md:block">
+                    <SmartTable
+                      rows={filteredUsers(data.estudiantes)}
+                      columns={ESTUDIANTES_COLUMNS}
+                      defaultSort={{ key: "id", dir: "asc" }}
+                      pageSize={10}
+                      emptyMessage={
+                        searchTerm
+                          ? "No se encontraron estudiantes con esos criterios"
+                          : "No hay estudiantes registrados"
+                      }
+                      actions={estudiantesActions}
+                    />
                   </div>
                 </section>
               )}
 
+              {/* ════ TAB ADMINISTRADORES / PROFESORES ════ */}
               {activeTab === "administradores" && (
                 <section>
                   {/* Vista móvil (tarjetas) */}
@@ -893,138 +1029,20 @@ export default function UsuariosInscritos() {
                     )}
                   </div>
 
-                  {/* Vista desktop */}
-                  <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-200">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            ID
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Nombre
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Correo
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Usuario
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Asignatura
-                          </th>
-                          <th className="px-4 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Rol
-                          </th>
-                          <th className="px-4 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Acciones
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {paginatedUsers.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan="7"
-                              className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                            >
-                              {searchTerm
-                                ? "No se encontraron profesores con esos criterios"
-                                : "No hay profesores registrados"}
-                            </td>
-                          </tr>
-                        ) : (
-                          paginatedUsers.map((admin, index) => {
-                            const colors = [
-                              "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
-                              "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
-                              "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
-                              "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
-                              "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
-                            ];
-                            const colorClass = colors[index % colors.length];
-
-                            return (
-                              <tr
-                                key={admin.id}
-                                className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
-                              >
-                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-700 dark:text-blue-300">
-                                  {admin.id}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                                  <div className="flex flex-col">
-                                    <span>
-                                      {admin.nombres} {admin.apellidos}
-                                      {admin.id === 1 && (
-                                        <span className="ml-2 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 text-xs font-semibold px-2 py-1 rounded-full">
-                                          MASTER
-                                        </span>
-                                      )}
-                                    </span>
-                                    {admin.asignatura && (
-                                      <span
-                                        className={`${colorClass} text-xs font-semibold px-2 py-1 rounded-full mt-1 inline-block transition-colors duration-200`}
-                                      >
-                                        📚 {admin.asignatura}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                  {admin.correo}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                  {admin.usuario}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                  {admin.asignatura || "-"}
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap">
-                                  <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold transition-colors duration-200">
-                                    {admin.rol}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => handleView(admin)}
-                                      className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
-                                      title="Ver"
-                                    >
-                                      <FaEye />
-                                    </button>
-                                    <button
-                                      onClick={() => handleEdit(admin)}
-                                      className="p-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-800/30 transition-colors duration-200"
-                                      title="Editar"
-                                    >
-                                      <FaEdit />
-                                    </button>
-                                    {admin.id !== 1 ? (
-                                      <button
-                                        onClick={() => handleDelete(admin)}
-                                        className="p-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors duration-200"
-                                        title="Eliminar"
-                                      >
-                                        <FaTrash />
-                                      </button>
-                                    ) : (
-                                      <span
-                                        className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed text-sm"
-                                        title="El administrador principal no puede ser eliminado"
-                                      >
-                                        <FaTrash />
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
+                  {/* Vista desktop — SmartTable */}
+                  <div className="hidden md:block">
+                    <SmartTable
+                      rows={filteredUsers(data.administradores)}
+                      columns={ADMIN_COLUMNS}
+                      defaultSort={{ key: "id", dir: "asc" }}
+                      pageSize={10}
+                      emptyMessage={
+                        searchTerm
+                          ? "No se encontraron profesores con esos criterios"
+                          : "No hay profesores registrados"
+                      }
+                      actions={adminActions}
+                    />
                   </div>
                 </section>
               )}
@@ -1033,7 +1051,7 @@ export default function UsuariosInscritos() {
         )}
       </div>
 
-      {/* Modales con lazy loading */}
+      {/* ── Modales con lazy loading ── */}
       <Suspense
         fallback={
           <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
