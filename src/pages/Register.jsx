@@ -391,8 +391,6 @@ export default function Register() {
         empresa: form.empresa ? sanitizeInput(form.empresa) : form.empresa,
       };
 
-      console.log("📤 Enviando datos:", formDataToSend);
-
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/register`,
         formDataToSend,
@@ -462,425 +460,406 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-blue-950 flex items-center justify-center p-6 relative">
-      {/* Botón volver al inicio */}
-      <button
-        onClick={() => navigate("/")}
-        className="absolute top-6 left-6 flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 transition-colors duration-200 z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 mr-1"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <span className="font-medium">Volver al sitio</span>
-      </button>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
+      {/* Blobs decorativos — igual que Login */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-blue-300 dark:bg-blue-900 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
+      <div className="absolute top-0 right-0 w-72 h-72 bg-blue-400 dark:bg-blue-800 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
+      <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-blue-200 dark:bg-blue-700 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
 
-      {/* Contenedor principal */}
-      <div className="relative w-full max-w-6xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row z-10">
-        {/* Imagen + texto lado izquierdo */}
-        <div className="hidden md:flex md:w-2/5 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-10 flex-col justify-between rounded-l-3xl relative overflow-hidden">
-          {/* Fondo decorativo */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400 rounded-full -translate-y-32 translate-x-32 opacity-20 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500 rounded-full translate-y-32 -translate-x-32 opacity-20 blur-3xl"></div>
-
-          <div className="relative z-10">
-            <img
-              src="/logo_render.png"
-              alt="Logo"
-              className="mb-8 max-h-48 mx-auto object-contain drop-shadow-2xl"
-              loading="lazy"
-            />
-          </div>
-
-          <div className="relative z-10 text-center">
-            <h2 className="text-4xl font-extrabold text-white mb-4 drop-shadow-lg">
-              ¡Bienvenido!
-            </h2>
-            <p className="text-blue-200 text-lg leading-relaxed drop-shadow-md">
-              Regístrate y accede a cursos exclusivos desde cualquier país de
-              Latinoamérica
-            </p>
-
-            {/* Features list */}
-            <div className="mt-8 space-y-3 text-left">
-              <div className="flex items-center gap-3 text-white bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <span className="text-2xl">🌎</span>
-                <span className="text-sm">Soporte para 18 países</span>
-              </div>
-              <div className="flex items-center gap-3 text-white bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <span className="text-2xl">📱</span>
-                <span className="text-sm">Números internacionales</span>
-              </div>
-              <div className="flex items-center gap-3 text-white bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <span className="text-2xl">🆔</span>
-                <span className="text-sm">Documentos por país</span>
-              </div>
-            </div>
-          </div>
+      <div className="relative z-10 w-full max-w-2xl">
+        {/* Botón volver */}
+        <div className="mb-4">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors group"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 transition-transform group-hover:-translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Volver al inicio
+          </a>
         </div>
 
-        {/* Formulario lado derecho */}
-        <div className="w-full md:w-3/5 p-8 md:p-10 overflow-y-auto max-h-[calc(100vh-4rem)]">
-          {/* Título, icono y descripción */}
-          <div className="text-center mb-6">
-            <div className="inline-block p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4">
-              <FaUserPlus
-                className="text-blue-600 dark:text-blue-400"
-                size={32}
-              />
+        {/* Card principal */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-blue-100 dark:border-gray-700 overflow-hidden">
+          {/* Header azul */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 text-center">
+            <div className="flex justify-center mb-3">
+              <img src="/logo_render.png" alt="Logo" className="h-14 w-auto" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Crear Cuenta
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Completa tus datos para registrarte
+            <h1 className="text-2xl font-extrabold text-white">MAAT ACADEMY</h1>
+            <p className="text-blue-200 text-sm mt-1">
+              Crea tu cuenta y accede a todos los cursos
             </p>
           </div>
 
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Fila 1: Nombres y Apellidos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nombres <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="nombres"
-                  placeholder="Ej: Juan Carlos"
-                  required
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                    fieldErrors.nombres
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                  onChange={handleChange}
-                  value={form.nombres}
+          <div className="p-8">
+            {/* Título, icono y descripción */}
+            <div className="text-center mb-6">
+              <div className="inline-block p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4">
+                <FaUserPlus
+                  className="text-blue-600 dark:text-blue-400"
+                  size={32}
                 />
-                {fieldErrors.nombres && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.nombres}
-                  </p>
-                )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Apellidos <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="apellidos"
-                  placeholder="Ej: Pérez García"
-                  required
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                    fieldErrors.apellidos
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                  onChange={handleChange}
-                  value={form.apellidos}
-                />
-                {fieldErrors.apellidos && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.apellidos}
-                  </p>
-                )}
-              </div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Crear Cuenta
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Completa tus datos para registrarte
+              </p>
             </div>
 
-            {/* Fila 2: País y Celular */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  País <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="pais"
-                  value={form.pais}
-                  onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                    fieldErrors.pais
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                >
-                  <option value="">Selecciona tu país</option>
-                  {countryOptions}
-                </select>
-                {fieldErrors.pais && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.pais}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Celular <span className="text-red-500">*</span>
-                </label>
-                <InternationalPhoneInput
-                  value={form.celular}
-                  onChange={handlePhoneChange}
-                  error={fieldErrors.celular}
-                  country={form.pais}
-                />
-                {fieldErrors.celular && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.celular}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Fila 3: Correo y Usuario */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Correo electrónico <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="correo"
-                  type="email"
-                  placeholder="ejemplo@correo.com"
-                  required
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                    fieldErrors.correo
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                  onChange={handleChange}
-                  value={form.correo}
-                />
-                {fieldErrors.correo && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.correo}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Usuario <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="usuario"
-                  placeholder="usuario123"
-                  required
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                    fieldErrors.usuario
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                  onChange={handleChange}
-                  value={form.usuario}
-                />
-                {fieldErrors.usuario && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.usuario}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Fila 4: Identificación y Ciudad */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {selectedCountry
-                    ? `${selectedCountry.idFormat}`
-                    : "Identificación"}{" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="cedula"
-                  placeholder={
-                    selectedCountry
-                      ? `Ej: ${selectedCountry.idExample}`
-                      : "Número de identificación"
-                  }
-                  required
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                    fieldErrors.cedula
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                  onChange={handleChange}
-                  value={form.cedula}
-                />
-                {fieldErrors.cedula && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.cedula}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Ciudad <span className="text-red-500">*</span>
-                </label>
-                {loadingCiudades ? (
-                  <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-                  </div>
-                ) : (
-                  <select
-                    name="ciudad"
-                    value={form.ciudad}
-                    onChange={handleChange}
+            {/* Formulario */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Fila 1: Nombres y Apellidos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nombres <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="nombres"
+                    placeholder="Ej: Juan Carlos"
                     required
-                    disabled={!form.pais || ciudades.length === 0}
                     className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                      fieldErrors.ciudad
+                      fieldErrors.nombres
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    } ${
-                      !form.pais || ciudades.length === 0
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
+                    }`}
+                    onChange={handleChange}
+                    value={form.nombres}
+                  />
+                  {fieldErrors.nombres && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.nombres}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Apellidos <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="apellidos"
+                    placeholder="Ej: Pérez García"
+                    required
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      fieldErrors.apellidos
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    }`}
+                    onChange={handleChange}
+                    value={form.apellidos}
+                  />
+                  {fieldErrors.apellidos && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.apellidos}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila 2: País y Celular */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    País <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="pais"
+                    value={form.pais}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      fieldErrors.pais
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
                     }`}
                   >
-                    <option value="">Selecciona tu ciudad</option>
-                    {ciudades.map((city) => (
-                      <option
-                        key={`${city.name}-${city.latitude}`}
-                        value={city.name}
-                      >
-                        {city.name}
-                      </option>
-                    ))}
+                    <option value="">Selecciona tu país</option>
+                    {countryOptions}
                   </select>
-                )}
-                {fieldErrors.ciudad && (
+                  {fieldErrors.pais && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.pais}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Celular <span className="text-red-500">*</span>
+                  </label>
+                  <InternationalPhoneInput
+                    value={form.celular}
+                    onChange={handlePhoneChange}
+                    error={fieldErrors.celular}
+                    country={form.pais}
+                  />
+                  {fieldErrors.celular && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.celular}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila 3: Correo y Usuario */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Correo electrónico <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="correo"
+                    type="email"
+                    placeholder="ejemplo@correo.com"
+                    required
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      fieldErrors.correo
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    }`}
+                    onChange={handleChange}
+                    value={form.correo}
+                  />
+                  {fieldErrors.correo && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.correo}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Usuario <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="usuario"
+                    placeholder="usuario123"
+                    required
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      fieldErrors.usuario
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    }`}
+                    onChange={handleChange}
+                    value={form.usuario}
+                  />
+                  {fieldErrors.usuario && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.usuario}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila 4: Identificación y Ciudad */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {selectedCountry
+                      ? `${selectedCountry.idFormat}`
+                      : "Identificación"}{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="cedula"
+                    placeholder={
+                      selectedCountry
+                        ? `Ej: ${selectedCountry.idExample}`
+                        : "Número de identificación"
+                    }
+                    required
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      fieldErrors.cedula
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    }`}
+                    onChange={handleChange}
+                    value={form.cedula}
+                  />
+                  {fieldErrors.cedula && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.cedula}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Ciudad <span className="text-red-500">*</span>
+                  </label>
+                  {loadingCiudades ? (
+                    <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <select
+                      name="ciudad"
+                      value={form.ciudad}
+                      onChange={handleChange}
+                      required
+                      disabled={!form.pais || ciudades.length === 0}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        fieldErrors.ciudad
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } ${
+                        !form.pais || ciudades.length === 0
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                    >
+                      <option value="">Selecciona tu ciudad</option>
+                      {ciudades.map((city) => (
+                        <option
+                          key={`${city.name}-${city.latitude}`}
+                          value={city.name}
+                        >
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {fieldErrors.ciudad && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors.ciudad}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila 5: Empresa y Cargo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Empresa
+                  </label>
+                  <input
+                    name="empresa"
+                    placeholder="Nombre de tu empresa (opcional)"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    onChange={handleChange}
+                    value={form.empresa}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Cargo <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="cargo"
+                    value={form.cargo}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="Gerente">Gerente</option>
+                    <option value="Técnico">Técnico</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Fila 6: Contraseña */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Contraseña <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  minLength="6"
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    fieldErrors.password
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  onChange={handleChange}
+                  value={form.password}
+                />
+                {fieldErrors.password && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {fieldErrors.ciudad}
+                    {fieldErrors.password}
                   </p>
                 )}
               </div>
-            </div>
 
-            {/* Fila 5: Empresa y Cargo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Empresa
-                </label>
-                <input
-                  name="empresa"
-                  placeholder="Nombre de tu empresa (opcional)"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  onChange={handleChange}
-                  value={form.empresa}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Cargo <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="cargo"
-                  value={form.cargo}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              {/* Botón de registro */}
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full py-4 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ${
+                    isLoading ? "opacity-75 cursor-not-allowed" : ""
+                  }`}
                 >
-                  <option value="Gerente">Gerente</option>
-                  <option value="Técnico">Técnico</option>
-                </select>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Procesando...
+                    </div>
+                  ) : (
+                    "Crear Cuenta"
+                  )}
+                </button>
               </div>
-            </div>
 
-            {/* Fila 6: Contraseña */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Contraseña <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                required
-                minLength="6"
-                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  fieldErrors.password
-                    ? "border-red-500"
-                    : "border-gray-300 dark:border-gray-600"
-                }`}
-                onChange={handleChange}
-                value={form.password}
-              />
-              {fieldErrors.password && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {fieldErrors.password}
-                </p>
-              )}
-            </div>
-
-            {/* Botón de registro */}
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full py-4 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ${
-                  isLoading ? "opacity-75 cursor-not-allowed" : ""
-                }`}
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Procesando...
-                  </div>
-                ) : (
-                  "Crear Cuenta"
-                )}
-              </button>
-            </div>
-
-            {/* Link a login */}
-            <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-              ¿Ya tienes una cuenta?{" "}
-              <a
-                href="/login"
-                className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
-              >
-                Inicia sesión aquí
-              </a>
-            </div>
-          </form>
+              {/* Link a login */}
+              <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+                ¿Ya tienes una cuenta?{" "}
+                <a
+                  href="/login"
+                  className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                >
+                  Inicia sesión aquí
+                </a>
+              </div>
+            </form>
+          </div>
+          {/* fin div formulario */}
         </div>
+        {/* fin card */}
       </div>
+      {/* fin max-w-2xl */}
 
-     
-
-      {/* Estilos SweetAlert2 - CORREGIDO */}
+      {/* Estilos SweetAlert2 */}
       <style>{`
   @keyframes blob {
     0% { transform: translate(0px, 0px) scale(1); }

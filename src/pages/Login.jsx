@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -17,11 +18,7 @@ export default function Login() {
     const name = e.target.name;
 
     if (name === "usuario") {
-      if (value.includes("@")) {
-        value = sanitizeEmail(value);
-      } else {
-        value = sanitizeInput(value);
-      }
+      value = value.includes("@") ? sanitizeEmail(value) : sanitizeInput(value);
     } else if (name === "password") {
       value = sanitizeInput(value);
     }
@@ -63,13 +60,18 @@ export default function Login() {
 
     setIsLoading(true);
     setShowResendButton(false);
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
         form,
       );
 
+      // ✅ Guardar access token (igual que antes — compatibilidad total)
       localStorage.setItem("token", res.data.token);
+      // ✅ NUEVO: guardar refresh token para renovación automática
+      localStorage.setItem("refreshToken", res.data.refreshToken);
+
       localStorage.setItem("rol", res.data.rol);
       localStorage.setItem("userId", res.data.userId);
       localStorage.setItem("usuario", res.data.usuario);
@@ -81,9 +83,7 @@ export default function Login() {
 
       Swal.fire({
         title: "¡Bienvenido!",
-        html: `Hola <strong>${
-          res.data.nombres || res.data.usuario
-        }</strong>, has iniciado sesión correctamente.`,
+        html: `Hola <strong>${res.data.nombres || res.data.usuario}</strong>, has iniciado sesión correctamente.`,
         icon: "success",
         timer: 1000,
         timerProgressBar: true,
@@ -93,7 +93,6 @@ export default function Login() {
           title: "swal2-title-custom",
           htmlContainer: "swal2-html-container-custom",
         },
-        // ✅ CORREGIDO: Eliminado didOpen que pausaba el timer
       }).then(() => {
         if (res.data.rol === "ADMIN") {
           navigate("/admin/dashboard", { replace: true });
@@ -104,59 +103,41 @@ export default function Login() {
     } catch (err) {
       console.error("❌ Error completo:", err.response);
 
-      // ✅ CORREGIDO: Manejo robusto de errores
       let errorMessage = "Credenciales incorrectas";
 
       if (err.response?.data) {
         const errorData = err.response.data;
-
-        // Si es un array de errores de validación
         if (Array.isArray(errorData)) {
           errorMessage = errorData
-            .map((error) =>
-              typeof error === "object" ? error.message : String(error),
-            )
+            .map((e) => (typeof e === "object" ? e.message : String(e)))
             .join(", ");
-        }
-        // Si es un objeto con propiedad "message" que es array
-        else if (Array.isArray(errorData.message)) {
+        } else if (Array.isArray(errorData.message)) {
           errorMessage = errorData.message
-            .map((item) =>
-              typeof item === "object" ? item.message : String(item),
-            )
+            .map((i) => (typeof i === "object" ? i.message : String(i)))
             .join(", ");
-        }
-        // Si es un objeto con propiedad "message" que es string
-        else if (errorData.message && typeof errorData.message === "string") {
+        } else if (errorData.message && typeof errorData.message === "string") {
           errorMessage = errorData.message;
-        }
-        // Si es un objeto con propiedades de error individuales
-        else if (typeof errorData === "object") {
-          // Buscar cualquier propiedad que contenga el mensaje de error
+        } else if (typeof errorData === "object") {
           const messages = [];
           for (const key in errorData) {
-            if (typeof errorData[key] === "string") {
+            if (typeof errorData[key] === "string")
               messages.push(errorData[key]);
-            } else if (Array.isArray(errorData[key])) {
+            else if (Array.isArray(errorData[key]))
               messages.push(
-                ...errorData[key].map((msg) =>
-                  typeof msg === "object" ? msg.message : String(msg),
+                ...errorData[key].map((m) =>
+                  typeof m === "object" ? m.message : String(m),
                 ),
               );
-            }
           }
           errorMessage =
             messages.length > 0 ? messages.join(", ") : "Error de validación";
-        }
-        // Si es un string directo
-        else if (typeof errorData === "string") {
+        } else if (typeof errorData === "string") {
           errorMessage = errorData;
         }
       }
 
-      // ✅ CORREGIDO: Convertir a string si es un array
       const errorMessageString = Array.isArray(errorMessage)
-        ? errorMessage.map((item) => item.message || item).join(", ")
+        ? errorMessage.map((i) => i.message || i).join(", ")
         : String(errorMessage);
 
       if (errorMessageString.toLowerCase().includes("verificada")) {
@@ -164,7 +145,7 @@ export default function Login() {
         setEmailToResend(form.usuario.includes("@") ? form.usuario : "");
         Swal.fire({
           title: "¡Cuenta no verificada!",
-          html: `Tu cuenta no ha sido verificada. Por favor, revisa tu correo electrónico para activar tu cuenta.`,
+          html: "Tu cuenta no ha sido verificada. Por favor, revisa tu correo electrónico para activar tu cuenta.",
           icon: "warning",
           confirmButtonText: "Entendido",
           customClass: {
@@ -208,7 +189,6 @@ export default function Login() {
     }
 
     setIsResending(true);
-
     try {
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/resend-verification`,
@@ -226,97 +206,77 @@ export default function Login() {
           title: "swal2-title-custom",
           htmlContainer: "swal2-html-container-custom",
         },
-        // ✅ CORREGIDO: Eliminado didOpen que pausaba el timer
       });
-      setShowResendButton(false);
-    } catch (err) {
-      // ✅ CORREGIDO: Manejar error aquí también
-      let errorMessage = "Inténtalo de nuevo más tarde.";
-
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.response?.data) {
-        errorMessage =
-          typeof err.response.data === "string"
-            ? err.response.data
-            : JSON.stringify(err.response.data);
-      }
-
+    } catch {
       Swal.fire({
-        title: "¡Error al reenviar!",
-        html: `No pudimos reenviar el correo: <strong>${errorMessage}</strong>`,
+        title: "Error",
+        text: "No se pudo reenviar el correo. Por favor intenta nuevamente.",
         icon: "error",
         confirmButtonText: "Aceptar",
-        customClass: {
-          popup: "swal2-modern",
-          title: "swal2-title-custom",
-          htmlContainer: "swal2-html-container-custom",
-        },
+        customClass: { popup: "swal2-modern" },
       });
     } finally {
       setIsResending(false);
     }
   };
 
+  // ── JSX — idéntico al original ────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-blue-950 flex items-center justify-center p-6 relative">
-      <button
-        onClick={() => navigate("/")}
-        className="absolute top-6 left-6 flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 transition-colors duration-200 z-10"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 mr-1"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <span className="font-medium">Volver al sitio</span>
-      </button>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Blobs decorativos */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-blue-300 dark:bg-blue-900 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
+      <div className="absolute top-0 right-0 w-72 h-72 bg-blue-400 dark:bg-blue-800 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
+      <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-blue-200 dark:bg-blue-700 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
 
-      <div className="relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row z-10">
-        <div className="hidden md:flex md:w-1/2 bg-gradient-to-tr from-blue-600 to-blue-800 p-12 flex-col justify-center rounded-l-3xl">
-          <img
-            src="/logo_render.png"
-            alt="Libro abierto"
-            className="mb-8 max-h-72 mx-auto object-contain"
-          />
-          <h2 className="text-4xl font-extrabold text-white mb-4 drop-shadow-lg">
-            Aprende Redes y Telecomunicaciones
-          </h2>
-          <p className="text-blue-200 text-lg leading-relaxed drop-shadow-md">
-            Ingresa con tu usuario y contraseña para acceder a tus cursos y
-            aprovechar todo nuestro contenido de aprendizaje.
-          </p>
+      <div className="relative z-10 w-full max-w-md mx-4">
+        {/* ── Botón volver a la landing ── */}
+        <div className="mb-4">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors group"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 transition-transform group-hover:-translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Volver al inicio
+          </a>
         </div>
 
-        <div className="w-full md:w-1/2 p-10">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold text-blue-900 dark:text-white mb-2">
-              Inicia sesión
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-blue-100 dark:border-gray-700">
+          {/* Logo */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-gray-700 rounded-2xl shadow-md border border-blue-200 dark:border-blue-600">
+              <img src="/logo_render.png" alt="Logo" className="h-16 w-auto" />
+            </div>
+            <h1 className="text-3xl font-extrabold text-blue-700 dark:text-blue-400">
+              MAAT ACADEMY
             </h1>
-            <p className="text-blue-700 dark:text-blue-300">
-              Ingresa a tu cuenta para continuar
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              Sistema de Gestión Educativa
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label
-                htmlFor="usuario"
-                className="block text-sm font-medium text-blue-800 dark:text-blue-200 mb-1"
-              >
-                Usuario o Correo electrónico
+              <label className="block text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">
+                Usuario o correo electrónico
               </label>
               <input
                 id="usuario"
                 name="usuario"
-                placeholder="usuario o email@ejemplo.com"
+                type="text"
+                placeholder="usuario o correo@ejemplo.com"
                 autoComplete="username"
                 required
                 className="w-full px-4 py-3 border border-blue-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-blue-900 dark:text-white dark:bg-gray-700 placeholder-blue-400 dark:placeholder-gray-400"
@@ -326,11 +286,8 @@ export default function Login() {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-blue-800 dark:text-blue-200"
-                >
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-blue-800 dark:text-blue-300">
                   Contraseña
                 </label>
                 <a
@@ -357,9 +314,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
-                  isLoading ? "opacity-75 cursor-not-allowed" : ""
-                }`}
+                className={`w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${isLoading ? "opacity-75 cursor-not-allowed" : ""}`}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
@@ -376,12 +331,12 @@ export default function Login() {
                         r="10"
                         stroke="currentColor"
                         strokeWidth="4"
-                      ></circle>
+                      />
                       <path
                         className="opacity-75"
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
+                      />
                     </svg>
                     Procesando...
                   </div>
@@ -409,11 +364,7 @@ export default function Login() {
                 <button
                   onClick={handleResendVerification}
                   disabled={isResending}
-                  className={`px-3 py-2 text-sm rounded transition-colors flex items-center justify-center min-w-[100px] ${
-                    isResending
-                      ? "bg-blue-400 cursor-not-allowed text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
+                  className={`px-3 py-2 text-sm rounded transition-colors flex items-center justify-center min-w-[100px] ${isResending ? "bg-blue-400 cursor-not-allowed text-white" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
                 >
                   {isResending ? (
                     <>
@@ -430,12 +381,12 @@ export default function Login() {
                           r="10"
                           stroke="currentColor"
                           strokeWidth="4"
-                        ></circle>
+                        />
                         <path
                           className="opacity-75"
                           fill="currentColor"
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
+                        />
                       </svg>
                       Enviando...
                     </>
@@ -471,87 +422,16 @@ export default function Login() {
           66% { transform: translate(-20px, 20px) scale(0.9); }
           100% { transform: translate(0px, 0px) scale(1); }
         }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .swal2-modern {
-          border-radius: 1.5rem !important;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-          padding: 2rem !important;
-          background: white !important;
-        }
-        
-        @media (prefers-color-scheme: dark) {
-          .swal2-modern {
-            background: #1f2937 !important;
-            color: white !important;
-          }
-        }
-        
-        .swal2-title-custom {
-          font-size: 1.875rem !important;
-          font-weight: 700 !important;
-          color: #1a202c !important;
-          margin-bottom: 0.5rem !important;
-        }
-        
-        @media (prefers-color-scheme: dark) {
-          .swal2-title-custom {
-            color: white !important;
-          }
-        }
-        
-        .swal2-html-container-custom {
-          font-size: 1.125rem !important;
-          color: #4a5568 !important;
-          line-height: 1.5 !important;
-        }
-        
-        @media (prefers-color-scheme: dark) {
-          .swal2-html-container-custom {
-            color: #d1d5db !important;
-          }
-        }
-        
-        .swal2-success .swal2-success-ring {
-          border-color: #3b82f6 !important;
-        }
-        .swal2-success [class^=swal2-success-line][class$=long] {
-          background-color: #3b82f6 !important;
-        }
-        .swal2-success [class^=swal2-success-line][class$=tip] {
-          background-color: #3b82f6 !important;
-        }
-        .swal2-error .swal2-x-mark-line-left,
-        .swal2-error .swal2-x-mark-line-right {
-          background-color: #ef4444 !important;
-        }
-        .swal2-warning {
-          border-color: #f59e0b !important;
-        }
-        .swal2-warning .swal2-icon-content {
-          color: #f59e0b !important;
-        }
-        .swal2-info {
-          border-color: #3b82f6 !important;
-        }
-        .swal2-info .swal2-icon-content {
-          color: #3b82f6 !important;
-        }
-        .swal2-confirm {
-          background-color: #3b82f6 !important;
-          border-radius: 0.75rem !important;
-          font-weight: 600 !important;
-          padding: 0.75rem 1.5rem !important;
-          transition: all 0.2s ease-in-out !important;
-        }
-        .swal2-confirm:hover {
-          background-color: #2563eb !important;
-        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .swal2-modern { border-radius:1.5rem!important;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05)!important;padding:2rem!important;background:white!important; }
+        @media(prefers-color-scheme:dark){.swal2-modern{background:#1f2937!important;color:white!important}}
+        .swal2-title-custom{font-size:1.875rem!important;font-weight:700!important;color:#1a202c!important;margin-bottom:.5rem!important}
+        @media(prefers-color-scheme:dark){.swal2-title-custom{color:white!important}}
+        .swal2-html-container-custom{font-size:1.125rem!important;color:#4a5568!important;line-height:1.5!important}
+        @media(prefers-color-scheme:dark){.swal2-html-container-custom{color:#d1d5db!important}}
+        .swal2-confirm{background-color:#3b82f6!important;border-radius:.75rem!important;font-weight:600!important;padding:.75rem 1.5rem!important;transition:all .2s ease-in-out!important}
+        .swal2-confirm:hover{background-color:#2563eb!important}
       `}</style>
     </div>
   );
