@@ -1,7 +1,7 @@
 // src/components/admin/SidebarAdmin.jsx
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiLogOut, FiUser } from "react-icons/fi";
+import { FiLogOut } from "react-icons/fi";
 
 export default function SidebarAdmin({ className = "", onNavigate }) {
   const [userData, setUserData] = useState({
@@ -55,7 +55,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
         </p>
       </div>
 
-      {/* Info usuario */}
+      {/* Badge rol */}
       <div className="flex justify-center my-2">
         <div className="bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-sm font-medium inline-flex items-center gap-2 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700">
           <span>🎓</span>
@@ -68,7 +68,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1 flex flex-col px-4 gap-2 overflow-y-auto">
+      <nav className="flex-1 flex flex-col px-4 gap-1.5 overflow-y-auto">
         <SidebarLink
           to="/admin/dashboard"
           label="Dashboard"
@@ -77,7 +77,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
             <img
               src="https://img.icons8.com/?size=100&id=iJzm3AFQCS4W&format=png&color=0077B6"
               className="w-6 h-6"
-              alt="Dashboard"
+              alt=""
             />
           }
           onNavigate={onNavigate}
@@ -90,7 +90,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
             <img
               src="https://img.icons8.com/?size=100&id=oZAinaxvg8AD&format=png&color=0077B6"
               className="w-6 h-6"
-              alt="Crear curso"
+              alt=""
             />
           }
           onNavigate={onNavigate}
@@ -103,7 +103,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
             <img
               src="https://img.icons8.com/?size=100&id=3N5nsXW7ytVx&format=png&color=0077B6"
               className="w-6 h-6"
-              alt="Ver cursos"
+              alt=""
             />
           }
           onNavigate={onNavigate}
@@ -116,7 +116,7 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
             <img
               src="https://img.icons8.com/?size=100&id=CiGKDwbd2k7v&format=png&color=0077B6"
               className="w-6 h-6"
-              alt="Usuarios"
+              alt=""
             />
           }
           onNavigate={onNavigate}
@@ -129,10 +129,31 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
             <img
               src="https://img.icons8.com/?size=100&id=59878&format=png&color=0077B6"
               className="w-6 h-6"
-              alt="Cupones"
+              alt=""
             />
           }
           onNavigate={onNavigate}
+        />
+
+        {/* ✅ NUEVO — Diplomas */}
+        <div className="px-1 my-1">
+          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700" />
+        </div>
+        <SidebarLink
+          to="/admin/diplomas"
+          label="Diplomas"
+          active={location.pathname === "/admin/diplomas"}
+          icon={
+            <span
+              className="text-xl leading-none"
+              role="img"
+              aria-label="diploma"
+            >
+              🎓
+            </span>
+          }
+          onNavigate={onNavigate}
+          highlight
         />
       </nav>
 
@@ -155,7 +176,14 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
   );
 }
 
-function SidebarLink({ to, label, active, icon, onNavigate }) {
+function SidebarLink({
+  to,
+  label,
+  active,
+  icon,
+  onNavigate,
+  highlight = false,
+}) {
   return (
     <Link
       to={to}
@@ -164,23 +192,33 @@ function SidebarLink({ to, label, active, icon, onNavigate }) {
         flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 gap-3
         ${
           active
-            ? "bg-green-50 text-green-700 shadow-inner border border-green-300 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700"
-            : "text-gray-700 hover:bg-green-50 hover:text-green-600 dark:text-gray-300 dark:hover:bg-green-900/10 dark:hover:text-green-400"
+            ? highlight
+              ? "bg-amber-50 text-amber-700 shadow-inner border border-amber-300 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700"
+              : "bg-green-50 text-green-700 shadow-inner border border-green-300 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700"
+            : highlight
+              ? "text-amber-700 dark:text-amber-400 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-900/10 dark:hover:text-amber-300"
+              : "text-gray-700 hover:bg-green-50 hover:text-green-600 dark:text-gray-300 dark:hover:bg-green-900/10 dark:hover:text-green-400"
         }
       `}
     >
       <div
         className={`p-1.5 rounded-lg ${
           active
-            ? "bg-green-100 dark:bg-green-800/30"
-            : "bg-green-100 dark:bg-gray-700"
+            ? highlight
+              ? "bg-amber-100 dark:bg-amber-800/30"
+              : "bg-green-100 dark:bg-green-800/30"
+            : highlight
+              ? "bg-amber-100 dark:bg-gray-700"
+              : "bg-green-100 dark:bg-gray-700"
         }`}
       >
         {icon}
       </div>
       <span className="select-none">{label}</span>
       {active && (
-        <div className="ml-auto h-2 w-2 rounded-full bg-green-400 dark:bg-green-500" />
+        <div
+          className={`ml-auto h-2 w-2 rounded-full ${highlight ? "bg-amber-400 dark:bg-amber-500" : "bg-green-400 dark:bg-green-500"}`}
+        />
       )}
     </Link>
   );

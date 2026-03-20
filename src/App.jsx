@@ -9,12 +9,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import LandingPage from "./pages/LandingPage";
-
-// ✅ RECUPERACIÓN DE CONTRASEÑA
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-// ADMIN - Importa el layout y las páginas
+// ADMIN
 import AdminLayout from "./layouts/AdminLayout";
 import DashboardAdmin from "./pages/admin/DashboardAdmin";
 import CrearCurso from "./pages/admin/CrearCurso";
@@ -23,8 +21,10 @@ import EstudiantesCurso from "./pages/admin/EstudiantesCurso";
 import UsuariosInscritos from "./pages/admin/UsuariosInscritos";
 import VerTodosLosCursos from "./pages/admin/VerTodosLosCursos";
 import GestionarCupones from "./pages/admin/GestionarCupones";
+// ✅ NUEVO
+import GestionDiplomas from "./pages/admin/GestionDiplomas";
 
-// ESTUDIANTE - Importa el layout y las páginas
+// ESTUDIANTE
 import EstudianteLayout from "./layouts/EstudianteLayout";
 import DashboardEstudiante from "./pages/estudiante/DashboardEstudiante";
 import CursosEstudiante from "./pages/estudiante/CursosEstudiante";
@@ -48,8 +48,6 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-
-            {/* ✅ RECUPERACIÓN DE CONTRASEÑA */}
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -69,6 +67,8 @@ function App() {
                 element={<UsuariosInscritos />}
               />
               <Route path="gestionar-cupones" element={<GestionarCupones />} />
+              {/* ✅ NUEVO */}
+              <Route path="diplomas" element={<GestionDiplomas />} />
             </Route>
 
             {/* ESTUDIANTE */}
@@ -83,12 +83,9 @@ function App() {
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/failed" element={<PaymentFailed />} />
             <Route path="/payment/cancelled" element={<PaymentFailed />} />
-
-            {/* Legacy */}
             <Route path="/pago-exitoso" element={<PaymentSuccess />} />
             <Route path="/pago-fallido" element={<PaymentFailed />} />
 
-            {/* Fallback */}
             <Route path="*" element={<LandingPage />} />
           </Routes>
         </Router>
