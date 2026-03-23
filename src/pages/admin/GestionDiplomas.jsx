@@ -135,7 +135,7 @@ function CursosList({ onSelect }) {
               <div className="w-full h-32 rounded-lg overflow-hidden mb-4 bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center">
                 {curso.imagen ? (
                   <img
-                    src={`${API}/uploads/${curso.imagen}`}
+                    src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${curso.imagen}`}
                     alt={curso.titulo}
                     className="w-full h-full object-cover"
                     onError={(e) => {
