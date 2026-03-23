@@ -65,7 +65,7 @@ export default function EditarCurso() {
     const token = localStorage.getItem("token");
 
     // Cargar profesores
-    axios
+    api
       .get(`/api/users/profesores`, {})
       .then((res) => {
         let profesoresData = [];
@@ -89,7 +89,7 @@ export default function EditarCurso() {
       });
 
     // Cargar datos del curso
-    axios
+    api
       .get(`/api/courses/${id}`, {})
       .then((res) => {
         const curso = res.data;

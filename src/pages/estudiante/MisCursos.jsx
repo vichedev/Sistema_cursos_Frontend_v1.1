@@ -19,6 +19,7 @@ import {
   FaCheck,
   FaCrown,
   FaGem,
+  FaDownload,
 } from "react-icons/fa";
 import { isCourseExpired } from "../../utils/dateUtils";
 
@@ -554,9 +555,21 @@ const CursoCard = React.memo(({ curso }) => {
 
             {/* Acceso al curso - MEJORADO: No muestra mensaje de "no disponible" si hay enlace */}
             {isExpired ? (
-              <div className="text-center bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 p-3 rounded-xl font-semibold text-sm">
-                Curso finalizado - Ya no disponible
-              </div>
+              curso.diplomaCodigo ? (
+                <a
+                  href={`${import.meta.env.VITE_BACKEND_URL}/api/diplomas/pdf/${curso.diplomaCodigo}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-3 rounded-xl font-bold text-center transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                  <FaDownload />
+                  🎓 DESCARGAR MI DIPLOMA
+                </a>
+              ) : (
+                <div className="text-center bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 p-3 rounded-xl font-semibold text-sm">
+                  Curso finalizado
+                </div>
+              )
             ) : curso.activo ? (
               curso.link ? (
                 <a

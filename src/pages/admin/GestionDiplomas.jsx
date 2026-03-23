@@ -191,6 +191,7 @@ function EstudiantesDiploma({ curso, onBack }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState({}); // { [estudianteId]: true/false }
+
   const [sendingAll, setSendingAll] = useState(false);
   const [sent, setSent] = useState(new Set());
   const [search, setSearch] = useState("");
@@ -199,7 +200,16 @@ function EstudiantesDiploma({ curso, onBack }) {
     setLoading(true);
     api
       .get(`/api/diplomas/cursos/${curso.id}/estudiantes`)
-      .then((r) => setData(r.data))
+      .then((r) => {
+        setData(r.data);
+        // Inicializar con los estudiantes que ya tienen diploma enviado en BD
+        const yaEnviados = new Set(
+          (r.data.estudiantes || [])
+            .filter((e) => e.diplomaEnviado)
+            .map((e) => e.estudianteId),
+        );
+        setSent(yaEnviados);
+      })
       .catch(() =>
         Swal.fire("Error", "No se pudieron cargar los estudiantes", "error"),
       )
@@ -420,11 +430,30 @@ function EstudiantesDiploma({ curso, onBack }) {
                   </p>
 
                   {/* Botón */}
-                  <div className="flex justify-end">
+                  <div className="flex justify-end items-center gap-2">
                     {isSent ? (
-                      <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
-                        <FaCheckCircle /> Enviado
-                      </span>
+                      <>
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-full whitespace-nowrap">
+                          <FaCheckCircle /> Enviado
+                        </span>
+                        <button
+                          onClick={() => enviarUno(est)}
+                          disabled={isSending || sendingAll}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150
+                            ${
+                              isSending || sendingAll
+                                ? "bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+                                : "bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 active:scale-95"
+                            }`}
+                        >
+                          {isSending ? (
+                            <FaSpinner className="animate-spin" />
+                          ) : (
+                            <FaPaperPlane />
+                          )}
+                          Reenviar
+                        </button>
+                      </>
                     ) : (
                       <button
                         onClick={() => enviarUno(est)}

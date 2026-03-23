@@ -3,28 +3,19 @@
  * Tabla inteligente con:
  *  - Ordenamiento por columna (asc/desc)
  *  - Columnas movibles (drag & drop)
- *  - Activar / desactivar columnas
+ *  - Activar / desactivar columnas  ← configuración persistida en localStorage
+ *  - Cerrar panel al hacer click fuera
  *  - Paginación integrada
  *  - Dark mode compatible (Tailwind)
- *
- * Props:
- *  - rows: array de objetos con los datos
- *  - columns: array de definición de columnas (ver abajo)
- *  - actions: (opcional) función (row) => JSX  ← botones Ver/Editar/Eliminar
- *  - defaultSort: { key: 'id', dir: 'asc' }  (opcional)
- *  - pageSize: número de filas por página por defecto (default 10)
- *  - emptyMessage: texto cuando no hay datos
- *
- * Formato de columns:
- * [
- *   { key: 'id',      label: 'ID',      sortable: true,  defaultVisible: true  },
- *   { key: 'nombres', label: 'Nombre',  sortable: true,  defaultVisible: true,
- *     render: (val, row) => <span>{row.nombres} {row.apellidos}</span> },
- *   ...
- * ]
  */
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   FaSort,
   FaSortUp,
@@ -62,7 +53,7 @@ export default function SmartTable({
       setSort((prev) => {
         if (prev.key !== key) return { key, dir: "asc" };
         if (prev.dir === "asc") return { key, dir: "desc" };
-        return { key: defaultSort.key, dir: "asc" }; // reset
+        return { key: defaultSort.key, dir: "asc" };
       });
     },
     [defaultSort.key],
@@ -70,18 +61,50 @@ export default function SmartTable({
 
   const safeCols = Array.isArray(columns) ? columns : [];
 
-  // ── columnas visibles ──────────────────────────────────────────────────────
-  const [visible, setVisible] = useState(() =>
-    Object.fromEntries(
-      safeCols.map((c) => [c.key, c.defaultVisible !== false]),
-    ),
+  // ── clave única para localStorage basada en las keys de las columnas ──────
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const storageKey = useMemo(
+    () => `smarttable_${safeCols.map((c) => c.key).join("_")}`,
+    [],
   );
 
-  const toggleVisible = (key) =>
-    setVisible((prev) => ({ ...prev, [key]: !prev[key] }));
+  // ── columnas visibles — persistidas en localStorage ───────────────────────
+  const [visible, setVisible] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`${storageKey}_visible`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return Object.fromEntries(
+      safeCols.map((c) => [c.key, c.defaultVisible !== false]),
+    );
+  });
 
-  // ── orden de columnas (drag & drop) ───────────────────────────────────────
-  const [colOrder, setColOrder] = useState(() => safeCols.map((c) => c.key));
+  const toggleVisible = (key) =>
+    setVisible((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(`${storageKey}_visible`, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+  // ── orden de columnas (drag & drop) — persistido en localStorage ─────────
+  const [colOrder, setColOrder] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`${storageKey}_order`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Validar que tenga exactamente las mismas keys (por si cambia la config)
+        const currentKeys = safeCols
+          .map((c) => c.key)
+          .sort()
+          .join(",");
+        const savedKeys = [...parsed].sort().join(",");
+        if (currentKeys === savedKeys) return parsed;
+      }
+    } catch {}
+    return safeCols.map((c) => c.key);
+  });
 
   const dragColKey = useRef(null);
   const dragOverColKey = useRef(null);
@@ -102,6 +125,9 @@ export default function SmartTable({
       const to = next.indexOf(dragOverColKey.current);
       next.splice(from, 1);
       next.splice(to, 0, dragColKey.current);
+      try {
+        localStorage.setItem(`${storageKey}_order`, JSON.stringify(next));
+      } catch {}
       return next;
     });
     dragColKey.current = null;
@@ -119,6 +145,19 @@ export default function SmartTable({
 
   // ── panel de columnas ──────────────────────────────────────────────────────
   const [showColPanel, setShowColPanel] = useState(false);
+  const colPanelRef = useRef(null);
+
+  // Cerrar panel al hacer click fuera
+  useEffect(() => {
+    if (!showColPanel) return;
+    const handleClickOutside = (e) => {
+      if (colPanelRef.current && !colPanelRef.current.contains(e.target)) {
+        setShowColPanel(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showColPanel]);
 
   // ── datos ordenados ────────────────────────────────────────────────────────
   const safeRows = Array.isArray(rows) ? rows : [];
@@ -147,9 +186,6 @@ export default function SmartTable({
   );
 
   const goTo = (p) => setPage(Math.max(1, Math.min(p, totalPages)));
-
-  // cuando cambian los datos externos, volvemos a pág 1
-  // (puedes agregar un useEffect si los rows cambian asíncronamente)
 
   // ── icono de sort ──────────────────────────────────────────────────────────
   const SortIcon = ({ colKey }) => {
@@ -192,7 +228,7 @@ export default function SmartTable({
           </select>
 
           {/* botón columnas */}
-          <div className="relative">
+          <div className="relative" ref={colPanelRef}>
             <button
               onClick={() => setShowColPanel((v) => !v)}
               className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors duration-150
@@ -252,7 +288,6 @@ export default function SmartTable({
                   onClick={() => col.sortable && cycleSort(col.key)}
                 >
                   <div className="flex items-center gap-1.5">
-                    {/* grip para drag */}
                     <FaGripVertical className="opacity-0 group-hover:opacity-40 text-gray-400 text-xs transition-opacity flex-shrink-0" />
                     <span>{col.label}</span>
                     {col.sortable && <SortIcon colKey={col.key} />}
@@ -309,7 +344,6 @@ export default function SmartTable({
       {/* ── paginación ── */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-1 pt-1 flex-wrap">
-          {/* anterior */}
           <button
             onClick={() => goTo(safePage - 1)}
             disabled={safePage === 1}
@@ -319,7 +353,6 @@ export default function SmartTable({
             <FaChevronLeft className="text-xs" />
           </button>
 
-          {/* páginas */}
           {getPaginationRange(safePage, totalPages).map((item, i) =>
             item === "…" ? (
               <span
@@ -344,7 +377,6 @@ export default function SmartTable({
             ),
           )}
 
-          {/* siguiente */}
           <button
             onClick={() => goTo(safePage + 1)}
             disabled={safePage === totalPages}
