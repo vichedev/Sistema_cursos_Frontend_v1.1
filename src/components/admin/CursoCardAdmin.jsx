@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useMemo, useCallback } from "react";
 import Swal from "sweetalert2";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import { isCourseExpired } from "../../utils/dateUtils";
 import {
   FaEye,
@@ -132,7 +132,7 @@ const getTodayString = () => {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(today.getDate()).padStart(2, "0")}`;
 };
 
@@ -148,7 +148,7 @@ const isTomorrowCourse = (curso) => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = `${tomorrow.getFullYear()}-${String(
-    tomorrow.getMonth() + 1
+    tomorrow.getMonth() + 1,
   ).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
 
   return fechaStr === tomorrowStr;
@@ -164,7 +164,7 @@ const getDaysUntilCourse = (curso) => {
   const todayDate = new Date(
     today.getFullYear(),
     today.getMonth(),
-    today.getDate()
+    today.getDate(),
   );
 
   const daysDiff = Math.round((courseDate - todayDate) / (1000 * 60 * 60 * 24));
@@ -336,19 +336,13 @@ export default function CursoCardAdmin({
 
     setLoading(true);
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${
-          curso.id
-        }/deactivate`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.patch(`/api/courses/${curso.id}/deactivate`, {});
 
       setCursos((prev) => prev.filter((c) => c.id !== curso.id));
       Swal.fire(
         "Archivado",
         "Curso movido a inactivos correctamente",
-        "success"
+        "success",
       );
     } catch (error) {
       console.error("Error al archivar curso:", error);
@@ -373,11 +367,7 @@ export default function CursoCardAdmin({
 
     setLoading(true);
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${curso.id}/activate`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.patch(`/api/courses/${curso.id}/activate`, {});
 
       setCursos((prev) => prev.filter((c) => c.id !== curso.id));
       Swal.fire("Restaurado", "Curso activado correctamente", "success");
@@ -406,10 +396,7 @@ export default function CursoCardAdmin({
 
     setLoading(true);
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${curso.id}/permanent`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.delete(`/api/courses/${curso.id}/permanent`);
 
       setCursos((prev) => prev.filter((c) => c.id !== curso.id));
       Swal.fire("Eliminado", "Curso eliminado permanentemente", "success");

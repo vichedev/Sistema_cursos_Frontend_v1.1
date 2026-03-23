@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import {
   FaGraduationCap,
   FaCheckCircle,
@@ -23,7 +23,7 @@ import { isCourseExpired } from "../../utils/dateUtils";
 function normalizeDate(date) {
   const d = new Date(date);
   return new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
   );
 }
 
@@ -87,10 +87,10 @@ function CalendarioCompacto({ cursos }) {
   const esHoy = (fecha) => {
     const hoy = new Date();
     const hoyNormalizado = new Date(
-      Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+      Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()),
     );
     const fechaNormalizada = new Date(
-      Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate())
+      Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()),
     );
     return hoyNormalizado.getTime() === fechaNormalizada.getTime();
   };
@@ -303,7 +303,7 @@ function CalendarioCompacto({ cursos }) {
                                   window.open(
                                     curso.link,
                                     "_blank",
-                                    "noopener,noreferrer"
+                                    "noopener,noreferrer",
                                   )
                                 }
                                 className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-xs sm:text-sm"
@@ -378,26 +378,19 @@ export default function DataGeneralEstudiante() {
 
       try {
         // Obtener datos del usuario
-        const userRes = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const userRes = await api.get(`/api/users/${userId}`);
         setUserData(userRes.data);
 
         // Mis cursos
-        const resMis = await axios.get(
+        const resMis = await api.get(
           `${
             import.meta.env.VITE_BACKEND_URL
           }/api/courses/mis-cursos?userId=${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
         );
         setMisCursos(resMis.data?.data || resMis.data || []);
 
         // Cursos disponibles (sugerencias)
-        const resDisp = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/courses/disponibles`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const resDisp = await api.get(`/api/courses/disponibles`);
         setDisponibles(resDisp.data?.data || resDisp.data || []);
       } catch (e) {
         console.error("Error dashboard estudiante:", e);
@@ -412,7 +405,7 @@ export default function DataGeneralEstudiante() {
 
   const kpis = useMemo(() => {
     const activos = misCursos.filter(
-      (c) => c.activo && !isCourseExpired(c)
+      (c) => c.activo && !isCourseExpired(c),
     ).length;
     const finalizados = misCursos.filter((c) => isCourseExpired(c)).length;
     const pagados = misCursos.filter((c) => Number(c.precio) > 0).length;
@@ -534,15 +527,15 @@ export default function DataGeneralEstudiante() {
                         isCourseExpired(curso)
                           ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"
                           : curso.activo
-                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
-                          : "bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-300"
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                            : "bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-300"
                       }`}
                     >
                       {isCourseExpired(curso)
                         ? "Finalizado"
                         : curso.activo
-                        ? "Activo"
-                        : "Inactivo"}
+                          ? "Activo"
+                          : "Inactivo"}
                     </span>
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${

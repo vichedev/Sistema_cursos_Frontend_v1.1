@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import Swal from "sweetalert2";
 import { FiArrowLeft } from "react-icons/fi";
 import {
@@ -66,9 +66,7 @@ export default function EditarCurso() {
 
     // Cargar profesores
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/profesores`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get(`/api/users/profesores`, {})
       .then((res) => {
         let profesoresData = [];
 
@@ -92,9 +90,7 @@ export default function EditarCurso() {
 
     // Cargar datos del curso
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get(`/api/courses/${id}`, {})
       .then((res) => {
         const curso = res.data;
         const cuposValue = curso.cupos || 0;
@@ -145,12 +141,7 @@ export default function EditarCurso() {
 
   const cargarCuponesDelCurso = async (cursoId, token) => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/course/${cursoId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await api.get(`/api/coupons/course/${cursoId}`, {});
 
       if (response.data && Array.isArray(response.data)) {
         const cuponesConId = response.data.map((cupon) => ({
@@ -347,13 +338,12 @@ export default function EditarCurso() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
+      const response = await api.get(
         `${
           import.meta.env.VITE_BACKEND_URL
         }/api/courses/api/generate-description`,
         {
           params: { titulo: form.titulo },
-          headers: { Authorization: `Bearer ${token}` },
         },
       );
 
@@ -525,16 +515,11 @@ export default function EditarCurso() {
         data.append("imagen", imagenFile);
       }
 
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
+      await api.put(`/api/courses/${id}`, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
 
       Swal.fire({
         title: "¡Curso actualizado!",

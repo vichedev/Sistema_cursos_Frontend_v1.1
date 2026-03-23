@@ -1,5 +1,5 @@
 // src/utils/cuponesHelpers.js
-import axios from "axios";
+import api from "../../../utils/axiosInstance";
 import Swal from "sweetalert2";
 import {
   FaCheckCircle,
@@ -8,12 +8,8 @@ import {
 } from "react-icons/fa";
 
 // Función para obtener el token (reutilizable)
-const getToken = () => localStorage.getItem("token");
 
 // Función para obtener headers con autorización
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${getToken()}` },
-});
 
 // Función principal para cargar datos
 export const cargarDatos = async (setters) => {
@@ -22,14 +18,8 @@ export const cargarDatos = async (setters) => {
   try {
     setLoading(true);
     const [cuponesRes, cursosRes] = await Promise.all([
-      axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/coupons`,
-        getAuthHeaders()
-      ),
-      axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/all`,
-        getAuthHeaders()
-      ),
+      api.get(`/api/coupons`),
+      api.get(`/api/courses/all`),
     ]);
 
     setCupones(cuponesRes.data);
@@ -97,24 +87,24 @@ export const calcularEstadisticas = (cuponesData, setStats) => {
     (c) =>
       c.activo &&
       (!c.fechaExpiracion || new Date() < new Date(c.fechaExpiracion)) &&
-      c.usosActuales < c.usosMaximos
+      c.usosActuales < c.usosMaximos,
   ).length;
   const expirados = cuponesData.filter(
-    (c) => c.fechaExpiracion && new Date() > new Date(c.fechaExpiracion)
+    (c) => c.fechaExpiracion && new Date() > new Date(c.fechaExpiracion),
   ).length;
   const inactivos = cuponesData.filter((c) => !c.activo).length;
   const agotados = cuponesData.filter(
-    (c) => c.usosActuales >= c.usosMaximos
+    (c) => c.usosActuales >= c.usosMaximos,
   ).length;
   const usados = cuponesData.reduce((sum, c) => sum + c.usosActuales, 0);
   const disponibles = cuponesData.reduce(
     (sum, c) => sum + (c.usosMaximos - c.usosActuales),
-    0
+    0,
   );
 
   const totalUsosMaximos = cuponesData.reduce(
     (sum, c) => sum + c.usosMaximos,
-    0
+    0,
   );
   const tasaUsoEfectiva =
     totalUsosMaximos > 0 ? ((usados / totalUsosMaximos) * 100).toFixed(1) : 0;
@@ -138,7 +128,7 @@ export const filtrarCupones = (
   searchTerm,
   filterCurso,
   filterEstado,
-  cursos // Agregar cursos como parámetro
+  cursos, // Agregar cursos como parámetro
 ) => {
   return cupones.filter((cupon) => {
     // Buscar el curso correspondiente
@@ -188,18 +178,12 @@ export const toggleActivarCupon = async (cuponId, activar, recargarFunc) => {
   if (result.isConfirmed) {
     try {
       const endpoint = activar ? "activate" : "deactivate";
-      await axios.put(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/coupons/${cuponId}/${endpoint}`,
-        {},
-        getAuthHeaders()
-      );
+      await api.put(`/api/coupons/${cuponId}/${endpoint}`, {});
 
       Swal.fire(
         activar ? "Activado" : "Desactivado",
         `El cupón ha sido ${action}do`,
-        "success"
+        "success",
       );
       recargarFunc();
     } catch (error) {
@@ -223,10 +207,7 @@ export const eliminarCupon = async (cuponId, recargarFunc) => {
 
   if (result.isConfirmed) {
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/${cuponId}`,
-        getAuthHeaders()
-      );
+      await api.delete(`/api/coupons/${cuponId}`);
 
       Swal.fire("Eliminado", "El cupón ha sido eliminado", "success");
       recargarFunc();
@@ -240,13 +221,10 @@ export const eliminarCupon = async (cuponId, recargarFunc) => {
 export const verDetallesCupon = async (
   cuponId,
   setSelectedCupon,
-  setShowDetalles
+  setShowDetalles,
 ) => {
   try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_BACKEND_URL}/api/coupons/${cuponId}/users`,
-      getAuthHeaders()
-    );
+    const response = await api.get(`/api/coupons/${cuponId}/users`);
 
     setSelectedCupon(response.data);
     setShowDetalles(true);
@@ -269,12 +247,12 @@ export const getEstadoCupon = (cupon) => {
     const fechaExpiracionSinHora = new Date(
       fechaExpiracion.getFullYear(),
       fechaExpiracion.getMonth(),
-      fechaExpiracion.getDate()
+      fechaExpiracion.getDate(),
     );
     const hoySinHora = new Date(
       hoy.getFullYear(),
       hoy.getMonth(),
-      hoy.getDate()
+      hoy.getDate(),
     );
 
     if (fechaExpiracionSinHora < hoySinHora) {

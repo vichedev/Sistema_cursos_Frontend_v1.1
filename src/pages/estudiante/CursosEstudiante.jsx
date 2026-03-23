@@ -1,6 +1,6 @@
 // src/pages/estudiante/CursosEstudiante.jsx
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import Swal from "sweetalert2";
 import PayphoneButton from "../../components/PayphoneButton";
 import {
@@ -93,17 +93,13 @@ export default function CursosEstudiante() {
 
       // Luego cargar los cursos
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/courses/disponibles`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "true",
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
+        const response = await api.get(`/api/courses/disponibles`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-        );
+        });
 
         if (
           typeof response.data === "string" &&
@@ -243,12 +239,11 @@ export default function CursosEstudiante() {
       });
 
       // ✅ SIN userId en el body
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/payments/inscribir-gratis`,
+      await api.post(
+        `/api/payments/inscribir-gratis`,
         { cursoId }, // ← Solo cursoId
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "ngrok-skip-browser-warning": "true",
             "Content-Type": "application/json",
           },
@@ -301,15 +296,14 @@ export default function CursosEstudiante() {
       setCouponLoading(true);
 
       // ✅ PRIMER INTENTO - SIN userId en el body
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/payments/verify-coupon`,
+      const response = await api.post(
+        `/api/payments/verify-coupon`,
         {
           cursoId,
           codigoCupon: codigoCupon.toUpperCase(),
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         },
@@ -326,7 +320,7 @@ export default function CursosEstudiante() {
 
         try {
           // ✅ LIBERACIÓN FORZADA - SIN userId
-          await axios.post(
+          await api.post(
             `${
               import.meta.env.VITE_BACKEND_URL
             }/api/payments/force-release-coupon`,
@@ -337,7 +331,6 @@ export default function CursosEstudiante() {
             },
             {
               headers: {
-                Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             },
@@ -346,15 +339,14 @@ export default function CursosEstudiante() {
           // ✅ REINTENTAR VERIFICACIÓN DESPUÉS DE LIBERAR
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
-          const retryResponse = await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/payments/verify-coupon`,
+          const retryResponse = await api.post(
+            `/api/payments/verify-coupon`,
             {
               cursoId,
               codigoCupon: codigoCupon.toUpperCase(),
             },
             {
               headers: {
-                Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             },
@@ -477,7 +469,7 @@ export default function CursosEstudiante() {
         didOpen: () => Swal.showLoading(),
       });
 
-      const response = await axios.post(
+      const response = await api.post(
         `${
           import.meta.env.VITE_BACKEND_URL
         }/api/payments/create-payphone-payment-with-coupon`,
@@ -487,7 +479,6 @@ export default function CursosEstudiante() {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         },
@@ -565,15 +556,10 @@ export default function CursosEstudiante() {
       // Esperar un momento para que el callback de Payphone se procese
       // await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/payments/check-payment-status`,
-        {
-          params: { clientTransactionId },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const response = await api.get(`/api/payments/check-payment-status`, {
+        params: { clientTransactionId },
+        headers: {},
+      });
 
       if (response.data.success) {
         // Pago exitoso - mantener el cupón aplicado
@@ -645,7 +631,7 @@ export default function CursosEstudiante() {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `${
           import.meta.env.VITE_BACKEND_URL
         }/api/payments/release-coupon-by-transaction`,
@@ -655,7 +641,6 @@ export default function CursosEstudiante() {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         },

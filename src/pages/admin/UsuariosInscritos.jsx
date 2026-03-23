@@ -7,7 +7,7 @@ import React, {
   lazy,
   Suspense,
 } from "react";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import Swal from "sweetalert2";
 import { useDebounce } from "use-debounce";
 
@@ -391,11 +391,7 @@ export default function UsuariosInscritos() {
         dataToSend.password = updatedUser.password;
       }
 
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/users/${updatedUser.id}`,
-        dataToSend,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await api.put(`/api/users/${updatedUser.id}`, dataToSend);
 
       closeModal();
       fetchUsuarios();
@@ -439,10 +435,7 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/users/${userToDelete.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const response = await api.delete(`/api/users/${userToDelete.id}`);
 
       if (response.data && response.data.success) {
         closeModal();
@@ -476,11 +469,7 @@ export default function UsuariosInscritos() {
     setModalError(null);
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/users`,
-        newUser,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await api.post(`/api/users`, newUser);
       setTimeout(() => {
         fetchUsuarios();
       }, 200);
@@ -499,12 +488,11 @@ export default function UsuariosInscritos() {
   const handleVerifyAccount = async (userId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/admin/verify-user/${userId}`,
+      const response = await api.post(
+        `/api/auth/admin/verify-user/${userId}`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         },

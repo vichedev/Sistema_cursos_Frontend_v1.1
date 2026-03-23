@@ -1,6 +1,6 @@
 // src/pages/estudiante/MisCursos.jsx
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import {
   FaSearch,
   FaFilter,
@@ -43,13 +43,12 @@ const useMisCursos = () => {
       }
 
       try {
-        const res = await axios.get(
+        const res = await api.get(
           `${
             import.meta.env.VITE_BACKEND_URL
           }/api/courses/mis-cursos?userId=${userId}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               "ngrok-skip-browser-warning": "true",
               "Content-Type": "application/json",
             },

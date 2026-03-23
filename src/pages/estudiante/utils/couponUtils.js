@@ -1,26 +1,14 @@
-import axios from "axios";
+import api from "../../../utils/axiosInstance";
 import Swal from "sweetalert2";
 
 // ===============================
-// ✅ FUNCIÓN PARA LIBERAR RESERVA DE CUPÓN (CORREGIDA)
+// ✅ FUNCIÓN PARA LIBERAR RESERVA DE CUPÓN
 // ===============================
-export const releaseCouponReservation = async (reservationId) => { // ❌ ELIMINAR userId
-  const token = localStorage.getItem("token");
+export const releaseCouponReservation = async (reservationId) => {
   try {
-    const response = await axios.post(
-      `${
-        import.meta.env.VITE_BACKEND_URL
-      }/api/payments/release-coupon-reservation`,
-      {
-        reservationId,
-        // ❌ ELIMINAR userId del body
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
+    const response = await api.post(
+      `/api/payments/release-coupon-reservation`,
+      { reservationId },
     );
 
     console.log("✅ Cupón liberado correctamente");
@@ -44,35 +32,22 @@ export const releaseCouponReservation = async (reservationId) => { // ❌ ELIMIN
 };
 
 // ===============================
-// ✅ FUNCIÓN PARA FORZAR LIBERACIÓN DE CUPÓN (CORREGIDA)
+// ✅ FUNCIÓN PARA FORZAR LIBERACIÓN DE CUPÓN
 // ===============================
-export const forceReleaseCoupon = async (codigoCupon, cursoId) => { // ✅ Simplificar parámetros
-  const token = localStorage.getItem("token");
+export const forceReleaseCoupon = async (codigoCupon, cursoId) => {
   try {
-    const response = await axios.post(
-      `${
-        import.meta.env.VITE_BACKEND_URL
-      }/api/payments/force-release-coupon`,
-      {
-        codigoCupon,
-        cursoId,
-        // ❌ SIN userId
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await api.post(`/api/payments/force-release-coupon`, {
+      codigoCupon,
+      cursoId,
+    });
 
     console.log("✅ Cupón liberado forzadamente");
     return { success: true, data: response.data };
   } catch (error) {
     console.error("Error forzando liberación:", error);
-    return { 
-      success: false, 
-      error: error.response?.data?.message || "Error al forzar liberación" 
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error al forzar liberación",
     };
   }
 };

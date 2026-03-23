@@ -1,6 +1,6 @@
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import CursoCardAdmin from "../../components/admin/CursoCardAdmin";
 import {
   FaPlus,
@@ -15,9 +15,9 @@ import {
 
 // ✅ CONSTANTES PARA URLs
 const API_URLS = {
-  ACTIVOS: `${import.meta.env.VITE_BACKEND_URL}/api/courses/all`,
-  INACTIVOS: `${import.meta.env.VITE_BACKEND_URL}/api/courses/admin/inactivos`,
-  TODOS: `${import.meta.env.VITE_BACKEND_URL}/api/courses/admin/todos`,
+  ACTIVOS: `/api/courses/all`,
+  INACTIVOS: `/api/courses/admin/inactivos`,
+  TODOS: `/api/courses/admin/todos`,
 };
 
 // ✅ HOOK PERSONALIZADO PARA LA CARGA DE CURSOS
@@ -28,18 +28,11 @@ const useCursos = (activeTab) => {
   const cargarCursos = useCallback(
     async (tab = activeTab) => {
       setLoading(true);
-      const token = localStorage.getItem("token");
 
       try {
         const url = API_URLS[tab] || API_URLS.ACTIVOS;
 
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "true",
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await api.get(url);
 
         let cursosData = [];
         if (response.data && Array.isArray(response.data.data)) {
@@ -61,7 +54,7 @@ const useCursos = (activeTab) => {
         setLoading(false);
       }
     },
-    [activeTab]
+    [activeTab],
   );
 
   useEffect(() => {
@@ -97,15 +90,15 @@ const EmptyState = ({ activeTab, searchTerm }) => (
       {searchTerm
         ? "No se encontraron cursos"
         : activeTab === "INACTIVOS"
-        ? "No hay cursos inactivos"
-        : "No hay cursos disponibles"}
+          ? "No hay cursos inactivos"
+          : "No hay cursos disponibles"}
     </h3>
     <p className="text-gray-500 dark:text-gray-400">
       {searchTerm
         ? "Intenta con otros términos de búsqueda"
         : activeTab === "INACTIVOS"
-        ? "Los cursos que archives aparecerán aquí"
-        : "Crea tu primer curso"}
+          ? "Los cursos que archives aparecerán aquí"
+          : "Crea tu primer curso"}
     </p>
     {!searchTerm && activeTab !== "INACTIVOS" && (
       <a
@@ -159,7 +152,7 @@ export default function VerTodosLosCursos() {
           (c.profesor &&
             `${c.profesor.nombres} ${c.profesor.apellidos}`
               .toLowerCase()
-              .includes(term))
+              .includes(term)),
       );
     }
 
@@ -196,15 +189,15 @@ export default function VerTodosLosCursos() {
                 {activeTab === "INACTIVOS"
                   ? "CURSOS INACTIVOS"
                   : activeTab === "TODOS"
-                  ? "TODOS LOS CURSOS"
-                  : "CURSOS ACTIVOS"}
+                    ? "TODOS LOS CURSOS"
+                    : "CURSOS ACTIVOS"}
               </h1>
               <p className="text-blue-100">
                 {activeTab === "INACTIVOS"
                   ? "Gestiona los cursos archivados"
                   : activeTab === "TODOS"
-                  ? "Vista completa de todos los cursos"
-                  : "Gestiona y administra todos los cursos activos"}
+                    ? "Vista completa de todos los cursos"
+                    : "Gestiona y administra todos los cursos activos"}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

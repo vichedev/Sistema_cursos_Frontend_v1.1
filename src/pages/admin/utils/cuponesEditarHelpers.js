@@ -1,9 +1,7 @@
 // src/utils/cuponesEditarHelpers.js
 import Swal from "sweetalert2";
-import axios from "axios";
+import api from "../../../utils/axiosInstance";
 import { formatearFechaParaInput, getEstadoCupon } from "./cuponesHelpers";
-
-const getToken = () => localStorage.getItem("token");
 
 export const editarCupon = async (cupon, recargarFunc) => {
   const fechaFormateada = formatearFechaParaInput(cupon.fechaExpiracion);
@@ -139,8 +137,8 @@ export const editarCupon = async (cupon, recargarFunc) => {
           <strong>Usados:</strong> ${
             cupon.usosActuales
           } | <strong>Disponibles:</strong> ${
-      cupon.usosMaximos - cupon.usosActuales
-    } | <strong>Total:</strong> ${cupon.usosMaximos}
+            cupon.usosMaximos - cupon.usosActuales
+          } | <strong>Total:</strong> ${cupon.usosMaximos}
         </p>
         <p class="text-sm ${
           isDarkMode ? "text-blue-400" : "text-blue-600"
@@ -154,7 +152,7 @@ export const editarCupon = async (cupon, recargarFunc) => {
           isDarkMode ? "text-blue-400" : "text-blue-600"
         } mt-1">
           <strong>Expira:</strong> ${new Date(
-            cupon.fechaExpiracion
+            cupon.fechaExpiracion,
           ).toLocaleDateString()}
         </p>
         `
@@ -184,7 +182,7 @@ export const editarCupon = async (cupon, recargarFunc) => {
     preConfirm: () => {
       const codigo = document.getElementById("codigo").value.trim();
       const usosMaximos = parseInt(
-        document.getElementById("usosMaximos").value
+        document.getElementById("usosMaximos").value,
       );
       const fechaInput = document.getElementById("fechaExpiracion");
       const fechaExpiracion = fechaInput.value || null;
@@ -201,7 +199,7 @@ export const editarCupon = async (cupon, recargarFunc) => {
 
       if (usosMaximos < cupon.usosActuales) {
         Swal.showValidationMessage(
-          `Los usos máximos no pueden ser menores a los usos actuales (${cupon.usosActuales})`
+          `Los usos máximos no pueden ser menores a los usos actuales (${cupon.usosActuales})`,
         );
         return false;
       }
@@ -213,7 +211,7 @@ export const editarCupon = async (cupon, recargarFunc) => {
 
         if (fechaSeleccionada < hoy) {
           Swal.showValidationMessage(
-            "La fecha de expiración no puede ser en el pasado"
+            "La fecha de expiración no puede ser en el pasado",
           );
           return false;
         }
@@ -230,11 +228,7 @@ export const editarCupon = async (cupon, recargarFunc) => {
 
   if (formValues) {
     try {
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/coupons/${cupon.id}`,
-        formValues,
-        { headers: { Authorization: `Bearer ${getToken()}` } }
-      );
+      await api.put(`/api/coupons/${cupon.id}`, formValues);
 
       Swal.fire({
         title: "¡Actualizado!",

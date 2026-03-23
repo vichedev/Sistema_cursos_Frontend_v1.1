@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import {
   FaUserGraduate,
   FaChalkboardTeacher,
@@ -38,33 +38,29 @@ export default function EstudiantesCurso() {
         const token = localStorage.getItem("token");
 
         // Curso
-        const cursoResponse = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const cursoResponse = await api.get(`/api/courses/${id}`);
         setCurso(cursoResponse.data);
 
         // Estudiantes (con pagos si existe)
         try {
-          const estudiantesResponse = await axios.get(
+          const estudiantesResponse = await api.get(
             `${
               import.meta.env.VITE_BACKEND_URL
             }/api/courses/${id}/estudiantes-con-pagos`,
-            { headers: { Authorization: `Bearer ${token}` } }
           );
 
           setEstudiantes(estudiantesResponse.data.estudiantes || []);
 
           const estudiantesPagados =
             estudiantesResponse.data.estudiantes.filter(
-              (est) => est.montoPagado > 0
+              (est) => est.montoPagado > 0,
             ).length;
           const estudiantesGratis = estudiantesResponse.data.estudiantes.filter(
-            (est) => est.montoPagado === 0
+            (est) => est.montoPagado === 0,
           ).length;
           const totalRecaudado = estudiantesResponse.data.estudiantes.reduce(
             (sum, est) => sum + est.montoPagado,
-            0
+            0,
           );
 
           setPaymentData({
@@ -74,9 +70,8 @@ export default function EstudiantesCurso() {
           });
         } catch {
           // Fallback sin pagos
-          const estudiantesBasic = await axios.get(
-            `${import.meta.env.VITE_BACKEND_URL}/api/courses/${id}/estudiantes`,
-            { headers: { Authorization: `Bearer ${token}` } }
+          const estudiantesBasic = await api.get(
+            `/api/courses/${id}/estudiantes`,
           );
 
           const estudiantesConPago = estudiantesBasic.data.map((est) => ({
@@ -194,7 +189,7 @@ export default function EstudiantesCurso() {
         const fechaInscripcion =
           est.fechaInscripcion || est.FechaInscripcion
             ? new Date(
-                est.fechaInscripcion || est.FechaInscripcion
+                est.fechaInscripcion || est.FechaInscripcion,
               ).toLocaleDateString("es-ES")
             : "N/A";
 

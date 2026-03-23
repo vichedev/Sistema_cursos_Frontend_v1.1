@@ -1,6 +1,6 @@
 // src/pages/admin/GestionarCupones.jsx
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import Swal from "sweetalert2";
 import {
   FaGift,
@@ -96,7 +96,7 @@ export default function GestionarCupones() {
     searchTerm,
     filterCurso,
     filterEstado,
-    cursos
+    cursos,
   );
 
   if (loading) {
@@ -321,18 +321,20 @@ export default function GestionarCupones() {
                                   getColorTipo(cupon.tipo) === "amber"
                                     ? "bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-200"
                                     : getColorTipo(cupon.tipo) === "green"
-                                    ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200"
-                                    : getColorTipo(cupon.tipo) === "purple"
-                                    ? "bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200"
-                                    : getColorTipo(cupon.tipo) === "blue"
-                                    ? "bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200"
-                                    : getColorTipo(cupon.tipo) === "emerald"
-                                    ? "bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200"
-                                    : getColorTipo(cupon.tipo) === "red"
-                                    ? "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
-                                    : getColorTipo(cupon.tipo) === "cyan"
-                                    ? "bg-cyan-100 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200"
-                                    : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                                      ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200"
+                                      : getColorTipo(cupon.tipo) === "purple"
+                                        ? "bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200"
+                                        : getColorTipo(cupon.tipo) === "blue"
+                                          ? "bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200"
+                                          : getColorTipo(cupon.tipo) ===
+                                              "emerald"
+                                            ? "bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200"
+                                            : getColorTipo(cupon.tipo) === "red"
+                                              ? "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
+                                              : getColorTipo(cupon.tipo) ===
+                                                  "cyan"
+                                                ? "bg-cyan-100 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200"
+                                                : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
                                 } mt-1 inline-block`}
                               >
                                 {getTipoCuponTexto(cupon.tipo)}
@@ -353,7 +355,7 @@ export default function GestionarCupones() {
                                   <span className="flex items-center gap-1">
                                     <FaCalendarAlt />
                                     {formatearFechaParaDisplay(
-                                      cupon.fechaExpiracion
+                                      cupon.fechaExpiracion,
                                     )}
                                   </span>
                                 )}
@@ -366,10 +368,10 @@ export default function GestionarCupones() {
                                 estado.color === "green"
                                   ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200"
                                   : estado.color === "red"
-                                  ? "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
-                                  : estado.color === "orange"
-                                  ? "bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200"
-                                  : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                                    ? "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
+                                    : estado.color === "orange"
+                                      ? "bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200"
+                                      : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
                               }`}
                             >
                               <EstadoIcon className="text-sm" />
@@ -505,19 +507,19 @@ export default function GestionarCupones() {
                               "green"
                               ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200"
                               : getEstadoCupon(selectedCupon.cupon).color ===
-                                "red"
-                              ? "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
-                              : getEstadoCupon(selectedCupon.cupon).color ===
-                                "orange"
-                              ? "bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                                  "red"
+                                ? "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
+                                : getEstadoCupon(selectedCupon.cupon).color ===
+                                    "orange"
+                                  ? "bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200"
+                                  : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
                             : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
                         }`}
                       >
                         {selectedCupon.cupon &&
                           (() => {
                             const EstadoIcon = getEstadoCupon(
-                              selectedCupon.cupon
+                              selectedCupon.cupon,
                             ).icon;
                             return <EstadoIcon className="text-sm" />;
                           })()}
@@ -535,7 +537,7 @@ export default function GestionarCupones() {
                         </span>
                         <p className="text-gray-800 dark:text-white">
                           {new Date(
-                            selectedCupon.cupon.fechaExpiracion
+                            selectedCupon.cupon.fechaExpiracion,
                           ).toLocaleDateString("es-ES", {
                             weekday: "long",
                             year: "numeric",
@@ -590,7 +592,7 @@ export default function GestionarCupones() {
                             <div className="col-span-3 text-right">
                               <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                 {new Date(usuario.fechaUso).toLocaleDateString(
-                                  "es-ES"
+                                  "es-ES",
                                 )}
                               </span>
                               <br />
@@ -600,7 +602,7 @@ export default function GestionarCupones() {
                                   {
                                     hour: "2-digit",
                                     minute: "2-digit",
-                                  }
+                                  },
                                 )}
                               </span>
                             </div>

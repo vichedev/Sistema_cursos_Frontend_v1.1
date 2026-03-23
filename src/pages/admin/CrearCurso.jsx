@@ -1,7 +1,7 @@
 // src/pages/admin/CrearCurso.jsx
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
 import {
   FaBook,
@@ -61,11 +61,8 @@ export default function CrearCurso() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/profesores`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get(`/api/users/profesores`)
       .then((res) => {
         if (res.data && Array.isArray(res.data.data))
           setProfesores(res.data.data);
@@ -263,16 +260,9 @@ export default function CrearCurso() {
     setIsGeneratingDescription(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/courses/api/generate-description`,
-        {
-          params: { titulo: form.titulo },
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await api.get(`/api/courses/api/generate-description`, {
+        params: { titulo: form.titulo },
+      });
 
       if (response.data.success) {
         setForm((prev) => ({
@@ -289,7 +279,7 @@ export default function CrearCurso() {
         });
       } else {
         throw new Error(
-          response.data.message || "Error al generar descripción"
+          response.data.message || "Error al generar descripción",
         );
       }
     } catch (error) {
@@ -384,7 +374,7 @@ export default function CrearCurso() {
       Swal.fire(
         "Error",
         "El precio debe ser mayor a 0 para cursos pagados.",
-        "error"
+        "error",
       );
       setIsSubmitting(false);
       return;
@@ -413,16 +403,11 @@ export default function CrearCurso() {
 
       if (imagenFile) data.append("imagen", imagenFile);
 
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/courses/create`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      await api.post(`/api/courses/create`, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       Swal.fire({
         icon: "success",
@@ -1023,7 +1008,7 @@ export default function CrearCurso() {
                         Precio final: $
                         {calcularPrecioFinal(
                           form.precio,
-                          tipoCuponSeleccionado
+                          tipoCuponSeleccionado,
                         ).toFixed(2)}
                       </span>
                     </div>
@@ -1055,9 +1040,9 @@ export default function CrearCurso() {
                         <div
                           key={cupon.id}
                           className={`flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg border border-${getColorTipoCupon(
-                            cupon.tipo
+                            cupon.tipo,
                           )}-100 dark:border-${getColorTipoCupon(
-                            cupon.tipo
+                            cupon.tipo,
                           )}-800`}
                         >
                           <div className="flex-1">
@@ -1067,13 +1052,13 @@ export default function CrearCurso() {
                               </span>
                               <span
                                 className={`text-xs px-2 py-1 rounded-full bg-${getColorTipoCupon(
-                                  cupon.tipo
+                                  cupon.tipo,
                                 )}-100 dark:bg-${getColorTipoCupon(
-                                  cupon.tipo
+                                  cupon.tipo,
                                 )}-800 text-${getColorTipoCupon(
-                                  cupon.tipo
+                                  cupon.tipo,
                                 )}-800 dark:text-${getColorTipoCupon(
-                                  cupon.tipo
+                                  cupon.tipo,
                                 )}-200`}
                               >
                                 {getTipoCuponTexto(cupon.tipo)}
@@ -1084,7 +1069,7 @@ export default function CrearCurso() {
                               {cupon.usosMaximos !== 1 ? "s" : ""} •
                               {cupon.fechaExpiracion
                                 ? ` Vence: ${new Date(
-                                    cupon.fechaExpiracion
+                                    cupon.fechaExpiracion,
                                   ).toLocaleDateString()}`
                                 : " Sin expiración"}
                             </div>

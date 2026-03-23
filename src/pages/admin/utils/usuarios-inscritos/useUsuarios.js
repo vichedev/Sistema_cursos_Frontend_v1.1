@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import axios from "axios";
+import api from "../../../../utils/axiosInstance";
 import { useDebounce } from "use-debounce";
 
 export function useUsuarios() {
@@ -28,17 +28,9 @@ export function useUsuarios() {
   const fetchUsuarios = () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem("token");
 
-    if (!token) {
-      setError("No hay token de autenticación");
-      setLoading(false);
-      return;
-    }
-
-    axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/usuarios-por-rol`, {
-        headers: { Authorization: `Bearer ${token}` },
+    api
+      .get(`/api/users/usuarios-por-rol`, {
         timeout: 10000,
       })
       .then((res) => {
@@ -179,6 +171,6 @@ export function useUsuarios() {
     filterOptions,
     paginatedUsers,
     totalItems,
-    filteredUsers, 
+    filteredUsers,
   };
 }

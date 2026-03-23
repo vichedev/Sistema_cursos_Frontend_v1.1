@@ -1,6 +1,6 @@
 // src/pages/admin/GestionDiplomas.jsx
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api from "../../utils/axiosInstance";
 import Swal from "sweetalert2";
 import {
   FaGraduationCap,
@@ -16,12 +16,9 @@ import {
   FaClock,
 } from "react-icons/fa";
 
-const API = import.meta.env.VITE_BACKEND_URL;
 const isDark = () => document.documentElement.classList.contains("dark");
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-const token = () => localStorage.getItem("token");
-const headers = () => ({ Authorization: `Bearer ${token()}` });
 
 const TIPO_LABEL = {
   ONLINE_GRATIS: {
@@ -66,8 +63,8 @@ function CursosList({ onSelect }) {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    axios
-      .get(`${API}/api/diplomas/cursos`, { headers: headers() })
+    api
+      .get(`/api/diplomas/cursos`)
       .then((r) => setCursos(r.data))
       .catch(() =>
         Swal.fire("Error", "No se pudieron cargar los cursos", "error"),
@@ -200,10 +197,8 @@ function EstudiantesDiploma({ curso, onBack }) {
 
   const load = useCallback(() => {
     setLoading(true);
-    axios
-      .get(`${API}/api/diplomas/cursos/${curso.id}/estudiantes`, {
-        headers: headers(),
-      })
+    api
+      .get(`/api/diplomas/cursos/${curso.id}/estudiantes`)
       .then((r) => setData(r.data))
       .catch(() =>
         Swal.fire("Error", "No se pudieron cargar los estudiantes", "error"),
@@ -218,10 +213,9 @@ function EstudiantesDiploma({ curso, onBack }) {
   const enviarUno = async (estudiante) => {
     setSending((p) => ({ ...p, [estudiante.estudianteId]: true }));
     try {
-      await axios.post(
-        `${API}/api/diplomas/enviar/${curso.id}/${estudiante.estudianteId}`,
+      await api.post(
+        `/api/diplomas/enviar/${curso.id}/${estudiante.estudianteId}`,
         {},
-        { headers: headers() },
       );
       setSent((p) => new Set(p).add(estudiante.estudianteId));
       Swal.fire({
@@ -265,11 +259,7 @@ function EstudiantesDiploma({ curso, onBack }) {
 
     setSendingAll(true);
     try {
-      const res = await axios.post(
-        `${API}/api/diplomas/enviar-todos/${curso.id}`,
-        {},
-        { headers: headers() },
-      );
+      const res = await api.post(`/api/diplomas/enviar-todos/${curso.id}`, {});
       const { enviados, errores } = res.data;
       // Marcar todos como enviados
       setSent(new Set(data.estudiantes.map((e) => e.estudianteId)));
