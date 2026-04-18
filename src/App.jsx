@@ -38,6 +38,10 @@ import PaymentFailed from "./pages/estudiante/PaymentFailed";
 import { NotificationProvider } from "./context/NotificationContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
+// LEGALES
+import Privacidad from "./pages/Privacidad";
+import Terminos from "./pages/Terminos";
+
 function App() {
   return (
     <ThemeProvider>
@@ -85,6 +89,9 @@ function App() {
             <Route path="/payment/cancelled" element={<PaymentFailed />} />
             <Route path="/pago-exitoso" element={<PaymentSuccess />} />
             <Route path="/pago-fallido" element={<PaymentFailed />} />
+            {/* LEGALES */}
+            <Route path="/privacidad" element={<Privacidad />} />
+            <Route path="/terminos" element={<Terminos />} />
 
             <Route path="*" element={<LandingPage />} />
           </Routes>

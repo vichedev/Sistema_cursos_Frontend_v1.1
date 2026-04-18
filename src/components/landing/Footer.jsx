@@ -1,6 +1,16 @@
+import { Link, useLocation } from "react-router-dom";
+
 const Footer = () => {
-  // Función para scroll suave a las secciones
+  const location = useLocation();
+
+  // Función para scroll suave a las secciones (solo funciona en la landing)
   const scrollToSection = (sectionId) => {
+    // Si no estamos en la landing, navegar a la landing con el hash
+    if (location.pathname !== "/") {
+      window.location.href = `/#${sectionId}`;
+      return;
+    }
+
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
@@ -132,6 +142,23 @@ const Footer = () => {
                 © {new Date().getFullYear()} MAAT ACADEMY!. Todos los derechos
                 reservados.
               </p>
+            </div>
+
+            {/* ✅ NUEVO: Enlaces legales */}
+            <div className="flex items-center gap-2 text-sm">
+              <Link
+                to="/privacidad"
+                className="text-gray-400 hover:text-white transition-colors duration-300 hover:underline"
+              >
+                Política de Privacidad
+              </Link>
+              <span className="text-gray-600">•</span>
+              <Link
+                to="/terminos"
+                className="text-gray-400 hover:text-white transition-colors duration-300 hover:underline"
+              >
+                Términos y Condiciones
+              </Link>
             </div>
           </div>
         </div>
