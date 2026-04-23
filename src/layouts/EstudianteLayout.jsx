@@ -74,7 +74,7 @@ export default function EstudianteLayout({ className = "" }) {
         </div>
 
         {/* Área de contenido principal */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
           <Outlet />
         </main>
       </div>

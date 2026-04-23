@@ -53,6 +53,7 @@ import { ImageModal } from "./components/common/ImageModal";
 import { DescriptionModal } from "./components/common/DescriptionModal";
 import { FilterDropdown } from "./components/common/FilterDropdown";
 import { CouponModal } from "./components/common/CouponModal";
+import { PrivacyModal } from "./components/common/PrivacyModal";
 
 export default function CursosEstudiante() {
   const [cursos, setCursos] = useState([]);
@@ -72,6 +73,25 @@ export default function CursosEstudiante() {
   });
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  // ✅ ESTADO PARA MODAL DE POLÍTICA DE PRIVACIDAD
+  const [privacyModal, setPrivacyModal] = useState({ open: false, resolver: null });
+
+  const requirePrivacyAcceptance = () => {
+    return new Promise((resolve) => {
+      try {
+        const stored = localStorage.getItem("privacyPolicyAccepted");
+        if (stored) {
+          const data = JSON.parse(stored);
+          if (data.accepted && Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+            resolve(true);
+            return;
+          }
+        }
+      } catch {}
+      setPrivacyModal({ open: true, resolver: resolve });
+    });
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -411,15 +431,15 @@ export default function CursosEstudiante() {
             <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-3 rounded-lg border border-green-200 dark:border-green-700 mt-3">
               <div class="flex justify-between text-sm">
                 <span>Precio original:</span>
-                <span class="line-through text-gray-500">$${result.precioOriginal}</span>
+                <span class="line-through text-gray-500">$${parseFloat(result.precioOriginal).toFixed(2)}</span>
               </div>
               <div class="flex justify-between text-lg font-bold mt-1">
                 <span>Precio final:</span>
-                <span class="text-green-600 dark:text-green-400">$${result.precioConDescuento}</span>
+                <span class="text-green-600 dark:text-green-400">$${parseFloat(result.precioConDescuento).toFixed(2)}</span>
               </div>
               <div class="flex justify-between text-sm mt-1">
                 <span>Ahorro:</span>
-                <span class="text-green-600 dark:text-green-400 font-bold">$${result.ahorro}</span>
+                <span class="text-green-600 dark:text-green-400 font-bold">$${parseFloat(result.ahorro).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -1161,18 +1181,18 @@ export default function CursosEstudiante() {
                             {hasAppliedCoupon ? (
                               <div className="text-center">
                                 <div className="line-through text-gray-500 dark:text-gray-400 text-xs">
-                                  ${curso.precio}
+                                  ${parseFloat(curso.precio).toFixed(2)}
                                 </div>
                                 <div className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-300 text-sm font-bold border border-green-300 dark:border-green-700 transition-colors duration-200">
-                                  💰 ${appliedCoupon.precioConDescuento}
+                                  💰 ${parseFloat(appliedCoupon.precioConDescuento).toFixed(2)}
                                 </div>
                                 <div className="text-xs text-green-600 dark:text-green-400 font-bold mt-1">
-                                  🎁 Ahorras ${appliedCoupon.ahorro}
+                                  🎁 Ahorras ${parseFloat(appliedCoupon.ahorro).toFixed(2)}
                                 </div>
                               </div>
                             ) : (
                               <span className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 text-yellow-800 dark:text-yellow-300 text-sm font-bold border border-yellow-300 dark:border-yellow-700 transition-colors duration-200">
-                                💰 ${curso.precio}
+                                💰 ${parseFloat(curso.precio).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -1268,13 +1288,16 @@ export default function CursosEstudiante() {
                                 </div>
 
                                 <button
-                                  onClick={() => createPaymentWithCoupon(curso)}
+                                  onClick={async () => {
+                                    const ok = await requirePrivacyAcceptance();
+                                    if (ok) createPaymentWithCoupon(curso);
+                                  }}
                                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 md:px-5 md:py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition duration-300 transform hover:shadow-xl flex items-center justify-center gap-1 md:gap-2 text-sm"
                                 >
                                   <FaGift className="text-yellow-300 text-xs md:text-sm" />
                                   {appliedCoupon.gratis
                                     ? "🎁 Obtener GRATIS"
-                                    : `💳 Pagar $${appliedCoupon.precioConDescuento}`}
+                                    : `💳 Pagar $${parseFloat(appliedCoupon.precioConDescuento).toFixed(2)}`}
                                 </button>
                               </div>
                             ) : (
@@ -1310,6 +1333,7 @@ export default function CursosEstudiante() {
                                 <div className="flex justify-center">
                                   <PayphoneButton
                                     curso={curso}
+                                    onBeforePayment={requirePrivacyAcceptance}
                                     onSuccess={() =>
                                       setCursos((prev) =>
                                         prev.map((c) =>
@@ -1330,7 +1354,10 @@ export default function CursosEstudiante() {
                               🎓 Curso gratuito
                             </p>
                             <button
-                              onClick={() => handleEnroll(curso.id)}
+                              onClick={async () => {
+                                const ok = await requirePrivacyAcceptance();
+                                if (ok) handleEnroll(curso.id);
+                              }}
                               className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 md:px-5 md:py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition duration-300 transform hover:shadow-xl text-sm"
                             >
                               🚀 Inscribirse Gratis
@@ -1370,6 +1397,25 @@ export default function CursosEstudiante() {
         onApply={applyCoupon}
         loading={couponLoading}
         onCodigoChange={updateCouponCode}
+      />
+
+      {/* ✅ MODAL DE POLÍTICA DE PRIVACIDAD */}
+      <PrivacyModal
+        open={privacyModal.open}
+        onAccept={() => {
+          localStorage.setItem(
+            "privacyPolicyAccepted",
+            JSON.stringify({ accepted: true, timestamp: Date.now() }),
+          );
+          const resolver = privacyModal.resolver;
+          setPrivacyModal({ open: false, resolver: null });
+          resolver?.(true);
+        }}
+        onClose={() => {
+          const resolver = privacyModal.resolver;
+          setPrivacyModal({ open: false, resolver: null });
+          resolver?.(false);
+        }}
       />
     </div>
   );

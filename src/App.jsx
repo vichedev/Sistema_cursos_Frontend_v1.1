@@ -29,6 +29,7 @@ import EstudianteLayout from "./layouts/EstudianteLayout";
 import DashboardEstudiante from "./pages/estudiante/DashboardEstudiante";
 import CursosEstudiante from "./pages/estudiante/CursosEstudiante";
 import MisCursos from "./pages/estudiante/MisCursos";
+import MisDiplomas from "./pages/estudiante/MisDiplomas";
 
 // PAGOS
 import PaymentSuccess from "./pages/estudiante/PaymentSuccess";
@@ -81,6 +82,7 @@ function App() {
               <Route path="dashboard" element={<DashboardEstudiante />} />
               <Route path="cursos" element={<CursosEstudiante />} />
               <Route path="mis-cursos" element={<MisCursos />} />
+              <Route path="mis-diplomas" element={<MisDiplomas />} />
             </Route>
 
             {/* PAGOS */}

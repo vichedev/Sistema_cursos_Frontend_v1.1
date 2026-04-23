@@ -2,9 +2,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { FiLogOut, FiUser } from "react-icons/fi";
+import { useNotifications } from "../../context/NotificationContext";
 
 export default function SidebarEstudiante({ onNavigate }) {
   const location = useLocation();
+  const { diplomaNotifications } = useNotifications();
   const [userData, setUserData] = useState({
     usuario: "Estudiante",
     nombres: "",
@@ -88,6 +90,15 @@ export default function SidebarEstudiante({ onNavigate }) {
         >
           Mis Cursos
         </SideLink>
+        <SideLink
+          to="/estudiante/mis-diplomas"
+          active={location.pathname === "/estudiante/mis-diplomas"}
+          onNavigate={onNavigate}
+          icon="🏅"
+          badge={diplomaNotifications.length > 0 ? diplomaNotifications.length : null}
+        >
+          Mis Diplomas
+        </SideLink>
       </nav>
 
       {/* Footer - Cerrar sesión */}
@@ -109,7 +120,7 @@ export default function SidebarEstudiante({ onNavigate }) {
   );
 }
 
-function SideLink({ to, active, onNavigate, icon, children }) {
+function SideLink({ to, active, onNavigate, icon, badge, children }) {
   return (
     <Link
       to={to}
@@ -122,10 +133,14 @@ function SideLink({ to, active, onNavigate, icon, children }) {
       }`}
     >
       <span className="text-base">{icon}</span>
-      <span>{children}</span>
-      {active && (
+      <span className="flex-1">{children}</span>
+      {badge ? (
+        <span className="ml-auto min-w-[18px] h-[18px] bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+          {badge}
+        </span>
+      ) : active ? (
         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-400 dark:bg-green-500"></span>
-      )}
+      ) : null}
     </Link>
   );
 }

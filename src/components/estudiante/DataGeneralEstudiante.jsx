@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../utils/axiosInstance";
+import { useNotifications } from "../../context/NotificationContext";
 import {
   FaGraduationCap,
   FaCheckCircle,
@@ -11,331 +12,209 @@ import {
   FaClock,
   FaChartLine,
   FaVideo,
-  FaMapMarkerAlt,
   FaChevronLeft,
   FaChevronRight,
   FaLink,
   FaTimes,
+  FaBell,
+  FaRocket,
+  FaFire,
+  FaArrowRight,
+  FaAward,
 } from "react-icons/fa";
 import { isCourseExpired } from "../../utils/dateUtils";
 
-// Función corregida para normalizar fechas
+// ─── Date helpers ─────────────────────────────────────────────────────────────
 function normalizeDate(date) {
   const d = new Date(date);
-  return new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-  );
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }
-
-// Función para comparar si dos fechas son iguales (ignorando la zona horaria)
-function areDatesEqual(date1, date2) {
+function areDatesEqual(d1, d2) {
   return (
-    date1.getUTCFullYear() === date2.getUTCFullYear() &&
-    date1.getUTCMonth() === date2.getUTCMonth() &&
-    date1.getUTCDate() === date2.getUTCDate()
+    d1.getUTCFullYear() === d2.getUTCFullYear() &&
+    d1.getUTCMonth() === d2.getUTCMonth() &&
+    d1.getUTCDate() === d2.getUTCDate()
   );
 }
 
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
+function KpiCard({ label, value, icon, gradient }) {
+  return (
+    <div className={`relative overflow-hidden rounded-2xl p-4 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 ${gradient}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-widest opacity-75 truncate">{label}</p>
+          <p className="text-3xl font-black mt-1 leading-none">{value}</p>
+        </div>
+        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+          {React.cloneElement(icon, { className: "text-lg text-white" })}
+        </div>
+      </div>
+      <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10 pointer-events-none" />
+    </div>
+  );
+}
+
+// ─── Calendario compacto ──────────────────────────────────────────────────────
 function CalendarioCompacto({ cursos }) {
   const [mesActual, setMesActual] = useState(new Date().getMonth());
   const [añoActual, setAñoActual] = useState(new Date().getFullYear());
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
 
-  // Generar días del mes con relleno para semanas completas
   const diasDelMes = useMemo(() => {
     const primerDia = new Date(añoActual, mesActual, 1);
     const ultimoDia = new Date(añoActual, mesActual + 1, 0);
     const dias = [];
-
-    // Días del mes anterior para completar la semana (lunes inicio)
     let diaInicio = primerDia.getDay();
-    diaInicio = diaInicio === 0 ? 7 : diaInicio; // Domingo como 7
+    diaInicio = diaInicio === 0 ? 7 : diaInicio;
     for (let i = diaInicio - 1; i > 0; i--) {
-      const fecha = new Date(añoActual, mesActual, 1 - i);
-      dias.push({ fecha, esDelMes: false, cursos: [] });
+      dias.push({ fecha: new Date(añoActual, mesActual, 1 - i), esDelMes: false, cursos: [] });
     }
-
-    // Días del mes actual
     for (let i = 1; i <= ultimoDia.getDate(); i++) {
       const fecha = new Date(añoActual, mesActual, i);
-      const cursosDia = cursos.filter((curso) => {
-        if (!curso.fecha) return false;
-        const cursoDate = normalizeDate(curso.fecha);
-        return areDatesEqual(cursoDate, fecha);
+      dias.push({
+        fecha,
+        esDelMes: true,
+        cursos: cursos.filter((c) => c.fecha && areDatesEqual(normalizeDate(c.fecha), fecha)),
       });
-      dias.push({ fecha, esDelMes: true, cursos: cursosDia });
     }
-
-    // Completar última semana con días del siguiente mes
     while (dias.length % 7 !== 0) {
-      const lastDate = dias[dias.length - 1].fecha;
-      const fecha = new Date(lastDate);
-      fecha.setDate(fecha.getDate() + 1);
-      dias.push({ fecha, esDelMes: false, cursos: [] });
+      const last = dias[dias.length - 1].fecha;
+      const next = new Date(last);
+      next.setDate(next.getDate() + 1);
+      dias.push({ fecha: next, esDelMes: false, cursos: [] });
     }
-
     return dias;
   }, [mesActual, añoActual, cursos]);
 
-  const cambiarMes = (incremento) => {
-    const nuevaFecha = new Date(añoActual, mesActual + incremento, 1);
-    setMesActual(nuevaFecha.getMonth());
-    setAñoActual(nuevaFecha.getFullYear());
-    setDiaSeleccionado(null);
-  };
-
   const esHoy = (fecha) => {
     const hoy = new Date();
-    const hoyNormalizado = new Date(
-      Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()),
+    return (
+      new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())).getTime() ===
+      new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate())).getTime()
     );
-    const fechaNormalizada = new Date(
-      Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()),
-    );
-    return hoyNormalizado.getTime() === fechaNormalizada.getTime();
+  };
+
+  const prevMonth = () => {
+    const d = new Date(añoActual, mesActual - 1, 1);
+    setMesActual(d.getMonth());
+    setAñoActual(d.getFullYear());
+    setDiaSeleccionado(null);
+  };
+  const nextMonth = () => {
+    const d = new Date(añoActual, mesActual + 1, 1);
+    setMesActual(d.getMonth());
+    setAñoActual(d.getFullYear());
+    setDiaSeleccionado(null);
   };
 
   return (
     <div>
+      {/* Nav */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2 select-none">
-          <FaCalendarAlt className="text-blue-600 dark:text-blue-400" />
-          <span className="hidden sm:inline">Próximas clases</span>
-          <span className="sm:hidden">Clases</span>
+        <h3 className="text-sm font-bold text-gray-800 dark:text-white flex items-center gap-2">
+          <FaCalendarAlt className="text-blue-500" />
+          Próximas clases
         </h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => cambiarMes(-1)}
-            aria-label="Mes anterior"
-            className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-blue-600 dark:text-blue-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            type="button"
-          >
-            <FaChevronLeft className="text-sm" />
+        <div className="flex items-center gap-1">
+          <button onClick={prevMonth}
+            className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors">
+            <FaChevronLeft className="text-xs" />
           </button>
-          <span className="font-semibold text-gray-700 dark:text-gray-300 select-none min-w-[120px] sm:min-w-[140px] text-center text-sm sm:text-base">
-            {new Date(añoActual, mesActual)
-              .toLocaleDateString("es-ES", {
-                month: "long",
-                year: "numeric",
-              })
-              .toUpperCase()}
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[100px] text-center">
+            {new Date(añoActual, mesActual).toLocaleDateString("es-ES", { month: "long", year: "numeric" }).toUpperCase()}
           </span>
-          <button
-            onClick={() => cambiarMes(1)}
-            aria-label="Mes siguiente"
-            className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-blue-600 dark:text-blue-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            type="button"
-          >
-            <FaChevronRight className="text-sm" />
+          <button onClick={nextMonth}
+            className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors">
+            <FaChevronRight className="text-xs" />
           </button>
         </div>
       </div>
 
-      {/* Días de la semana - Mejorado para móvil */}
-      <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 select-none">
-        {["L", "M", "X", "J", "V", "S", "D"].map((dia, index) => (
-          <div key={index} className="py-1 text-xs sm:text-xs">
-            {dia}
-          </div>
+      {/* Days header */}
+      <div className="grid grid-cols-7 gap-0.5 mb-1 text-center">
+        {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => (
+          <div key={i} className="py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500">{d}</div>
         ))}
       </div>
 
-      {/* Días del mes - Mejorado para móvil */}
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {diasDelMes.map((dia, index) => {
-          const tieneCursos = dia.cursos.length > 0;
-          return (
-            <button
-              key={index}
-              onClick={() => (tieneCursos ? setDiaSeleccionado(dia) : null)}
-              className={`min-h-[40px] sm:min-h-[50px] p-1 rounded-md flex flex-col justify-start items-center cursor-pointer transition-colors duration-200
-                ${
-                  dia.esDelMes
-                    ? "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
-                    : "bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-400 dark:text-gray-500"
-                }
-                ${
-                  esHoy(dia.fecha)
-                    ? "border-2 border-blue-500 dark:border-blue-400"
-                    : ""
-                }
-                hover:bg-blue-50 dark:hover:bg-blue-900/20
-                relative
-              `}
-              title={
-                tieneCursos
-                  ? `${dia.cursos.length} clase(s) este día`
-                  : undefined
-              }
-              type="button"
-            >
-              <div
-                className={`font-semibold mb-0.5 dark:text-gray-300 text-xs sm:text-sm ${
-                  esHoy(dia.fecha)
-                    ? "text-blue-600 dark:text-blue-400 font-bold"
-                    : ""
-                }`}
-              >
-                {dia.esDelMes ? dia.fecha.getDate() : ""}
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-0.5 text-center">
+        {diasDelMes.map((dia, i) => (
+          <button
+            key={i}
+            onClick={() => dia.cursos.length > 0 && setDiaSeleccionado(dia)}
+            type="button"
+            className={`min-h-[38px] p-0.5 rounded-lg flex flex-col justify-start items-center transition-all duration-150
+              ${dia.esDelMes
+                ? "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+                : "bg-transparent border border-transparent text-gray-300 dark:text-gray-600"}
+              ${esHoy(dia.fecha) ? "!border-2 !border-blue-500 dark:!border-blue-400 shadow-sm" : ""}
+              ${dia.cursos.length > 0 ? "hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer" : "cursor-default"}
+            `}
+          >
+            <span className={`text-[11px] font-bold leading-tight pt-0.5 ${
+              esHoy(dia.fecha) ? "text-blue-600 dark:text-blue-400" :
+              dia.esDelMes ? "text-gray-700 dark:text-gray-300" : ""
+            }`}>
+              {dia.esDelMes ? dia.fecha.getDate() : ""}
+            </span>
+            {dia.cursos.length > 0 && (
+              <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center">
+                {dia.cursos.slice(0, 2).map((c, j) => (
+                  <span key={j} className={`w-1 h-1 rounded-full ${isCourseExpired(c) ? "bg-red-400" : "bg-green-500"}`} />
+                ))}
+                {dia.cursos.length > 2 && <span className="w-1 h-1 rounded-full bg-blue-400" />}
               </div>
-
-              {/* Indicadores de cursos - Mejorados para móvil */}
-              {tieneCursos && (
-                <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
-                  {dia.cursos.slice(0, 2).map((curso, i) => {
-                    const isExpired = isCourseExpired(curso);
-                    return (
-                      <span
-                        key={i}
-                        className={`w-2 h-2 rounded-full ${
-                          isExpired ? "bg-red-500" : "bg-green-500"
-                        }`}
-                        title={`${curso.titulo} - ${
-                          isExpired ? "Inactivo" : "Activo"
-                        }`}
-                      />
-                    );
-                  })}
-                  {dia.cursos.length > 2 && (
-                    <span
-                      className="w-2 h-2 rounded-full bg-blue-500"
-                      title={`+${dia.cursos.length - 2} más`}
-                    />
-                  )}
-                </div>
-              )}
-            </button>
-          );
-        })}
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Mini modal para detalles del día seleccionado - Mejorado para móvil */}
+      {/* Day detail modal */}
       {diaSeleccionado && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4"
-          onClick={() => setDiaSeleccionado(null)}
-        >
-          <div
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col mx-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Encabezado del modal - Mejorado para móvil */}
-            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-              <h4 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white pr-2">
-                Clases del{" "}
-                {diaSeleccionado.fecha.toLocaleDateString("es-ES", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </h4>
-              <button
-                onClick={() => setDiaSeleccionado(null)}
-                className="p-1 sm:p-2 rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
-                aria-label="Cerrar modal"
-                type="button"
-              >
-                <FaTimes
-                  size={16}
-                  className="text-gray-600 dark:text-gray-400"
-                />
-              </button>
-            </div>
-
-            {/* Lista de cursos - Mejorado para móvil */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
-              {diaSeleccionado.cursos.length === 0 ? (
-                <div className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
-                  No hay clases programadas para este día
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setDiaSeleccionado(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-5 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-bold capitalize">
+                    {diaSeleccionado.fecha.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+                  </h4>
+                  <p className="text-blue-100 text-sm">{diaSeleccionado.cursos.length} clase(s) programada(s)</p>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {diaSeleccionado.cursos.map((curso) => {
-                    const isExpired = isCourseExpired(curso);
-                    return (
-                      <div
-                        key={curso.id}
-                        className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-700"
-                      >
-                        <h5 className="font-semibold text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2 text-sm sm:text-base">
-                          <FaVideo className="text-blue-500 dark:text-blue-400 flex-shrink-0" />
-                          <span className="line-clamp-2">{curso.titulo}</span>
-                        </h5>
-
-                        <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                          <p className="flex items-center gap-2">
-                            <FaClock className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                            {curso.hora
-                              ? `Hora: ${curso.hora.substring(0, 5)}`
-                              : "Hora no definida"}
-                          </p>
-
-                          <p className="flex items-center gap-2">
-                            <FaUser className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                            <span className="line-clamp-1">
-                              {curso.profesorNombre ||
-                                curso.docente ||
-                                "Docente no especificado"}
-                            </span>
-                          </p>
-
-                          {curso.modalidad && (
-                            <p className="flex items-center gap-2">
-                              <FaMapMarkerAlt className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                              <span className="line-clamp-1">
-                                Modalidad: {curso.modalidad}
-                              </span>
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100 dark:border-gray-600">
-                          {isExpired ? (
-                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium text-xs sm:text-sm">
-                              <FaTimes className="text-red-500 dark:text-red-400 flex-shrink-0" />
-                              Curso finalizado
-                            </div>
-                          ) : curso.activo ? (
-                            curso.link ? (
-                              <button
-                                onClick={() =>
-                                  window.open(
-                                    curso.link,
-                                    "_blank",
-                                    "noopener,noreferrer",
-                                  )
-                                }
-                                className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-xs sm:text-sm"
-                              >
-                                <FaLink size={12} />
-                                Ir a la clase
-                              </button>
-                            ) : (
-                              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-                                <FaTimes className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                                Enlace no disponible
-                              </div>
-                            )
-                          ) : (
-                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium text-xs sm:text-sm">
-                              <FaTimes className="text-red-500 dark:text-red-400 flex-shrink-0" />
-                              Curso inactivo
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                <button onClick={() => setDiaSeleccionado(null)} className="p-2 rounded-xl hover:bg-white/20 transition-colors">
+                  <FaTimes />
+                </button>
+              </div>
             </div>
-
-            {/* Pie del modal - Mejorado para móvil */}
-            <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {diaSeleccionado.cursos.length} clase(s) programada(s)
-              </p>
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              {diaSeleccionado.cursos.map((curso) => {
+                const expired = isCourseExpired(curso);
+                return (
+                  <div key={curso.id} className="border border-gray-100 dark:border-gray-700 rounded-xl p-4 bg-gray-50 dark:bg-gray-700/50">
+                    <h5 className="font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2 text-sm">
+                      <FaVideo className="flex-shrink-0" />{curso.titulo}
+                    </h5>
+                    <div className="mt-2 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                      <p className="flex items-center gap-2"><FaClock className="flex-shrink-0" />{curso.hora ? curso.hora.substring(0, 5) : "Hora no definida"}</p>
+                      <p className="flex items-center gap-2"><FaUser className="flex-shrink-0" />{curso.profesorNombre || "Docente no especificado"}</p>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-600">
+                      {expired ? (
+                        <span className="text-xs text-red-500 font-semibold">⏱ Curso finalizado</span>
+                      ) : curso.link ? (
+                        <button onClick={() => window.open(curso.link, "_blank", "noopener,noreferrer")}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors">
+                          <FaLink size={10} />Ir a la clase
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">Enlace próximamente</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -344,261 +223,306 @@ function CalendarioCompacto({ cursos }) {
   );
 }
 
-function Kpi({ label, value, icon, color }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 sm:p-4 flex items-center gap-3 hover:shadow-lg transition-shadow duration-200">
-      <div
-        className={`p-2 sm:p-3 rounded-full bg-gradient-to-r ${color} text-white flex-shrink-0`}
-      >
-        {React.cloneElement(icon, { className: "text-sm sm:text-base" })}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-          {label}
-        </p>
-        <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
+// ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DataGeneralEstudiante() {
   const [loading, setLoading] = useState(true);
   const [misCursos, setMisCursos] = useState([]);
   const [disponibles, setDisponibles] = useState([]);
   const [userData, setUserData] = useState(null);
 
+  const { newCourseNotifications, markAsRead, markAllRead } = useNotifications();
+
   useEffect(() => {
-    const fetchData = async () => {
+    const load = async () => {
       setLoading(true);
-      const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
-
       try {
-        // Obtener datos del usuario
-        const userRes = await api.get(`/api/users/${userId}`);
-        setUserData(userRes.data);
-
-        // Mis cursos
-        const resMis = await api.get(
-          `${
-            import.meta.env.VITE_BACKEND_URL
-          }/api/courses/mis-cursos?userId=${userId}`,
-        );
-        setMisCursos(resMis.data?.data || resMis.data || []);
-
-        // Cursos disponibles (sugerencias)
-        const resDisp = await api.get(`/api/courses/disponibles`);
-        setDisponibles(resDisp.data?.data || resDisp.data || []);
+        const [userRes, misRes, dispRes] = await Promise.allSettled([
+          api.get(`/api/users/${userId}`),
+          api.get(`/api/courses/mis-cursos`),
+          api.get(`/api/courses/disponibles`),
+        ]);
+        if (userRes.status === "fulfilled") setUserData(userRes.value.data);
+        if (misRes.status === "fulfilled") setMisCursos(misRes.value.data?.data || misRes.value.data || []);
+        if (dispRes.status === "fulfilled") setDisponibles(dispRes.value.data?.data || dispRes.value.data || []);
       } catch (e) {
         console.error("Error dashboard estudiante:", e);
-        setMisCursos([]);
-        setDisponibles([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    load();
   }, []);
 
   const kpis = useMemo(() => {
-    const activos = misCursos.filter(
-      (c) => c.activo && !isCourseExpired(c),
-    ).length;
+    const activos     = misCursos.filter((c) => c.activo && !isCourseExpired(c)).length;
     const finalizados = misCursos.filter((c) => isCourseExpired(c)).length;
-    const pagados = misCursos.filter((c) => Number(c.precio) > 0).length;
-    const gratuitos = misCursos.filter((c) => Number(c.precio) === 0).length;
-    return {
-      activos,
-      finalizados,
-      pagados,
-      gratuitos,
-      total: misCursos.length,
-    };
+    const pagados     = misCursos.filter((c) => Number(c.precio) > 0).length;
+    const gratuitos   = misCursos.filter((c) => Number(c.precio) === 0).length;
+    const diplomas    = misCursos.filter((c) => c.diplomaCodigo).length;
+    return { activos, finalizados, pagados, gratuitos, diplomas, total: misCursos.length };
   }, [misCursos]);
 
-  const cursosRecientes = useMemo(() => {
-    return [...misCursos]
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .slice(0, 3);
-  }, [misCursos]);
+  const cursosRecientes = useMemo(
+    () => [...misCursos].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5),
+    [misCursos],
+  );
+
+  const newCourseIds = useMemo(
+    () => new Set(newCourseNotifications.map((n) => n.courseId)),
+    [newCourseNotifications],
+  );
 
   if (loading) {
     return (
-      <section className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <section className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-b-4 border-blue-500 animate-spin" />
-          <div className="text-lg text-gray-700 dark:text-gray-300 font-medium">
-            Cargando tu panel…
+          <div className="relative w-14 h-14">
+            <div className="absolute inset-0 rounded-full border-4 border-indigo-100 dark:border-indigo-900" />
+            <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin" />
           </div>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Cargando tu panel…</p>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      {/* Header con información del estudiante - Mejorado para móvil */}
-      <div className="bg-gradient-to-r from-indigo-500 to-blue-500 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
-          <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
-              Bienvenido, {userData?.nombres || "Estudiante"}
-            </h1>
-            <p className="text-blue-100 mt-1 text-sm sm:text-base">
-              Resumen de tu actividad académica
-            </p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 bg-white/20 p-2 sm:p-3 rounded-lg backdrop-blur-sm flex-shrink-0">
-            <FaUser className="text-white text-sm sm:text-base" />
-            <span className="text-xs sm:text-sm truncate">
-              {userData?.correo || ""}
-            </span>
-          </div>
-        </div>
-      </div>
+    <section className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
 
-      {/* KPIs - Mejorado para móvil */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-        <Kpi
-          label="Total Cursos"
-          value={kpis.total}
-          icon={<FaGraduationCap />}
-          color="from-indigo-500 to-indigo-600"
-        />
-        <Kpi
-          label="Activos"
-          value={kpis.activos}
-          icon={<FaChartLine />}
-          color="from-green-500 to-green-600"
-        />
-        <Kpi
-          label="Finalizados"
-          value={kpis.finalizados}
-          icon={<FaCheckCircle />}
-          color="from-gray-500 to-gray-600"
-        />
-        <Kpi
-          label="Pagados"
-          value={kpis.pagados}
-          icon={<FaCoins />}
-          color="from-yellow-500 to-yellow-600"
-        />
-        <Kpi
-          label="Gratuitos"
-          value={kpis.gratuitos}
-          icon={<FaBookOpen />}
-          color="from-sky-400 to-sky-500"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Calendario compacto con mini modal */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 transition-colors duration-200">
-          <CalendarioCompacto cursos={misCursos.filter((c) => c.fecha)} />
-        </div>
-
-        {/* Cursos Recientes - Mejorado para móvil */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 transition-colors duration-200">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
-            <FaClock className="text-blue-500 dark:text-blue-400" />
-            <span className="hidden sm:inline">Cursos recientes</span>
-            <span className="sm:hidden">Recientes</span>
-          </h2>
-          <div className="space-y-2 sm:space-y-3">
-            {cursosRecientes.length === 0 ? (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
-                No tienes cursos inscritos
+      {/* ── New Course Notification Banner ──────────────────────────────── */}
+      {newCourseNotifications.length > 0 && (
+        <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 px-4 sm:px-6 lg:px-8 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                <FaBell className="text-white text-sm animate-bounce" />
               </div>
-            ) : (
-              cursosRecientes.map((curso) => (
-                <div
-                  key={curso.id}
-                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200"
-                >
-                  <h3 className="font-medium text-gray-800 dark:text-white truncate text-sm sm:text-base">
-                    {curso.titulo}
-                  </h3>
-                  <div className="flex justify-between items-center mt-2">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        isCourseExpired(curso)
-                          ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"
-                          : curso.activo
-                            ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
-                            : "bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-300"
-                      }`}
-                    >
-                      {isCourseExpired(curso)
-                        ? "Finalizado"
-                        : curso.activo
-                          ? "Activo"
-                          : "Inactivo"}
-                    </span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        curso.precio > 0
-                          ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
-                          : "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
-                      }`}
-                    >
-                      {curso.precio > 0 ? "Pagado" : "Gratuito"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
+              <div className="min-w-0">
+                <p className="text-white font-bold text-sm truncate">
+                  🎉 {newCourseNotifications.length === 1
+                    ? `Nuevo curso: "${newCourseNotifications[0].message}"`
+                    : `${newCourseNotifications.length} nuevos cursos disponibles`}
+                </p>
+                <p className="text-purple-200 text-xs hidden sm:block">Inscríbete antes de que se agoten los cupos</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                to="/estudiante/cursos"
+                onClick={() => markAllRead()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-50 transition-colors"
+              >
+                Ver cursos <FaArrowRight className="text-xs" />
+              </Link>
+              <button
+                onClick={() => newCourseNotifications.forEach((n) => markAsRead(n.id))}
+                className="p-1.5 rounded-lg hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                title="Cerrar"
+              >
+                <FaTimes className="text-xs" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Sugerencias de Cursos - Mejorado para móvil */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 transition-colors duration-200">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-3 sm:mb-4">
-          Cursos disponibles que te pueden interesar
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {disponibles.length === 0 ? (
-            <div className="col-span-full text-center text-gray-500 dark:text-gray-400 py-6 text-sm">
-              No hay cursos disponibles en este momento
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        {/* ── Hero Banner ─────────────────────────────────────────────────── */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700 p-6 text-white shadow-lg">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-0 right-0 w-56 h-56 rounded-full bg-white/10 blur-3xl translate-x-1/4 -translate-y-1/4" />
+            <div className="absolute bottom-0 left-10 w-40 h-40 rounded-full bg-purple-300/10 blur-2xl" />
+          </div>
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Avatar + name */}
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 text-2xl font-black text-white shadow-inner">
+                {(userData?.nombres || "E")[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="text-indigo-200 text-xs font-semibold uppercase tracking-widest">Bienvenido de vuelta</p>
+                <h1 className="text-xl sm:text-2xl font-black">{userData?.nombres || "Estudiante"}</h1>
+                <p className="text-indigo-200 text-xs mt-0.5 truncate max-w-[220px]">{userData?.correo}</p>
+              </div>
             </div>
-          ) : (
-            disponibles.slice(0, 6).map((curso) => (
-              <div
-                key={curso.id}
-                className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow duration-200 flex flex-col justify-between bg-white dark:bg-gray-700"
-              >
-                <div>
-                  <h3 className="font-semibold text-gray-800 dark:text-white mb-2 line-clamp-2 text-sm sm:text-base">
-                    {curso.titulo}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                    {curso.descripcion}
-                  </p>
+            {/* Quick stats */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="text-center bg-white/15 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2">
+                <p className="text-xl sm:text-2xl font-black">{kpis.total}</p>
+                <p className="text-indigo-200 text-[10px] uppercase tracking-wide">Cursos</p>
+              </div>
+              <div className="text-center bg-white/15 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2">
+                <p className="text-xl sm:text-2xl font-black">{kpis.activos}</p>
+                <p className="text-indigo-200 text-[10px] uppercase tracking-wide">Activos</p>
+              </div>
+              {kpis.diplomas > 0 && (
+                <div className="text-center bg-amber-400/30 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2">
+                  <p className="text-xl sm:text-2xl font-black">{kpis.diplomas}</p>
+                  <p className="text-amber-200 text-[10px] uppercase tracking-wide">Diplomas</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${
-                      curso.precio > 0
-                        ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
-                        : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
-                    }`}
-                  >
-                    {curso.precio > 0 ? `$${curso.precio}` : "Gratuito"}
-                  </span>
-                  <Link
-                    to="/estudiante/cursos"
-                    className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-xs sm:text-sm font-medium transition-colors duration-200"
-                  >
-                    Ver más →
+              )}
+              <Link
+                to="/estudiante/cursos"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-white text-indigo-700 rounded-xl font-bold text-xs hover:bg-indigo-50 transition-colors self-center flex-shrink-0"
+              >
+                <FaRocket className="text-xs" /> Explorar
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ── KPI Cards ───────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <KpiCard label="Total"       value={kpis.total}       icon={<FaGraduationCap />} gradient="bg-gradient-to-br from-indigo-500 to-indigo-700" />
+          <KpiCard label="Activos"     value={kpis.activos}     icon={<FaChartLine />}     gradient="bg-gradient-to-br from-emerald-500 to-teal-700" />
+          <KpiCard label="Finalizados" value={kpis.finalizados} icon={<FaCheckCircle />}   gradient="bg-gradient-to-br from-slate-500 to-slate-700" />
+          <KpiCard label="Pagados"     value={kpis.pagados}     icon={<FaCoins />}         gradient="bg-gradient-to-br from-amber-500 to-orange-600" />
+          <KpiCard label="Gratuitos"   value={kpis.gratuitos}   icon={<FaBookOpen />}      gradient="bg-gradient-to-br from-sky-400 to-cyan-600" />
+        </div>
+
+        {/* ── Calendar + Recent Courses ────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-start">
+          {/* Calendar */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 transition-colors duration-200">
+            <CalendarioCompacto cursos={misCursos.filter((c) => c.fecha)} />
+          </div>
+
+          {/* Recent courses */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 transition-colors duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <FaClock className="text-blue-500" />
+                Mis cursos recientes
+              </h2>
+              <Link to="/estudiante/mis-cursos" className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
+                Ver todos <FaArrowRight className="text-[10px]" />
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {cursosRecientes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                  <FaGraduationCap className="text-4xl mb-2" />
+                  <p className="text-sm">No tienes cursos inscritos aún</p>
+                  <Link to="/estudiante/cursos" className="mt-2 text-xs text-blue-500 hover:underline">
+                    Explorar cursos disponibles →
                   </Link>
                 </div>
-              </div>
-            ))
-          )}
+              ) : (
+                cursosRecientes.map((curso) => {
+                  const expired = isCourseExpired(curso);
+                  return (
+                    <div
+                      key={curso.id}
+                      className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-all duration-200"
+                    >
+                      <div className={`w-1.5 h-10 rounded-full flex-shrink-0 ${expired ? "bg-red-400" : curso.activo ? "bg-green-500" : "bg-gray-400"}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-800 dark:text-white truncate text-sm">{curso.titulo}</p>
+                        <div className="flex gap-1.5 mt-1 flex-wrap">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                            expired
+                              ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                              : curso.activo
+                              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                              : "bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                          }`}>
+                            {expired ? "Finalizado" : curso.activo ? "Activo" : "Inactivo"}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                            Number(curso.precio) > 0
+                              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+                              : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                          }`}>
+                            {Number(curso.precio) > 0 ? `$${parseFloat(curso.precio).toFixed(2)}` : "Gratis"}
+                          </span>
+                          {curso.diplomaCodigo && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                              🏅 Diploma
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Quick links */}
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+              <Link
+                to="/estudiante/mis-diplomas"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 transition-colors"
+              >
+                <FaAward className="text-xs" /> Mis Diplomas
+              </Link>
+              <Link
+                to="/estudiante/cursos"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition-colors"
+              >
+                <FaRocket className="text-xs" /> Explorar cursos
+              </Link>
+            </div>
+          </div>
         </div>
+
+        {/* ── Available Courses (Suggestions) ─────────────────────────────── */}
+        {disponibles.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 transition-colors duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <FaFire className="text-orange-500" />
+                Cursos que te pueden interesar
+              </h2>
+              <Link to="/estudiante/cursos" className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 transition-colors">
+                Ver todos <FaArrowRight className="text-[10px]" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {disponibles.slice(0, 6).map((curso) => {
+                const isNew = newCourseIds.has(curso.id);
+                return (
+                  <div
+                    key={curso.id}
+                    className={`relative flex flex-col border rounded-xl p-4 transition-all duration-200 hover:shadow-md ${
+                      isNew
+                        ? "border-purple-300 dark:border-purple-700 bg-purple-50/40 dark:bg-purple-900/10"
+                        : "border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30"
+                    }`}
+                  >
+                    {isNew && (
+                      <span className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow">
+                        ✨ NUEVO
+                      </span>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-bold text-gray-800 dark:text-white line-clamp-2 text-sm mb-1">{curso.titulo}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{curso.descripcion}</p>
+                    </div>
+                    <div className="flex items-center justify-between mt-auto">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                        Number(curso.precio) > 0
+                          ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
+                          : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                      }`}>
+                        {Number(curso.precio) > 0 ? `$${parseFloat(curso.precio).toFixed(2)}` : "🆓 Gratis"}
+                      </span>
+                      <Link
+                        to="/estudiante/cursos"
+                        className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1"
+                      >
+                        Ver <FaArrowRight className="text-[10px]" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     </section>
   );

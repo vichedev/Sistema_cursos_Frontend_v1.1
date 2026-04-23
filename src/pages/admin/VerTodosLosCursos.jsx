@@ -178,6 +178,7 @@ export default function VerTodosLosCursos() {
   }
 
   return (
+    <div className="p-4 sm:p-6 min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 transition-colors duration-200">
       {/* Barra búsqueda + filtros */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 md:p-5 mb-6 transition-colors duration-200">
@@ -330,6 +331,7 @@ export default function VerTodosLosCursos() {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 }

@@ -15,7 +15,6 @@ export function useAuth(allowedRoles = []) {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const refreshToken = localStorage.getItem("refreshToken");
     const userRole = localStorage.getItem("rol");
 
     // Sin token → login
@@ -29,29 +28,19 @@ export function useAuth(allowedRoles = []) {
       const currentTime = Date.now() / 1000;
 
       if (decoded.exp < currentTime) {
-        // Access token expirado — verificar si hay refresh token válido
-        if (!refreshToken) {
+        // VULN-02: el refreshToken es una cookie httpOnly, no está en localStorage
+        // El interceptor de axiosInstance intentará renovarlo automáticamente.
+        // Si falla, axiosInstance llama a clearSessionAndRedirect().
+        // Aquí solo verificamos que el access token no esté completamente muerto.
+        // Si la expiración es reciente, dejamos pasar y confiamos en el interceptor.
+        const expiredSecondsAgo = currentTime - decoded.exp;
+        if (expiredSecondsAgo > 60 * 60 * 24 * 7) {
+          // Expirado hace más de 7 días — no hay forma que el refresh sea válido
           clearSession();
           navigate("/login", { replace: true });
           return;
         }
-
-        try {
-          const decodedRefresh = jwtDecode(refreshToken);
-          if (decodedRefresh.exp < currentTime) {
-            // Refresh token también expirado → logout
-            clearSession();
-            navigate("/login", { replace: true });
-            return;
-          }
-          // Refresh token aún válido — el interceptor de axiosInstance
-          // se encargará de renovar el access token en el siguiente request.
-          // Aquí solo dejamos pasar.
-        } catch {
-          clearSession();
-          navigate("/login", { replace: true });
-          return;
-        }
+        // Si expiró recientemente, dejar pasar: axiosInstance renovará al primer request
       }
 
       // Verificar rol
@@ -73,14 +62,11 @@ export function useAuth(allowedRoles = []) {
 }
 
 function clearSession() {
+  // VULN-07: solo limpiar datos mínimos almacenados en localStorage
   localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
   localStorage.removeItem("rol");
   localStorage.removeItem("userId");
   localStorage.removeItem("usuario");
   localStorage.removeItem("nombres");
-  localStorage.removeItem("apellidos");
-  localStorage.removeItem("correo");
-  localStorage.removeItem("celular");
   localStorage.removeItem("cargo");
 }

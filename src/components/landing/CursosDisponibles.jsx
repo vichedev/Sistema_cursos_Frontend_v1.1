@@ -622,14 +622,19 @@ const CursosDisponibles = () => {
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/courses/all`
         );
-        const data = await res.json();
 
-        // ✅ ORDENAR CURSOS: Los más recientes primero
-        const cursosOrdenados = data.sort((a, b) => {
+        if (!res.ok) {
+          console.warn(`Error ${res.status} al cargar cursos`);
+          setCursos([]);
+          return;
+        }
+
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+
+        const cursosOrdenados = [...list].sort((a, b) => {
           if (!a.createdAt || !b.createdAt) return 0;
-          const timestampA = new Date(a.createdAt).getTime();
-          const timestampB = new Date(b.createdAt).getTime();
-          return timestampB - timestampA;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
 
         setCursos(cursosOrdenados);

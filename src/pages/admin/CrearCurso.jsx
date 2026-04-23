@@ -466,6 +466,7 @@ export default function CrearCurso() {
   };
 
   return (
+    <div className="p-4 sm:p-6 min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 transition-colors duration-200">
       {/* Header */}
       <div className="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
@@ -1373,6 +1374,7 @@ export default function CrearCurso() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

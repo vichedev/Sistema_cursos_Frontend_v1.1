@@ -785,7 +785,7 @@ export default function MisCursos() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200 p-4 sm:p-6">
       {/* Header con gradiente - Oculto en móvil */}
       <div className="hidden md:block bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

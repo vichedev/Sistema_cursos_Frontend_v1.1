@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const PayphoneButton = ({ curso, onSuccess, onError }) => { // ❌ ELIMINAR userId prop
+const PayphoneButton = ({ curso, onSuccess, onError, onBeforePayment }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -10,6 +10,14 @@ const PayphoneButton = ({ curso, onSuccess, onError }) => { // ❌ ELIMINAR user
     try {
       setLoading(true);
       setError('');
+
+      if (onBeforePayment) {
+        const canProceed = await onBeforePayment();
+        if (!canProceed) {
+          setLoading(false);
+          return;
+        }
+      }
 
       if (!curso || !curso.id) {
         throw new Error('Información del curso no disponible');
@@ -60,7 +68,7 @@ const PayphoneButton = ({ curso, onSuccess, onError }) => { // ❌ ELIMINAR user
           loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-blue-700'
         }`}
       >
-        {loading ? 'Procesando...' : `Pagar $${curso?.precio || 0}`}
+        {loading ? 'Procesando...' : `Pagar $${parseFloat(curso?.precio || 0).toFixed(2)}`}
       </button>
       {error && (
         <p className="mt-2 text-red-600 text-sm font-medium">{error}</p>

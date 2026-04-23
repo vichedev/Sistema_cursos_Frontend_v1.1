@@ -67,18 +67,14 @@ export default function Login() {
         form,
       );
 
-      // ✅ Guardar access token (igual que antes — compatibilidad total)
+      // Guardar solo datos mínimos necesarios para la UI
+      // VULN-02: refreshToken se almacena como cookie httpOnly (lo gestiona el backend)
+      // VULN-07: no almacenar datos personales sensibles en localStorage
       localStorage.setItem("token", res.data.token);
-      // ✅ NUEVO: guardar refresh token para renovación automática
-      localStorage.setItem("refreshToken", res.data.refreshToken);
-
       localStorage.setItem("rol", res.data.rol);
       localStorage.setItem("userId", res.data.userId);
       localStorage.setItem("usuario", res.data.usuario);
       localStorage.setItem("nombres", res.data.nombres);
-      localStorage.setItem("apellidos", res.data.apellidos || "");
-      localStorage.setItem("correo", res.data.correo || "");
-      localStorage.setItem("celular", res.data.celular || "");
       localStorage.setItem("cargo", res.data.cargo || "");
 
       Swal.fire({

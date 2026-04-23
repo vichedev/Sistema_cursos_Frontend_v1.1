@@ -15,7 +15,8 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
-const api = axios.create({ baseURL: BASE_URL });
+// VULN-02: withCredentials permite que el browser envíe la cookie httpOnly del refreshToken
+const api = axios.create({ baseURL: BASE_URL, withCredentials: true });
 
 // ── Request interceptor — adjunta el token a cada request ────────────────────
 api.interceptors.request.use((config) => {
@@ -44,6 +45,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Retry automático en 429 (rate limit) — máx 2 reintentos con espera exponencial
+    if (error.response?.status === 429 && (originalRequest._retryCount ?? 0) < 2) {
+      originalRequest._retryCount = (originalRequest._retryCount ?? 0) + 1;
+      const wait = Math.pow(2, originalRequest._retryCount) * 1000; // 2s, 4s
+      await new Promise((r) => setTimeout(r, wait));
+      return api(originalRequest);
+    }
+
     // Solo actuar en 401 y evitar loop en el propio endpoint /refresh
     if (
       error.response?.status === 401 &&
@@ -52,16 +61,7 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      // Sin refresh token → logout directo
-      if (!refreshToken) {
-        clearSessionAndRedirect();
-        return Promise.reject(error);
-      }
-
       if (isRefreshing) {
-        // Otro request ya está renovando — encolar y esperar
         return new Promise((resolve, reject) => {
           pendingRequests.push({ resolve, reject });
         })
@@ -75,14 +75,17 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post(`${BASE_URL}/api/auth/refresh`, {
-          refreshToken,
-        });
+        // VULN-02: el refreshToken viaja como cookie httpOnly automáticamente (withCredentials)
+        // No se envía en el body — el browser lo adjunta solo
+        const res = await axios.post(
+          `${BASE_URL}/api/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
 
         const newToken = res.data.token;
         localStorage.setItem("token", newToken);
 
-        // Actualizar header y reintentar todos los requests pendientes
         api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
         processPending(null, newToken);
 
@@ -102,16 +105,15 @@ api.interceptors.response.use(
 );
 
 function clearSessionAndRedirect() {
+  // VULN-07: solo limpiar datos mínimos almacenados en localStorage
   localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
   localStorage.removeItem("rol");
   localStorage.removeItem("userId");
   localStorage.removeItem("usuario");
   localStorage.removeItem("nombres");
-  localStorage.removeItem("apellidos");
-  localStorage.removeItem("correo");
-  localStorage.removeItem("celular");
   localStorage.removeItem("cargo");
+  // Notificar al backend para que limpie la cookie httpOnly del refreshToken
+  axios.post(`${BASE_URL}/api/auth/logout`, {}, { withCredentials: true }).catch(() => {});
   window.location.href = "/login";
 }
 
