@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import api from "../../utils/axiosInstance";
+import { formatDateOnly } from "../../utils/dateUtils";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
 import {
   FaBook,
@@ -1069,9 +1070,9 @@ export default function CrearCurso() {
                               {cupon.usosMaximos} uso
                               {cupon.usosMaximos !== 1 ? "s" : ""} •
                               {cupon.fechaExpiracion
-                                ? ` Vence: ${new Date(
+                                ? ` Vence: ${formatDateOnly(
                                     cupon.fechaExpiracion,
-                                  ).toLocaleDateString()}`
+                                  )}`
                                 : " Sin expiración"}
                             </div>
                           </div>

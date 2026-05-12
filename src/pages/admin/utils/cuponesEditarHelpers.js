@@ -1,6 +1,7 @@
 // src/utils/cuponesEditarHelpers.js
 import Swal from "sweetalert2";
 import api from "../../../utils/axiosInstance";
+import { formatDateOnly } from "../../../utils/dateUtils";
 import { formatearFechaParaInput, getEstadoCupon } from "./cuponesHelpers";
 
 export const editarCupon = async (cupon, recargarFunc) => {
@@ -151,9 +152,7 @@ export const editarCupon = async (cupon, recargarFunc) => {
         <p class="text-sm ${
           isDarkMode ? "text-blue-400" : "text-blue-600"
         } mt-1">
-          <strong>Expira:</strong> ${new Date(
-            cupon.fechaExpiracion,
-          ).toLocaleDateString()}
+          <strong>Expira:</strong> ${formatDateOnly(cupon.fechaExpiracion)}
         </p>
         `
             : ""

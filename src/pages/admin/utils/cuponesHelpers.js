@@ -6,6 +6,10 @@ import {
   FaExclamationTriangle,
   FaTimesCircle,
 } from "react-icons/fa";
+import {
+  formatDateOnly,
+  isCouponExpired,
+} from "../../../utils/dateUtils";
 
 // Función para obtener el token (reutilizable)
 
@@ -58,19 +62,11 @@ export const formatearFechaParaInput = (fecha) => {
 
 export const formatearFechaParaDisplay = (fecha) => {
   if (!fecha) return "";
-
-  try {
-    const date = new Date(fecha);
-    return date.toLocaleDateString("es-ES", {
-      timeZone: "UTC",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  } catch (error) {
-    console.error("Error formateando fecha para display:", error);
-    return new Date(fecha).toLocaleDateString();
-  }
+  return formatDateOnly(fecha, "es-ES", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 };
 
 // Función para recargar con retraso
@@ -86,11 +82,11 @@ export const calcularEstadisticas = (cuponesData, setStats) => {
   const activos = cuponesData.filter(
     (c) =>
       c.activo &&
-      (!c.fechaExpiracion || new Date() < new Date(c.fechaExpiracion)) &&
+      !isCouponExpired(c.fechaExpiracion) &&
       c.usosActuales < c.usosMaximos,
   ).length;
-  const expirados = cuponesData.filter(
-    (c) => c.fechaExpiracion && new Date() > new Date(c.fechaExpiracion),
+  const expirados = cuponesData.filter((c) =>
+    isCouponExpired(c.fechaExpiracion),
   ).length;
   const inactivos = cuponesData.filter((c) => !c.activo).length;
   const agotados = cuponesData.filter(
@@ -146,13 +142,10 @@ export const filtrarCupones = (
       filterEstado === "all" ||
       (filterEstado === "activo" &&
         cupon.activo &&
-        (!cupon.fechaExpiracion ||
-          new Date() < new Date(cupon.fechaExpiracion)) &&
+        !isCouponExpired(cupon.fechaExpiracion) &&
         cupon.usosActuales < cupon.usosMaximos) ||
       (filterEstado === "inactivo" && !cupon.activo) ||
-      (filterEstado === "expirado" &&
-        cupon.fechaExpiracion &&
-        new Date() > new Date(cupon.fechaExpiracion)) ||
+      (filterEstado === "expirado" && isCouponExpired(cupon.fechaExpiracion)) ||
       (filterEstado === "agotado" && cupon.usosActuales >= cupon.usosMaximos);
 
     return coincideBusqueda && coincideCurso && coincideEstado;
@@ -240,24 +233,8 @@ export const getEstadoCupon = (cupon) => {
     return { texto: "Inactivo", color: "gray", icon: FaTimesCircle };
   }
 
-  if (cupon.fechaExpiracion) {
-    const fechaExpiracion = new Date(cupon.fechaExpiracion);
-    const hoy = new Date();
-
-    const fechaExpiracionSinHora = new Date(
-      fechaExpiracion.getFullYear(),
-      fechaExpiracion.getMonth(),
-      fechaExpiracion.getDate(),
-    );
-    const hoySinHora = new Date(
-      hoy.getFullYear(),
-      hoy.getMonth(),
-      hoy.getDate(),
-    );
-
-    if (fechaExpiracionSinHora < hoySinHora) {
-      return { texto: "Expirado", color: "red", icon: FaExclamationTriangle };
-    }
+  if (isCouponExpired(cupon.fechaExpiracion)) {
+    return { texto: "Expirado", color: "red", icon: FaExclamationTriangle };
   }
 
   if (cupon.usosActuales >= cupon.usosMaximos) {

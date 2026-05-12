@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../utils/axiosInstance";
+import { formatDateOnly } from "../../utils/dateUtils";
 import Swal from "sweetalert2";
 import { FiArrowLeft } from "react-icons/fi";
 import {
@@ -1207,9 +1208,9 @@ export default function EditarCurso() {
                                 {cupon.usosMaximos} uso
                                 {cupon.usosMaximos !== 1 ? "s" : ""} •
                                 {cupon.fechaExpiracion
-                                  ? ` Vence: ${new Date(
+                                  ? ` Vence: ${formatDateOnly(
                                       cupon.fechaExpiracion,
-                                    ).toLocaleDateString()}`
+                                    )}`
                                   : " Sin expiración"}
                               </div>
                             </div>

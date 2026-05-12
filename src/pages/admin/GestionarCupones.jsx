@@ -1,6 +1,7 @@
 // src/pages/admin/GestionarCupones.jsx
 import { useEffect, useState } from "react";
 import api from "../../utils/axiosInstance";
+import { formatDateOnly, isCouponExpired } from "../../utils/dateUtils";
 import Swal from "sweetalert2";
 import {
   FaGift,
@@ -301,8 +302,7 @@ export default function GestionarCupones() {
                     const puedeActivar =
                       !cupon.activo &&
                       cupon.usosActuales < cupon.usosMaximos &&
-                      (!cupon.fechaExpiracion ||
-                        new Date() < new Date(cupon.fechaExpiracion));
+                      !isCouponExpired(cupon.fechaExpiracion);
 
                     return (
                       <div
@@ -536,14 +536,16 @@ export default function GestionarCupones() {
                           Fecha Expiración:
                         </span>
                         <p className="text-gray-800 dark:text-white">
-                          {new Date(
+                          {formatDateOnly(
                             selectedCupon.cupon.fechaExpiracion,
-                          ).toLocaleDateString("es-ES", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                            "es-ES",
+                            {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            },
+                          )}
                         </p>
                       </div>
                     )}
