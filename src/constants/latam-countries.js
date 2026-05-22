@@ -20,7 +20,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 8,
     phoneExample: "71234567",
     idFormat: "CI",
-    idPattern: /^\d{7,8}$/,
+    // CI boliviana: 5-10 dígitos, con complemento alfanumérico opcional (ej: 1234567-1K)
+    idPattern: /^\d{5,10}[A-Z]{0,2}$/i,
     idExample: "1234567",
   },
   {
@@ -42,7 +43,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 10,
     phoneExample: "300 123 4567",
     idFormat: "Cédula",
-    idPattern: /^\d{8,10}$/,
+    // Cédula colombiana: 6-10 dígitos (las antiguas tienen 6-7)
+    idPattern: /^\d{6,10}$/,
     idExample: "123456789",
   },
   {
@@ -53,7 +55,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 8,
     phoneExample: "8312 3456",
     idFormat: "Cédula",
-    idPattern: /^\d{9}$/,
+    // Cédula tica: 9 dígitos (nacionales) o 11-12 (DIMEX residentes)
+    idPattern: /^\d{9}$|^\d{11,12}$/,
     idExample: "123456789",
   },
   {
@@ -75,7 +78,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 10,
     phoneExample: "11 1234-5678",
     idFormat: "DNI",
-    idPattern: /^\d{8}$/,
+    // DNI argentino: 7-8 dígitos (los antiguos tienen 7)
+    idPattern: /^\d{7,8}$/,
     idExample: "12345678",
   },
   {
@@ -86,7 +90,9 @@ export const LATAM_COUNTRIES = [
     phoneLength: 8,
     phoneExample: "7123 4567",
     idFormat: "DUI",
-    idPattern: /^\d{8}[A-Z]$/i,
+    // DUI salvadoreño: 9 dígitos (8 + dígito verificador). El verificador es
+    // NUMÉRICO, no una letra — el patrón anterior bloqueaba a todos.
+    idPattern: /^\d{9}$/,
     idExample: "12345678-9",
   },
   {
@@ -119,7 +125,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 10,
     phoneExample: "55 1234 5678",
     idFormat: "CURP/RFC",
-    idPattern: /^[A-Z]{4}\d{6}[A-Z]{6}\d{2}$/,
+    // Acepta CURP (18) y RFC (12 morales / 13 personas). Case-insensitive.
+    idPattern: /^([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})$|^([A-Z]{4}\d{6}[A-Z0-9]{8})$/i,
     idExample: "GODE561231HDFRRN08",
   },
   {
@@ -130,8 +137,9 @@ export const LATAM_COUNTRIES = [
     phoneLength: 8,
     phoneExample: "8123 4567",
     idFormat: "Cédula",
-    idPattern: /^\d{14}$/,
-    idExample: "12345678901234",
+    // Cédula nicaragüense: 13 dígitos + 1 carácter verificador (letra o dígito)
+    idPattern: /^\d{13}[A-Z0-9]$/i,
+    idExample: "001-200595-1001X",
   },
   {
     name: "Panamá",
@@ -141,7 +149,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 8,
     phoneExample: "6123-4567",
     idFormat: "Cédula",
-    idPattern: /^\d{4,13}$/,
+    // Cédula panameña: admite prefijos con letra (PE, E, N, AV...) + dígitos
+    idPattern: /^[A-Z0-9]{4,13}$/i,
     idExample: "8-123-456",
   },
   {
@@ -152,7 +161,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 9,
     phoneExample: "981 234 567",
     idFormat: "CI",
-    idPattern: /^\d{6,9}$/,
+    // CI paraguaya: 5-9 dígitos
+    idPattern: /^\d{5,9}$/,
     idExample: "1234567",
   },
   {
@@ -196,7 +206,8 @@ export const LATAM_COUNTRIES = [
     phoneLength: 10,
     phoneExample: "412 123 4567",
     idFormat: "Cédula",
-    idPattern: /^\d{7,8}$/,
+    // Cédula venezolana: 6-8 dígitos (sin el prefijo V/E)
+    idPattern: /^\d{6,8}$/,
     idExample: "12345678",
   },
 ];

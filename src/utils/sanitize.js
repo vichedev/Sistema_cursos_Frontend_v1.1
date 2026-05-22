@@ -20,11 +20,25 @@ export const sanitizeEmail = (email) => {
 
 export const sanitizeNumber = (number) => {
   if (typeof number !== 'string') return '';
-  
+
   return number
     .trim()
     .replace(/[^0-9]/g, '') // Solo números
     .substring(0, 20);
+};
+
+// Identificación / cédula: muchos países LATAM usan IDs ALFANUMÉRICOS
+// (Chile RUT con K, México CURP/RFC con letras, etc.). Por eso NO se puede
+// usar sanitizeNumber aquí — se permiten letras, dígitos y guiones, y se
+// normaliza a mayúsculas para que las validaciones por país funcionen.
+export const sanitizeCedula = (value) => {
+  if (typeof value !== 'string') return '';
+
+  return value
+    .trim()
+    .replace(/[^a-zA-Z0-9-]/g, '') // letras, números y guion (coincide con el backend)
+    .toUpperCase()
+    .substring(0, 25);
 };
 
 export const sanitizeName = (name) => {

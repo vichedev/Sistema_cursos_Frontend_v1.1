@@ -7,12 +7,9 @@ import {
   FaBook,
   FaMoneyBillWave,
   FaUserCheck,
-  FaUserFriends,
   FaMedal,
-  FaTrophy,
   FaChartBar,
   FaGraduationCap,
-  FaStar,
 } from "react-icons/fa";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -77,19 +74,6 @@ function AnimatedBar({ label, count, total, color, bg, icon }) {
           className={`h-full rounded-full transition-all duration-700 ease-out ${bg}`}
           style={{ width: `${pct}%` }}
         />
-      </div>
-    </div>
-  );
-}
-
-// ─── TypeBadge ────────────────────────────────────────────────────────────────
-function TypeBadge({ label, count, emoji, bg, border, text }) {
-  return (
-    <div className={`rounded-xl p-4 border ${bg} ${border} flex items-center gap-3`}>
-      <span className="text-2xl flex-shrink-0">{emoji}</span>
-      <div className="min-w-0">
-        <p className={`text-xs font-bold uppercase tracking-wide ${text} truncate`}>{label}</p>
-        <p className={`text-2xl font-black ${text}`}>{count}</p>
       </div>
     </div>
   );
@@ -204,20 +188,15 @@ export default function DashboardAdminCursos() {
   const cursosOnline       = allCursos.filter((c) => c.tipo?.startsWith("ONLINE"));
   const total = allCursos.length;
 
-  const summaryCards = [
-    { title: "Total Cursos",      value: total,                                        icon: <FaBook className="text-xl" />,              gradient: "bg-gradient-to-br from-blue-500 to-indigo-700" },
-    { title: "Estudiantes",       value: stats?.totalEstudiantes ?? 0,                 icon: <FaUsers className="text-xl" />,             gradient: "bg-gradient-to-br from-emerald-500 to-teal-700" },
-    { title: "Profesores",        value: stats?.totalProfesores ?? 0,                  icon: <FaChalkboardTeacher className="text-xl" />, gradient: "bg-gradient-to-br from-violet-500 to-purple-700" },
-    { title: "Ingresos Totales",  value: `$${paymentStats.totalRecaudado.toFixed(2)}`, icon: <FaMoneyBillWave className="text-xl" />,    gradient: "bg-gradient-to-br from-orange-500 to-rose-600" },
-    { title: "Pagados",           value: paymentStats.totalPagados,                    icon: <FaUserCheck className="text-xl" />,         gradient: "bg-gradient-to-br from-teal-500 to-cyan-700" },
-    { title: "Gratuitos",         value: paymentStats.totalGratis,                     icon: <FaUserFriends className="text-xl" />,       gradient: "bg-gradient-to-br from-sky-500 to-blue-700" },
-  ];
+  const totalInscripciones = paymentStats.totalPagados + paymentStats.totalGratis;
+  const pctPagadas = totalInscripciones === 0 ? 0 : Math.round((paymentStats.totalPagados / totalInscripciones) * 100);
 
-  const typeItems = [
-    { label: "Gratuitos",     count: cursosGratis.length,       emoji: "📘", bg: "bg-blue-50 dark:bg-blue-900/20",     border: "border-blue-200 dark:border-blue-800",     text: "text-blue-700 dark:text-blue-300" },
-    { label: "Pagados",       count: cursosPagados.length,      emoji: "💰", bg: "bg-green-50 dark:bg-green-900/20",   border: "border-green-200 dark:border-green-800",   text: "text-green-700 dark:text-green-300" },
-    { label: "Presenciales",  count: cursosPresenciales.length, emoji: "🏢", bg: "bg-purple-50 dark:bg-purple-900/20", border: "border-purple-200 dark:border-purple-800", text: "text-purple-700 dark:text-purple-300" },
-    { label: "Online",        count: cursosOnline.length,       emoji: "💻", bg: "bg-orange-50 dark:bg-orange-900/20", border: "border-orange-200 dark:border-orange-800", text: "text-orange-700 dark:text-orange-300" },
+  // KPIs coherentes — cada uno mide algo DISTINTO (sin repeticiones)
+  const summaryCards = [
+    { title: "Ingresos totales", value: `$${paymentStats.totalRecaudado.toFixed(2)}`, icon: <FaMoneyBillWave className="text-xl" />,    gradient: "bg-gradient-to-br from-emerald-500 to-teal-700" },
+    { title: "Estudiantes",      value: stats?.totalEstudiantes ?? 0,                 icon: <FaUsers className="text-xl" />,             gradient: "bg-gradient-to-br from-blue-500 to-indigo-700" },
+    { title: "Cursos",           value: total,                                        icon: <FaBook className="text-xl" />,              gradient: "bg-gradient-to-br from-violet-500 to-purple-700" },
+    { title: "Profesores",       value: stats?.totalProfesores ?? 0,                  icon: <FaChalkboardTeacher className="text-xl" />, gradient: "bg-gradient-to-br from-orange-500 to-rose-600" },
   ];
 
   if (loading) {
@@ -237,13 +216,13 @@ export default function DashboardAdminCursos() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
 
-      {/* ── Hero Header ─────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 px-6 py-8 relative overflow-hidden">
+      {/* ── Hero Header (ancho completo) ──────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-900 px-4 sm:px-6 lg:px-8 py-8 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-4 left-10 w-40 h-40 rounded-full bg-blue-400/20 blur-3xl" />
           <div className="absolute bottom-0 right-20 w-56 h-56 rounded-full bg-purple-400/20 blur-3xl" />
         </div>
-        <div className="relative max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Dashboard Administrativo
@@ -259,74 +238,56 @@ export default function DashboardAdminCursos() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        {/* ── Stat Cards ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* ── KPIs (4 métricas distintas) ─────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {summaryCards.map((card, i) => (
             <StatCard key={i} {...card} />
           ))}
         </div>
 
-        {/* ── Revenue Banner ──────────────────────────────────────────────── */}
-        <div className="rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 p-5 sm:p-6 shadow-lg text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-            {/* Left: total */}
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-                <FaTrophy className="text-3xl text-yellow-300" />
-              </div>
-              <div>
-                <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest">
-                  Ingresos Totales Generados
-                </p>
-                <p className="text-4xl sm:text-5xl font-black mt-0.5">
-                  ${paymentStats.totalRecaudado.toFixed(2)}
-                </p>
-              </div>
+        {/* ── Inscripciones + Distribución de cursos ──────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
+
+          {/* Inscripciones: pagadas vs gratuitas (única vista de este dato) */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors duration-200">
+            <h2 className="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-5">
+              <FaUserCheck className="text-emerald-500" />
+              Inscripciones
+            </h2>
+            <div className="flex items-end gap-2 mb-4">
+              <span className="text-4xl font-black text-gray-800 dark:text-white leading-none">{totalInscripciones}</span>
+              <span className="text-sm text-gray-400 mb-1">inscripciones totales</span>
             </div>
-            {/* Right: breakdown */}
-            <div className="flex gap-6 sm:gap-10 md:mr-6">
-              <div className="text-center">
-                <p className="text-2xl sm:text-3xl font-black">{paymentStats.totalPagados}</p>
-                <p className="text-emerald-100 text-xs font-medium mt-0.5 uppercase tracking-wide">Inscripciones pagadas</p>
+            <div className="relative h-3 rounded-full overflow-hidden bg-sky-100 dark:bg-sky-900/30 mb-4">
+              <div className="absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${pctPagadas}%` }} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Pagadas</p>
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{paymentStats.totalPagados}</p>
+                <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">{pctPagadas}% del total</p>
               </div>
-              <div className="w-px bg-white/30 hidden sm:block" />
-              <div className="text-center">
-                <p className="text-2xl sm:text-3xl font-black">{paymentStats.totalGratis}</p>
-                <p className="text-emerald-100 text-xs font-medium mt-0.5 uppercase tracking-wide">Inscripciones gratuitas</p>
+              <div className="rounded-xl p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800">
+                <p className="text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300">Gratuitas</p>
+                <p className="text-2xl font-black text-sky-600 dark:text-sky-400">{paymentStats.totalGratis}</p>
+                <p className="text-xs text-sky-600/70 dark:text-sky-400/70">{100 - pctPagadas}% del total</p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ── Distribution + Type Summary ─────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
-
-          {/* Distribution bars */}
+          {/* Distribución de cursos por tipo (única vista de este dato) */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-4 transition-colors duration-200">
             <h2 className="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <FaChartBar className="text-indigo-500" />
-              Distribución de Cursos
+              Distribución de cursos
+              <span className="ml-auto text-xs font-normal text-gray-400">{total} en total</span>
             </h2>
             <AnimatedBar label="Gratuitos"    count={cursosGratis.length}       total={total} color="text-blue-600 dark:text-blue-400"   bg="bg-blue-500"   icon="📘" />
             <AnimatedBar label="Pagados"      count={cursosPagados.length}      total={total} color="text-green-600 dark:text-green-400" bg="bg-green-500"  icon="💰" />
             <AnimatedBar label="Presenciales" count={cursosPresenciales.length} total={total} color="text-purple-600 dark:text-purple-400" bg="bg-purple-500" icon="🏢" />
             <AnimatedBar label="Online"       count={cursosOnline.length}       total={total} color="text-orange-600 dark:text-orange-400" bg="bg-orange-500" icon="💻" />
-          </div>
-
-          {/* Type summary — fixed: removed h-full that caused misalignment */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors duration-200">
-            <h2 className="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-4">
-              <FaStar className="text-yellow-500" />
-              Resumen por Tipo
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              {typeItems.map((item) => (
-                <TypeBadge key={item.label} {...item} />
-              ))}
-            </div>
           </div>
         </div>
 
@@ -426,28 +387,6 @@ export default function DashboardAdminCursos() {
                 <p className="text-sm">Sin pagos recientes</p>
               </div>
             )}
-
-            {/* Summary footer */}
-            <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/40">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
-                    Total recaudado
-                  </p>
-                  <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    ${paymentStats.totalRecaudado.toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-right text-sm space-y-0.5">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-bold text-gray-800 dark:text-white">{paymentStats.totalPagados}</span> pagos
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-500">
-                    <span className="font-bold text-gray-700 dark:text-gray-300">{paymentStats.totalGratis}</span> gratuitos
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

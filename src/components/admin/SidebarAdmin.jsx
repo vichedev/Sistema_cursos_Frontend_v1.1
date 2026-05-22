@@ -155,6 +155,33 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
           onNavigate={onNavigate}
           highlight
         />
+
+        {/* ✅ NUEVO — Publicidad y Configuración */}
+        <div className="px-1 my-1">
+          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700" />
+        </div>
+        <SidebarLink
+          to="/admin/publicidad"
+          label="Publicidad"
+          active={location.pathname === "/admin/publicidad"}
+          icon={
+            <span className="text-xl leading-none" role="img" aria-label="publicidad">
+              📣
+            </span>
+          }
+          onNavigate={onNavigate}
+        />
+        <SidebarLink
+          to="/admin/configuracion"
+          label="Configuración"
+          active={location.pathname === "/admin/configuracion"}
+          icon={
+            <span className="text-xl leading-none" role="img" aria-label="configuracion">
+              ⚙️
+            </span>
+          }
+          onNavigate={onNavigate}
+        />
       </nav>
 
       {/* Cerrar sesión */}

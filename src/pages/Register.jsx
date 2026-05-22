@@ -13,6 +13,7 @@ import {
   sanitizeNumber,
   sanitizeName,
   sanitizeUsername,
+  sanitizeCedula,
 } from "../utils/sanitize";
 
 // ✅ Hook debounce personalizado
@@ -215,7 +216,8 @@ export default function Register() {
         sanitizedValue = sanitizeUsername(sanitizedValue);
         break;
       case "cedula":
-        sanitizedValue = sanitizeNumber(sanitizedValue);
+        // Alfanumérico (Chile RUT-K, México CURP/RFC, etc.) — NO solo dígitos
+        sanitizedValue = sanitizeCedula(sanitizedValue);
         break;
       case "password":
         sanitizedValue = sanitizeInput(sanitizedValue);
@@ -223,6 +225,13 @@ export default function Register() {
       case "ciudad":
         sanitizedValue = sanitizeInput(sanitizedValue);
         break;
+    }
+
+    // Al cambiar el país, limpiar la ciudad escrita (su catálogo cambia)
+    if (name === "pais") {
+      setForm({ ...form, pais: sanitizedValue, ciudad: "" });
+      setFieldErrors((prev) => ({ ...prev, pais: "", ciudad: "" }));
+      return;
     }
 
     setForm({ ...form, [name]: sanitizedValue });
@@ -709,32 +718,38 @@ export default function Register() {
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                    <select
-                      name="ciudad"
-                      value={form.ciudad}
-                      onChange={handleChange}
-                      required
-                      disabled={!form.pais || ciudades.length === 0}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                        fieldErrors.ciudad
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                      } ${
-                        !form.pais || ciudades.length === 0
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                      }`}
-                    >
-                      <option value="">Selecciona tu ciudad</option>
-                      {ciudades.map((city) => (
-                        <option
-                          key={`${city.name}-${city.latitude}`}
-                          value={city.name}
-                        >
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
+                    <>
+                      {/* Combobox: se puede ELEGIR de la lista o ESCRIBIR la ciudad.
+                          Así nadie queda bloqueado si su ciudad/cantón (ej: Puebloviejo)
+                          no está en el catálogo de la librería. */}
+                      <input
+                        name="ciudad"
+                        list="ciudades-list"
+                        autoComplete="off"
+                        placeholder={
+                          form.pais
+                            ? "Escribe o selecciona tu ciudad"
+                            : "Primero selecciona el país"
+                        }
+                        value={form.ciudad}
+                        onChange={handleChange}
+                        required
+                        disabled={!form.pais}
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                          fieldErrors.ciudad
+                            ? "border-red-500"
+                            : "border-gray-300 dark:border-gray-600"
+                        } ${!form.pais ? "opacity-50 cursor-not-allowed" : ""}`}
+                      />
+                      <datalist id="ciudades-list">
+                        {ciudades.map((city) => (
+                          <option
+                            key={`${city.name}-${city.latitude}`}
+                            value={city.name}
+                          />
+                        ))}
+                      </datalist>
+                    </>
                   )}
                   {fieldErrors.ciudad && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400">

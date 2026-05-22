@@ -23,6 +23,9 @@ import VerTodosLosCursos from "./pages/admin/VerTodosLosCursos";
 import GestionarCupones from "./pages/admin/GestionarCupones";
 // ✅ NUEVO
 import GestionDiplomas from "./pages/admin/GestionDiplomas";
+// ✅ NUEVO: configuración y publicidad
+import Configuracion from "./pages/admin/Configuracion";
+import Publicidad from "./pages/admin/Publicidad";
 
 // ESTUDIANTE
 import EstudianteLayout from "./layouts/EstudianteLayout";
@@ -74,6 +77,9 @@ function App() {
               <Route path="gestionar-cupones" element={<GestionarCupones />} />
               {/* ✅ NUEVO */}
               <Route path="diplomas" element={<GestionDiplomas />} />
+              {/* ✅ NUEVO: publicidad y configuración */}
+              <Route path="publicidad" element={<Publicidad />} />
+              <Route path="configuracion" element={<Configuracion />} />
             </Route>
 
             {/* ESTUDIANTE */}
