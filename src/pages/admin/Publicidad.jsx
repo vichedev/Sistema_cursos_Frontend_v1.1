@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import api from "../../utils/axiosInstance";
 import { swSuccess, swError, swConfirm } from "../../utils/swalConfig";
+import { compressImages } from "../../utils/compressImage";
 import {
   FaBullhorn,
   FaPlus,
@@ -74,6 +75,7 @@ export default function Publicidad() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null); // campaña en edición
   const [detailId, setDetailId] = useState(null);
   const pollRef = useRef(null);
 
@@ -150,16 +152,28 @@ export default function Publicidad() {
       ) : (
         <div className="grid gap-4">
           {campaigns.map((c) => (
-            <CampaignCard key={c.id} c={c} onAction={action} onRemove={remove} onDetail={() => setDetailId(c.id)} />
+            <CampaignCard
+              key={c.id}
+              c={c}
+              onAction={action}
+              onRemove={remove}
+              onDetail={() => setDetailId(c.id)}
+              onEdit={() => setEditing(c)}
+            />
           ))}
         </div>
       )}
 
-      {showForm && (
+      {(showForm || editing) && (
         <CampaignForm
-          onClose={() => setShowForm(false)}
+          editing={editing}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
           onCreated={() => {
             setShowForm(false);
+            setEditing(null);
             load();
           }}
         />
@@ -170,7 +184,8 @@ export default function Publicidad() {
   );
 }
 
-function CampaignCard({ c, onAction, onRemove, onDetail }) {
+function CampaignCard({ c, onAction, onRemove, onDetail, onEdit }) {
+  const editable = ["BORRADOR", "PROGRAMADA", "CANCELADA", "FALLIDA"].includes(c.estado);
   const meta = ESTADO_META[c.estado] || ESTADO_META.BORRADOR;
   const channels = (c.canalEmail ? 1 : 0) + (c.canalWhatsapp ? 1 : 0);
   const expected = Math.max(1, c.total * channels);
@@ -217,6 +232,9 @@ function CampaignCard({ c, onAction, onRemove, onDetail }) {
 
       <div className="flex flex-wrap gap-2 mt-4">
         <Btn tone="soft" onClick={onDetail}>Ver detalles</Btn>
+        {editable && (
+          <Btn tone="soft" onClick={onEdit}>Editar</Btn>
+        )}
         {(c.estado === "BORRADOR" || c.estado === "FALLIDA" || c.estado === "CANCELADA") && (
           <Btn tone="primary" onClick={() => onAction(c.id, "send", "Envío iniciado")}>Enviar ahora</Btn>
         )}
@@ -258,33 +276,100 @@ function Btn({ tone, onClick, children }) {
   );
 }
 
-// ─── Formulario de creación ──────────────────────────────────────────────────
-function CampaignForm({ onClose, onCreated }) {
-  const [form, setForm] = useState({
-    nombre: "",
-    asunto: "",
-    titulo: "",
-    mensaje: "",
-    canalEmail: true,
-    canalWhatsapp: false,
-    segmento: "TODOS",
-    cursoId: "",
-    programadaPara: "",
-  });
+// Convierte una fecha ISO a valor de <input type="datetime-local"> en hora local
+const toLocalDatetime = (d) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+};
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+
+// ─── Formulario de creación / edición ────────────────────────────────────────
+function CampaignForm({ editing, onClose, onCreated }) {
+  const isEdit = Boolean(editing);
+  const [form, setForm] = useState(() => ({
+    nombre: editing?.nombre || "",
+    asunto: editing?.asunto || "",
+    titulo: editing?.titulo || "",
+    mensaje: editing?.mensaje || "",
+    canalEmail: editing ? !!editing.canalEmail : true,
+    canalWhatsapp: editing ? !!editing.canalWhatsapp : false,
+    segmento: editing?.segmento || "TODOS",
+    cursoId: editing?.cursoId ? String(editing.cursoId) : "",
+    programadaPara: toLocalDatetime(editing?.programadaPara),
+  }));
   // Ajustes anti-baneo: las pausas se manejan en SEGUNDOS (más claro para el admin)
-  const [adv, setAdv] = useState({ batchSize: "", delaySec: "", batchPauseSec: "" });
+  const [adv, setAdv] = useState(() => ({
+    batchSize: editing?.batchSize ? String(editing.batchSize) : "",
+    delaySec: editing?.delayMs ? String(Math.round(editing.delayMs / 1000)) : "",
+    batchPauseSec: editing?.batchPauseMs ? String(Math.round(editing.batchPauseMs / 1000)) : "",
+  }));
   const [showAdv, setShowAdv] = useState(false);
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState([]); // imágenes nuevas {file,url}
+  const [existingImages, setExistingImages] = useState(() => editing?.imagenes || []); // nombres ya subidos
   const [cursos, setCursos] = useState([]);
   const [defaults, setDefaults] = useState(null);
-  const [seleccionados, setSeleccionados] = useState([]); // [{id,nombre,correo,celular}]
+  const [seleccionados, setSeleccionados] = useState(() =>
+    editing?.segmento === "MANUAL" && Array.isArray(editing?.destinatariosManual)
+      ? editing.destinatariosManual.map((d, i) => ({ id: `m${i}`, nombre: d.nombre, correo: d.correo, celular: d.celular }))
+      : [],
+  );
   const [showPicker, setShowPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Audiencia calculada en vivo por el backend {total, conCorreo, conWhatsapp, plan}
+  const [audience, setAudience] = useState(null);
+  const [audLoading, setAudLoading] = useState(false);
 
   useEffect(() => {
     api.get("/api/courses/all").then((r) => setCursos(r.data || [])).catch(() => {});
     api.get("/api/settings").then((r) => setDefaults(r.data?.data || {})).catch(() => {});
   }, []);
+
+  // Recalcula la audiencia (y el plan de envío) cuando cambian segmento/canales/curso.
+  useEffect(() => {
+    if (!form.canalEmail && !form.canalWhatsapp) {
+      setAudience(null);
+      return;
+    }
+    if (form.segmento === "CURSO" && !form.cursoId) {
+      setAudience(null);
+      return;
+    }
+    if (form.segmento === "MANUAL" && seleccionados.length === 0) {
+      setAudience({ total: 0, conCorreo: 0, conWhatsapp: 0, plan: null });
+      return;
+    }
+    let cancelled = false;
+    setAudLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const params = {
+          segmento: form.segmento,
+          canalEmail: form.canalEmail,
+          canalWhatsapp: form.canalWhatsapp,
+        };
+        if (form.segmento === "CURSO") params.cursoId = form.cursoId;
+        if (form.segmento === "MANUAL") {
+          params.destinatariosManual = JSON.stringify(
+            seleccionados.map((s) => ({ nombre: s.nombre, correo: s.correo, celular: s.celular })),
+          );
+        }
+        const { data } = await api.get("/api/campaigns/audience", { params });
+        if (!cancelled) setAudience(data.data);
+      } catch {
+        if (!cancelled) setAudience(null);
+      } finally {
+        if (!cancelled) setAudLoading(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [form.segmento, form.cursoId, form.canalEmail, form.canalWhatsapp, seleccionados]);
 
   // Valores por defecto efectivos según el canal (WhatsApp suele ir más lento)
   const eff = useMemo(() => {
@@ -313,10 +398,34 @@ function CampaignForm({ onClose, onCreated }) {
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const onFiles = (e) => {
-    const files = Array.from(e.target.files || []).slice(0, 5);
+  const onFiles = async (e) => {
+    const picked = Array.from(e.target.files || []).slice(0, 5);
+    // Comprime/redimensiona en el navegador antes de subir (menos peso, más rápido).
+    const files = await compressImages(picked, { maxWidth: 1280, maxHeight: 1280, quality: 0.8 });
     setImages(files.map((f) => ({ file: f, url: URL.createObjectURL(f) })));
   };
+
+  // Imágenes mostradas en la vista previa (existentes + nuevas).
+  const previewImages = useMemo(
+    () => [
+      ...existingImages.map((f) => ({ url: `${BACKEND_URL}/uploads/${f}` })),
+      ...images.map((im) => ({ url: im.url })),
+    ],
+    [existingImages, images],
+  );
+
+  // Plan de envío efectivo: parte del cálculo automático del backend y aplica
+  // los ajustes manuales si el admin los puso. Decide cuántos lotes y el tiempo.
+  const displayPlan = useMemo(() => {
+    const total = audience?.total ?? 0;
+    const auto = audience?.plan;
+    const batchSize = Number(adv.batchSize) || auto?.batchSize || eff.batchSize;
+    const delaySec = Number(adv.delaySec) || (auto ? Math.round(auto.delayMs / 1000) : eff.delaySec);
+    const batchPauseSec = Number(adv.batchPauseSec) || (auto ? Math.round(auto.batchPauseMs / 1000) : eff.batchPauseSec);
+    const totalBatches = total > 0 ? Math.ceil(total / batchSize) : 0;
+    const etaSec = total > 0 ? total * delaySec + Math.max(0, totalBatches - 1) * batchPauseSec : 0;
+    return { total, batchSize, delaySec, batchPauseSec, totalBatches, etaSec };
+  }, [audience, adv, eff]);
 
   const submit = async (modo) => {
     if (!form.nombre.trim()) return swError("Falta el nombre de la campaña");
@@ -357,12 +466,18 @@ function CampaignForm({ onClose, onCreated }) {
     if (adv.delaySec) fd.append("delayMs", String(Math.round(Number(adv.delaySec) * 1000)));
     if (adv.batchPauseSec) fd.append("batchPauseMs", String(Math.round(Number(adv.batchPauseSec) * 1000)));
     images.forEach((im) => fd.append("imagenes", im.file));
+    if (isEdit) fd.append("imagenesExistentes", JSON.stringify(existingImages));
 
     setSubmitting(true);
     try {
-      await api.post("/api/campaigns", fd);
+      if (isEdit) await api.put(`/api/campaigns/${editing.id}`, fd);
+      else await api.post("/api/campaigns", fd);
       swSuccess(
-        modo === "ahora" ? "Campaña creada y enviándose" : modo === "programar" ? "Campaña programada" : "Borrador guardado",
+        modo === "ahora"
+          ? isEdit ? "Campaña actualizada y enviándose" : "Campaña creada y enviándose"
+          : modo === "programar"
+            ? "Campaña programada"
+            : isEdit ? "Cambios guardados" : "Borrador guardado",
       );
       onCreated();
     } catch (e) {
@@ -373,16 +488,27 @@ function CampaignForm({ onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl my-6">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 rounded-t-2xl z-10">
-          <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100">Nueva campaña</h2>
+    <div className="fixed inset-0 z-50 flex items-stretch md:items-center justify-center bg-black/50 p-0 md:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-2xl w-full max-w-6xl md:my-6 flex flex-col" style={{ maxHeight: "94vh" }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-2xl">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-500">
+              <FaBullhorn size={15} />
+            </span>
+            <div>
+              <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100 leading-tight">{isEdit ? "Editar campaña" : "Nueva campaña"}</h2>
+              <p className="text-xs text-gray-400 dark:text-gray-500">Configura a la izquierda · previsualiza a la derecha</p>
+            </div>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
             <FaTimes size={18} />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        {/* Cuerpo dividido: configuración (izq) · vista previa (der) */}
+        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+          {/* ───── IZQUIERDA · Configuración ───── */}
+          <div className="flex-1 md:flex-none md:w-[460px] min-h-0 overflow-y-auto px-6 py-6 space-y-6 md:border-r border-gray-100 dark:border-gray-700">
           {/* Sección: Información */}
           <Section title="Información">
             <Field label="Nombre de la campaña">
@@ -435,6 +561,9 @@ function CampaignForm({ onClose, onCreated }) {
                 </button>
               </div>
             )}
+
+            {/* Audiencia calculada en vivo */}
+            <AudienceCard audience={audience} loading={audLoading} channels={{ email: form.canalEmail, whatsapp: form.canalWhatsapp }} />
           </Section>
 
           {/* Sección: Contenido */}
@@ -447,24 +576,23 @@ function CampaignForm({ onClose, onCreated }) {
             <Field label="Título destacado (opcional)">
               <input className={inputCls} value={form.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder="Ej: 🎓 Curso de Excel Avanzado" />
             </Field>
-            <MessageComposer
-              value={form.mensaje}
-              onChange={(v) => set("mensaje", v)}
-              titulo={form.titulo}
-              images={images}
-            />
+            <MessageComposer value={form.mensaje} onChange={(v) => set("mensaje", v)} />
             <Field label="Imágenes (hasta 5)">
               <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 hover:border-orange-400 w-fit">
-                <FaImage size={13} /> Subir imágenes
+                <FaImage size={13} /> {images.length > 0 ? "Reemplazar imágenes" : "Subir imágenes"}
                 <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
               </label>
-              {images.length > 0 && (
+              {(existingImages.length > 0 || images.length > 0) && (
                 <div className="flex gap-2 mt-3 flex-wrap">
+                  {existingImages.map((f) => (
+                    <Thumb key={f} src={`${BACKEND_URL}/uploads/${f}`} onRemove={() => setExistingImages((p) => p.filter((x) => x !== f))} />
+                  ))}
                   {images.map((im, i) => (
-                    <img key={i} src={im.url} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-600" />
+                    <Thumb key={i} src={im.url} onRemove={() => setImages((p) => p.filter((_, j) => j !== i))} />
                   ))}
                 </div>
               )}
+              <p className="text-xs text-gray-400 mt-1.5">Las imágenes se comprimen automáticamente antes de subir.</p>
             </Field>
           </Section>
 
@@ -473,8 +601,12 @@ function CampaignForm({ onClose, onCreated }) {
             <Field label="Programar para (opcional)">
               <input type="datetime-local" className={inputCls} value={form.programadaPara} onChange={(e) => set("programadaPara", e.target.value)} />
             </Field>
+
+            {/* Plan de envío automático (siempre visible) */}
+            <PlanCard plan={displayPlan} loading={audLoading} fmtSeg={fmtSeg} manual={adv.batchSize || adv.delaySec || adv.batchPauseSec} />
+
             <button type="button" onClick={() => setShowAdv((s) => !s)} className="text-sm font-medium text-orange-600 dark:text-orange-400">
-              {showAdv ? "▼" : "▶"} Ajustes anti-baneo (opcional)
+              {showAdv ? "▼" : "▶"} Ajustar manualmente la velocidad (opcional)
             </button>
             {showAdv && (
               <div className="mt-2 space-y-4 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700 p-4">
@@ -519,29 +651,37 @@ function CampaignForm({ onClose, onCreated }) {
                 {/* Resumen en lenguaje claro */}
                 <div className="text-sm text-gray-700 dark:text-gray-200 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 rounded-lg px-3 py-2.5">
                   📋 <b>Resumen:</b> se enviará 1 mensaje cada{" "}
-                  <b>{fmtSeg(adv.delaySec || eff.delaySec)}</b>; tras{" "}
-                  <b>{adv.batchSize || eff.batchSize}</b> mensajes, una pausa de{" "}
-                  <b>{fmtSeg(adv.batchPauseSec || eff.batchPauseSec)}</b>.
-                  <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Ej: 100 destinatarios ≈{" "}
-                    {(() => {
-                      const bs = Number(adv.batchSize || eff.batchSize);
-                      const ds = Number(adv.delaySec || eff.delaySec);
-                      const ps = Number(adv.batchPauseSec || eff.batchPauseSec);
-                      const totalSeg = 100 * ds + Math.floor(100 / bs) * ps;
-                      return fmtSeg(Math.round(totalSeg));
-                    })()}{" "}
-                    en completarse.
-                  </span>
+                  <b>{fmtSeg(displayPlan.delaySec)}</b>; tras{" "}
+                  <b>{displayPlan.batchSize}</b> mensajes, una pausa de{" "}
+                  <b>{fmtSeg(displayPlan.batchPauseSec)}</b>.
+                  {displayPlan.total > 0 && (
+                    <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {displayPlan.total} destinatario{displayPlan.total === 1 ? "" : "s"} →{" "}
+                      <b>{displayPlan.totalBatches}</b> lote{displayPlan.totalBatches === 1 ? "" : "s"} ≈{" "}
+                      <b>{fmtSeg(displayPlan.etaSec)}</b> en completarse.
+                    </span>
+                  )}
                 </div>
               </div>
             )}
           </Section>
-        </div>
+          </div>{/* fin columna izquierda */}
 
-        <div className="flex flex-wrap gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700 justify-end sticky bottom-0 bg-white dark:bg-gray-800 rounded-b-2xl">
+          {/* ───── DERECHA · Vista previa en vivo (contenedor de scroll) ───── */}
+          <div className="hidden md:block md:flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800/60 px-6 py-6">
+            <LivePreview
+              asunto={form.asunto}
+              titulo={form.titulo}
+              mensaje={form.mensaje}
+              images={previewImages}
+              channels={{ email: form.canalEmail, whatsapp: form.canalWhatsapp }}
+            />
+          </div>
+        </div>{/* fin cuerpo dividido */}
+
+        <div className="flex flex-wrap gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700 justify-end bg-white dark:bg-gray-800 rounded-b-2xl">
           <button onClick={() => submit("borrador")} disabled={submitting} className="px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium text-sm disabled:opacity-60">
-            Guardar borrador
+            {isEdit ? "Guardar cambios" : "Guardar borrador"}
           </button>
           <button onClick={() => submit("programar")} disabled={submitting} className="px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm disabled:opacity-60">
             Programar
@@ -781,10 +921,9 @@ function StudentPicker({ channels, initial, onClose, onConfirm }) {
   );
 }
 
-// ─── Editor de mensaje con formato + vista previa ────────────────────────────
-function MessageComposer({ value, onChange, titulo, images }) {
+// ─── Editor de mensaje con formato ───────────────────────────────────────────
+function MessageComposer({ value, onChange }) {
   const ref = useRef(null);
-  const [preview, setPreview] = useState("email"); // email | whatsapp | null
 
   const wrap = (marker) => {
     const ta = ref.current;
@@ -825,20 +964,10 @@ function MessageComposer({ value, onChange, titulo, images }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Mensaje</span>
-        <div className="flex gap-1">
-          <button type="button" onClick={() => setPreview("email")} className={`text-xs px-2.5 py-1 rounded-md font-medium ${preview === "email" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
-            <FaEnvelope className="inline mr-1" size={11} /> Correo
-          </button>
-          <button type="button" onClick={() => setPreview("whatsapp")} className={`text-xs px-2.5 py-1 rounded-md font-medium ${preview === "whatsapp" ? "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-300" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
-            <FaWhatsapp className="inline mr-1" size={11} /> WhatsApp
-          </button>
-        </div>
-      </div>
+      <span className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Mensaje</span>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-2 py-1 border border-b-0 border-gray-300 dark:border-gray-600 rounded-t-lg bg-gray-50 dark:bg-gray-700/40">
+      <div className="flex items-center gap-1 px-2 py-1 border border-b-0 border-gray-300 dark:border-gray-600 rounded-t-lg bg-gray-50 dark:bg-gray-700/40 flex-wrap">
         <Tool onClick={() => wrap("*")} title="Negrita (*texto*)"><FaBold size={12} /></Tool>
         <Tool onClick={() => wrap("_")} title="Cursiva (_texto_)"><FaItalic size={12} /></Tool>
         <Tool onClick={addBullets} title="Lista (- )"><FaListUl size={12} /></Tool>
@@ -848,47 +977,148 @@ function MessageComposer({ value, onChange, titulo, images }) {
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-0 md:gap-4">
-        <textarea
-          ref={ref}
-          className="w-full min-h-[170px] resize-y rounded-b-lg md:rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-orange-400 outline-none"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={"Escribe la promoción...\n\nUsa *negrita*, _cursiva_ y listas con - "}
-        />
-        {/* Vista previa */}
-        <div className="mt-3 md:mt-0">
-          {preview === "email" ? (
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white">
-              <div className="bg-gradient-to-r from-orange-500 to-orange-400 py-2.5 text-center">
-                <span className="text-white text-sm font-bold">MAAT Academy</span>
-              </div>
-              <div className="p-4">
-                {images?.length > 0 && <img src={images[0].url} alt="" className="w-full rounded-lg mb-3" />}
-                {titulo && <p className="font-bold text-gray-900 text-base mb-2">{titulo}</p>}
-                <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: fmtToHtml(value) }} />
-                <div className="text-center mt-3">
-                  <span className="inline-block bg-orange-500 text-white text-xs font-semibold px-4 py-2 rounded-lg">Ver nuestros cursos</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-lg p-3" style={{ background: "#e5ddd5" }}>
-              <div className="bg-white rounded-lg rounded-tl-none shadow-sm p-3 max-w-[90%]">
-                {images?.length > 0 && <img src={images[0].url} alt="" className="w-full rounded-md mb-2" />}
-                {titulo && <p className="font-bold text-gray-900 text-sm mb-1">{titulo}</p>}
-                <p className="text-sm text-gray-800 whitespace-pre-wrap" style={{ wordBreak: "break-word" }}>
-                  {(value || "").replace(/^\s*-\s+/gm, "• ")}
-                </p>
-                <span className="block text-[10px] text-gray-400 text-right mt-1">12:00 ✓✓</span>
-              </div>
-            </div>
-          )}
+      <textarea
+        ref={ref}
+        className="w-full min-h-[200px] resize-y rounded-b-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-orange-400 outline-none"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={"Escribe la promoción...\n\nUsa *negrita*, _cursiva_ y listas con - "}
+      />
+      <p className="text-xs text-gray-400 mt-1.5">
+        Formato: <b>*negrita*</b>, <i>_cursiva_</i>, viñetas con <code>-</code>. Mira el resultado en la vista previa de la derecha →
+      </p>
+    </div>
+  );
+}
+
+// ─── Vista previa en vivo (panel derecho) ────────────────────────────────────
+function LivePreview({ asunto, titulo, mensaje, images, channels }) {
+  const available = [channels.email && "email", channels.whatsapp && "whatsapp"].filter(Boolean);
+  const [tab, setTab] = useState("email");
+
+  // Mantiene la pestaña activa válida si cambian los canales seleccionados
+  useEffect(() => {
+    if (available.length && !available.includes(tab)) setTab(available[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channels.email, channels.whatsapp]);
+
+  const hasContent = Boolean((mensaje || "").trim() || titulo || images?.length);
+
+  const PillBtn = ({ value, color, icon, label }) => (
+    <button
+      type="button"
+      onClick={() => setTab(value)}
+      className={`text-xs px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1.5 ${
+        tab === value ? `bg-white dark:bg-gray-800 shadow-sm ${color}` : "text-gray-500 dark:text-gray-400"
+      }`}
+    >
+      {icon} {label}
+    </button>
+  );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          Vista previa
+        </h3>
+        {available.length > 1 && (
+          <div className="flex gap-1 p-0.5 rounded-lg bg-gray-100 dark:bg-gray-700/60">
+            <PillBtn value="email" color="text-blue-600 dark:text-blue-300" icon={<FaEnvelope size={11} />} label="Correo" />
+            <PillBtn value="whatsapp" color="text-green-600 dark:text-green-300" icon={<FaWhatsapp size={11} />} label="WhatsApp" />
+          </div>
+        )}
+      </div>
+
+      {available.length === 0 ? (
+        <div className="min-h-[340px] flex flex-col items-center justify-center text-center text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-8">
+          <FaBullhorn className="text-3xl mb-3 opacity-40" />
+          <p className="text-sm">Selecciona un canal de envío<br />para ver la vista previa.</p>
+        </div>
+      ) : tab === "email" ? (
+        <EmailPreview asunto={asunto} titulo={titulo} mensaje={mensaje} images={images} empty={!hasContent} />
+      ) : (
+        <WhatsappPreview titulo={titulo} mensaje={mensaje} images={images} empty={!hasContent} />
+      )}
+    </div>
+  );
+}
+
+function EmailPreview({ asunto, titulo, mensaje, images, empty }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white shadow-xl overflow-hidden">
+      {/* Barra del cliente de correo */}
+      <div className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-100 border-b border-gray-200">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+        <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+        <span className="ml-3 text-[11px] text-gray-400 truncate">Bandeja de entrada</span>
+      </div>
+      {/* Metadatos del correo */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <p className="text-sm font-semibold text-gray-900 truncate">
+          {asunto || <span className="text-gray-300 font-normal">(Sin asunto)</span>}
+        </p>
+        <div className="flex items-center gap-2 mt-1.5">
+          <span className="w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">M</span>
+          <div className="leading-tight">
+            <p className="text-xs font-medium text-gray-700">MAAT Academy</p>
+            <p className="text-[11px] text-gray-400">para mí</p>
+          </div>
         </div>
       </div>
-      <p className="text-xs text-gray-400 mt-1.5">
-        Formato: <b>*negrita*</b>, <i>_cursiva_</i>, viñetas con <code>-</code>. Se ve bien en correo y WhatsApp.
-      </p>
+      {/* Cuerpo con marca */}
+      <div className="bg-gray-50 p-4">
+        <div className="rounded-xl overflow-hidden bg-white border border-gray-100 shadow-sm">
+          <div className="bg-gradient-to-r from-orange-500 to-amber-400 py-3 text-center">
+            <span className="text-white text-sm font-bold tracking-wide">MAAT Academy</span>
+          </div>
+          <div className="p-4">
+            {images?.length > 0 && <img src={images[0].url} alt="" className="w-full rounded-lg mb-3" />}
+            {titulo && <p className="font-bold text-gray-900 text-base mb-2">{titulo}</p>}
+            {empty ? (
+              <p className="text-sm text-gray-300 italic">Tu mensaje aparecerá aquí…</p>
+            ) : (
+              <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: fmtToHtml(mensaje) }} />
+            )}
+            <div className="text-center mt-4">
+              <span className="inline-block bg-orange-500 text-white text-xs font-semibold px-5 py-2.5 rounded-lg shadow-sm">Ver nuestros cursos</span>
+            </div>
+          </div>
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-center">
+            <p className="text-[10px] text-gray-400">© MAAT Academy · Recibes este correo por estar inscrito.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WhatsappPreview({ titulo, mensaje, images, empty }) {
+  const text = (mensaje || "").replace(/^\s*-\s+/gm, "• ");
+  return (
+    <div className="rounded-[2rem] border-[6px] border-gray-800 dark:border-gray-900 shadow-xl overflow-hidden bg-black max-w-[320px] mx-auto w-full">
+      {/* Cabecera de WhatsApp */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54]">
+        <span className="w-8 h-8 rounded-full bg-white/20 text-white text-sm font-bold flex items-center justify-center">M</span>
+        <div className="leading-tight">
+          <p className="text-sm font-semibold text-white">MAAT Academy</p>
+          <p className="text-[11px] text-white/70">en línea</p>
+        </div>
+      </div>
+      {/* Chat */}
+      <div className="px-3 py-4 min-h-[280px]" style={{ background: "#e5ddd5" }}>
+        <div className="bg-white rounded-lg rounded-tl-none shadow-sm p-2.5 max-w-[92%]">
+          {images?.length > 0 && <img src={images[0].url} alt="" className="w-full rounded-md mb-2" />}
+          {titulo && <p className="font-bold text-gray-900 text-sm mb-1">{titulo}</p>}
+          {empty ? (
+            <p className="text-sm text-gray-300 italic">Tu mensaje aparecerá aquí…</p>
+          ) : (
+            <p className="text-sm text-gray-800 whitespace-pre-wrap" style={{ wordBreak: "break-word" }}>{text}</p>
+          )}
+          <span className="block text-[10px] text-gray-400 text-right mt-1">12:00 ✓✓</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1055,6 +1285,81 @@ function AdvField({ label, unit, hint, recommended, placeholder, min = 0, value,
       />
       {hint && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{hint}</p>}
       {recommended && <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">{recommended}</p>}
+    </div>
+  );
+}
+
+// Miniatura de imagen con botón para quitarla
+function Thumb({ src, onRemove }) {
+  return (
+    <div className="relative group">
+      <img src={src} alt="" className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-600" />
+      <button
+        type="button"
+        onClick={onRemove}
+        title="Quitar"
+        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow hover:bg-rose-600"
+      >
+        <FaTimes size={9} />
+      </button>
+    </div>
+  );
+}
+
+// Tarjeta de audiencia calculada en vivo
+function AudienceCard({ audience, loading, channels }) {
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 px-3 py-2.5">
+      <div className="flex items-center gap-2 text-sm">
+        <FaUsers className="text-orange-500" size={13} />
+        {loading ? (
+          <span className="text-gray-400 flex items-center gap-1.5"><FaSpinner className="animate-spin" size={11} /> Calculando audiencia…</span>
+        ) : audience ? (
+          <span className="text-gray-700 dark:text-gray-200">
+            <b className="text-orange-600 dark:text-orange-400">{audience.total}</b> destinatario{audience.total === 1 ? "" : "s"}
+          </span>
+        ) : (
+          <span className="text-gray-400">Selecciona canal y segmento para calcular</span>
+        )}
+      </div>
+      {audience && audience.total > 0 && (
+        <div className="flex gap-3 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+          {channels.email && (
+            <span className="inline-flex items-center gap-1"><FaEnvelope size={10} className="text-blue-500" /> {audience.conCorreo} con correo</span>
+          )}
+          {channels.whatsapp && (
+            <span className="inline-flex items-center gap-1"><FaWhatsapp size={10} className="text-green-500" /> {audience.conWhatsapp} con WhatsApp</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Tarjeta del plan de envío automático (lotes + tiempo estimado)
+function PlanCard({ plan, loading, fmtSeg, manual }) {
+  return (
+    <div className="rounded-lg border border-indigo-200 dark:border-indigo-800/50 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2.5">
+      <div className="flex items-center gap-2 text-sm font-medium text-indigo-700 dark:text-indigo-300">
+        <FaClock size={12} /> Plan de envío {manual ? "(ajustado a mano)" : "automático"}
+      </div>
+      {loading ? (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 flex items-center gap-1.5">
+          <FaSpinner className="animate-spin" size={10} /> Recalculando…
+        </p>
+      ) : plan.total > 0 ? (
+        <p className="text-sm text-gray-700 dark:text-gray-200 mt-1.5 leading-relaxed">
+          El sistema enviará en <b>{plan.totalBatches}</b> lote{plan.totalBatches === 1 ? "" : "s"} de hasta{" "}
+          <b>{plan.batchSize}</b> mensajes, con pausas para evitar bloqueos.
+          <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Tiempo estimado total: <b>{fmtSeg(plan.etaSec)}</b>.
+          </span>
+        </p>
+      ) : (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+          Cuando haya destinatarios, aquí verás cuántos lotes y cuánto tardará.
+        </p>
+      )}
     </div>
   );
 }

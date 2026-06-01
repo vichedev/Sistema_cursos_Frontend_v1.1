@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import api from "../../utils/axiosInstance";
 import { formatDateOnly } from "../../utils/dateUtils";
+import { compressImage } from "../../utils/compressImage";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
 import {
   FormCard,
@@ -285,10 +286,17 @@ export default function CrearCurso() {
     }
   };
 
-  const handleImage = (e) => {
-    const file = e.target.files[0];
+  const handleImage = async (e) => {
+    const original = e.target.files[0];
+    if (!original) {
+      setImagenFile(null);
+      setPreview("");
+      return;
+    }
+    // Comprime la portada en el navegador antes de guardarla para subir.
+    const file = await compressImage(original, { maxWidth: 1280, maxHeight: 1280, quality: 0.8 });
     setImagenFile(file);
-    setPreview(file ? URL.createObjectURL(file) : "");
+    setPreview(URL.createObjectURL(file));
   };
 
   const handleChange = (e) => {

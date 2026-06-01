@@ -21,6 +21,8 @@ import {
   FaCreditCard,
   FaBell,
   FaKey,
+  FaAddressBook,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 
 const TABS = [
@@ -30,6 +32,7 @@ const TABS = [
   { id: "ai", label: "Inteligencia Artificial", desc: "DeepSeek, Groq…", icon: <FaRobot /> },
   { id: "payphone", label: "Pagos (Payphone)", desc: "Pasarela de pago", icon: <FaCreditCard /> },
   { id: "notif", label: "Notificaciones", desc: "Correos y soporte", icon: <FaBell /> },
+  { id: "contacto", label: "Contacto público", desc: "Datos de la landing", icon: <FaAddressBook /> },
 ];
 
 function Field({ label, hint, children }) {
@@ -152,6 +155,7 @@ export default function Configuracion() {
           {tab === "ai" && <AiTab cfg={cfg} setVal={setVal} save={save} saving={saving} providers={aiProviders} />}
           {tab === "payphone" && <PayphoneTab cfg={cfg} setVal={setVal} save={save} saving={saving} />}
           {tab === "notif" && <NotificationsTab cfg={cfg} setVal={setVal} save={save} saving={saving} />}
+          {tab === "contacto" && <ContactoTab cfg={cfg} setVal={setVal} save={save} saving={saving} />}
         </div>
       </div>
     </div>
@@ -652,6 +656,122 @@ function NotificationsTab({ cfg, setVal, save, saving }) {
       >
         {saving ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />} Guardar
       </button>
+    </div>
+  );
+}
+
+// ─── Contacto público (landing) ──────────────────────────────────────────────
+function ContactoTab({ cfg, setVal, save, saving }) {
+  const test = async () => {
+    const res = await Swal.fire({
+      icon: "question",
+      title: "Probar formulario de contacto",
+      html: "Se enviará un mensaje de prueba al correo de destino configurado.",
+      showCancelButton: true,
+      confirmButtonText: "Enviar prueba",
+      cancelButtonText: "Cancelar",
+      background: document.documentElement.classList.contains("dark") ? "#0f172a" : "#fff",
+      color: document.documentElement.classList.contains("dark") ? "#f1f5f9" : "#0f172a",
+    });
+    if (!res.isConfirmed) return;
+    try {
+      const { data } = await api.post("/api/settings/contact", {
+        nombre: "Prueba de contacto",
+        correo: cfg.contacto_correo || "prueba@maat.ec",
+        mensaje: "Este es un mensaje de prueba enviado desde la configuración.",
+      });
+      data.success ? swSuccess("Enviado", "Revisa el correo de destino.") : swError("No se pudo", data.message);
+    } catch (e) {
+      swError("Error", e.response?.data?.message || e.message);
+    }
+  };
+
+  return (
+    <div>
+      <SectionTitle icon={<FaAddressBook />} title="Datos de contacto (landing pública)" />
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+        Esta información aparece en la sección <b>Contáctanos</b> de la página principal. Los mensajes del
+        formulario llegan al correo de destino indicado abajo.
+      </p>
+
+      {/* WhatsApp */}
+      <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">
+        <FaWhatsapp className="text-green-500" /> WhatsApp
+      </h3>
+      <div className="grid md:grid-cols-2 gap-x-5">
+        <Field label="Número de WhatsApp" hint="Ej: +593979860095">
+          <input className={inputCls} value={cfg.contacto_whatsapp || ""} onChange={(e) => setVal("contacto_whatsapp", e.target.value)} />
+        </Field>
+        <Field label="Nota / disponibilidad" hint='Ej: "Chat directo 24/7"'>
+          <input className={inputCls} value={cfg.contacto_whatsapp_nota || ""} onChange={(e) => setVal("contacto_whatsapp_nota", e.target.value)} />
+        </Field>
+      </div>
+
+      {/* Correo */}
+      <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 mt-4">
+        <FaEnvelope className="text-blue-500" /> Correo
+      </h3>
+      <div className="grid md:grid-cols-2 gap-x-5">
+        <Field label="Correo de contacto" hint="Se muestra en la tarjeta de correo">
+          <input className={inputCls} type="email" value={cfg.contacto_correo || ""} onChange={(e) => setVal("contacto_correo", e.target.value)} />
+        </Field>
+        <Field label="Nota de respuesta" hint='Ej: "Respuesta en 24h"'>
+          <input className={inputCls} value={cfg.contacto_correo_nota || ""} onChange={(e) => setVal("contacto_correo_nota", e.target.value)} />
+        </Field>
+      </div>
+
+      {/* Ubicación */}
+      <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 mt-4">
+        <FaMapMarkerAlt className="text-purple-500" /> Ubicación
+      </h3>
+      <div className="grid md:grid-cols-3 gap-x-5">
+        <Field label="País">
+          <input className={inputCls} value={cfg.contacto_pais || ""} onChange={(e) => setVal("contacto_pais", e.target.value)} />
+        </Field>
+        <Field label="Ciudad">
+          <input className={inputCls} value={cfg.contacto_ciudad || ""} onChange={(e) => setVal("contacto_ciudad", e.target.value)} />
+        </Field>
+        <Field label="Grupo / lema" hint='Ej: "✨Grupo Maat✨"'>
+          <input className={inputCls} value={cfg.contacto_grupo || ""} onChange={(e) => setVal("contacto_grupo", e.target.value)} />
+        </Field>
+      </div>
+
+      {/* Destino del formulario */}
+      <h3 className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 mt-4">
+        <FaPaperPlane className="text-orange-500" /> Recepción de mensajes
+      </h3>
+      <div className="grid md:grid-cols-2 gap-x-5">
+        <Field label="Correo que recibe los mensajes" hint="Si lo dejas vacío, se usa el correo de contacto / soporte">
+          <input className={inputCls} type="email" placeholder={cfg.contacto_correo || "correo de contacto"} value={cfg.contacto_destino || ""} onChange={(e) => setVal("contacto_destino", e.target.value)} />
+        </Field>
+      </div>
+
+      <div className="flex flex-wrap gap-3 mt-4">
+        <button
+          onClick={test}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm"
+        >
+          <FaPaperPlane /> Probar envío
+        </button>
+        <button
+          onClick={() =>
+            save([
+              "contacto_whatsapp",
+              "contacto_whatsapp_nota",
+              "contacto_correo",
+              "contacto_correo_nota",
+              "contacto_pais",
+              "contacto_ciudad",
+              "contacto_grupo",
+              "contacto_destino",
+            ])
+          }
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-60"
+        >
+          {saving ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />} Guardar
+        </button>
+      </div>
     </div>
   );
 }
