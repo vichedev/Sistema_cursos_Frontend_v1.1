@@ -77,7 +77,32 @@ export default function Publicidad() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null); // campaña en edición
   const [detailId, setDetailId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("TODOS");
   const pollRef = useRef(null);
+
+  // Conteo por estado para las pestañas de filtro
+  const counts = useMemo(() => {
+    const m = {};
+    for (const c of campaigns) m[c.estado] = (m[c.estado] || 0) + 1;
+    return m;
+  }, [campaigns]);
+
+  // Estados presentes (en el orden de ESTADO_META) para mostrar como filtros
+  const estadosPresentes = useMemo(
+    () => Object.keys(ESTADO_META).filter((k) => counts[k]),
+    [counts],
+  );
+
+  // Campañas tras aplicar búsqueda + filtro de estado
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return campaigns.filter((c) => {
+      if (estadoFilter !== "TODOS" && c.estado !== estadoFilter) return false;
+      if (q && !`${c.nombre} ${c.asunto || ""} ${c.titulo || ""}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [campaigns, search, estadoFilter]);
 
   const load = useCallback(async () => {
     try {
@@ -150,18 +175,60 @@ export default function Publicidad() {
           <p className="text-gray-500 dark:text-gray-400">Aún no hay campañas. Crea la primera.</p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {campaigns.map((c) => (
-            <CampaignCard
-              key={c.id}
-              c={c}
-              onAction={action}
-              onRemove={remove}
-              onDetail={() => setDetailId(c.id)}
-              onEdit={() => setEditing(c)}
-            />
-          ))}
-        </div>
+        <>
+          {/* ── Barra de filtros ── */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-6">
+            <div className="relative flex-1 min-w-0 lg:max-w-xs">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={13} />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar campaña..."
+                className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mb-1">
+              <FilterPill active={estadoFilter === "TODOS"} onClick={() => setEstadoFilter("TODOS")}>
+                Todas <span className="opacity-60">({campaigns.length})</span>
+              </FilterPill>
+              {estadosPresentes.map((k) => (
+                <FilterPill key={k} active={estadoFilter === k} onClick={() => setEstadoFilter(k)}>
+                  {ESTADO_META[k].label} <span className="opacity-60">({counts[k]})</span>
+                </FilterPill>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Grid de tarjetas ── */}
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <FaSearch className="mx-auto text-3xl mb-3 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-500 dark:text-gray-400">Ninguna campaña coincide con el filtro.</p>
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setEstadoFilter("TODOS");
+                }}
+                className="mt-3 text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((c) => (
+                <CampaignCard
+                  key={c.id}
+                  c={c}
+                  onAction={action}
+                  onRemove={remove}
+                  onDetail={() => setDetailId(c.id)}
+                  onEdit={() => setEditing(c)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {(showForm || editing) && (
@@ -184,6 +251,22 @@ export default function Publicidad() {
   );
 }
 
+// Pestaña/píldora de filtro de estado
+function FilterPill({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`whitespace-nowrap px-3.5 py-2 rounded-lg text-sm font-medium transition ${
+        active
+          ? "bg-orange-500 text-white shadow-sm"
+          : "bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function CampaignCard({ c, onAction, onRemove, onDetail, onEdit }) {
   const editable = ["BORRADOR", "PROGRAMADA", "CANCELADA", "FALLIDA"].includes(c.estado);
   const meta = ESTADO_META[c.estado] || ESTADO_META.BORRADOR;
@@ -192,56 +275,86 @@ function CampaignCard({ c, onAction, onRemove, onDetail, onEdit }) {
   const done = c.enviadosEmail + c.enviadosWhatsapp;
   const pct = Math.min(100, Math.round((done / expected) * 100));
   const showProgress = c.estado === "ENVIANDO" || c.estado === "COMPLETADA" || c.estado === "PAUSADA" || done > 0;
-
-  const canales = [c.canalEmail && "Correo", c.canalWhatsapp && "WhatsApp"].filter(Boolean).join(" · ");
+  const enviando = c.estado === "ENVIANDO";
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-sm transition">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-base truncate">{c.nombre}</h3>
-            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-            {canales} · {c.total} destinatario{c.total === 1 ? "" : "s"}
-            {c.imagenes?.length > 0 && ` · ${c.imagenes.length} imagen${c.imagenes.length === 1 ? "" : "es"}`}
-            {c.programadaPara && ` · programada ${new Date(c.programadaPara).toLocaleString()}`}
-          </p>
+    <div className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col hover:shadow-lg hover:border-orange-300 dark:hover:border-orange-700/50 transition-all duration-200">
+      {/* Cabecera: estado + canales */}
+      <div className="flex items-center justify-between gap-2">
+        <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${meta.cls}`}>
+          {enviando && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
+          {meta.label}
+        </span>
+        <div className="flex items-center gap-1.5">
+          {c.canalEmail && (
+            <span title="Correo" className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center">
+              <FaEnvelope size={12} />
+            </span>
+          )}
+          {c.canalWhatsapp && (
+            <span title="WhatsApp" className="w-7 h-7 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-500 flex items-center justify-center">
+              <FaWhatsapp size={13} />
+            </span>
+          )}
         </div>
       </div>
 
+      {/* Título */}
+      <h3 className="font-bold text-gray-800 dark:text-gray-100 text-base mt-3 line-clamp-2 leading-snug min-h-[2.6rem]">
+        {c.nombre}
+      </h3>
+
+      {/* Metadatos */}
+      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+        <span className="inline-flex items-center gap-1.5">
+          <FaUsers size={11} /> {c.total} destinatario{c.total === 1 ? "" : "s"}
+        </span>
+        {c.imagenes?.length > 0 && (
+          <span className="inline-flex items-center gap-1.5">
+            <FaImage size={11} /> {c.imagenes.length}
+          </span>
+        )}
+        {c.programadaPara && (
+          <span className="inline-flex items-center gap-1.5">
+            <FaClock size={11} /> {new Date(c.programadaPara).toLocaleDateString()}
+          </span>
+        )}
+      </div>
+
+      {/* Progreso */}
       {showProgress && (
         <div className="mt-4">
           <div className="flex justify-between text-xs mb-1.5 text-gray-500 dark:text-gray-400">
-            <span>
-              Correo: <b className="text-gray-700 dark:text-gray-200">{c.enviadosEmail}</b> · WhatsApp:{" "}
-              <b className="text-gray-700 dark:text-gray-200">{c.enviadosWhatsapp}</b>
-              {c.fallidos > 0 && <span className="text-red-500"> · Fallidos: {c.fallidos}</span>}
+            <span className="inline-flex items-center gap-2">
+              <span className="text-blue-500">✉ {c.enviadosEmail}</span>
+              <span className="text-green-500">WA {c.enviadosWhatsapp}</span>
+              {c.fallidos > 0 && <span className="text-red-500">✕ {c.fallidos}</span>}
             </span>
-            <span className="font-semibold">{pct}%</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-200">{pct}%</span>
           </div>
-          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${c.estado === "ENVIANDO" ? "bg-blue-500" : "bg-green-500"}`}
+              className={`h-full rounded-full transition-all duration-700 ${enviando ? "bg-blue-500" : "bg-green-500"}`}
               style={{ width: `${pct}%` }}
             />
           </div>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 mt-4">
-        <Btn tone="soft" onClick={onDetail}>Ver detalles</Btn>
-        {editable && (
-          <Btn tone="soft" onClick={onEdit}>Editar</Btn>
-        )}
+      {/* Empuja el pie hacia abajo para alinear tarjetas */}
+      <div className="flex-1" />
+
+      {/* Acciones */}
+      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/60">
+        <Btn tone="soft" onClick={onDetail}>Detalles</Btn>
+        {editable && <Btn tone="soft" onClick={onEdit}>Editar</Btn>}
         {(c.estado === "BORRADOR" || c.estado === "FALLIDA" || c.estado === "CANCELADA") && (
-          <Btn tone="primary" onClick={() => onAction(c.id, "send", "Envío iniciado")}>Enviar ahora</Btn>
+          <Btn tone="primary" onClick={() => onAction(c.id, "send", "Envío iniciado")}>Enviar</Btn>
         )}
         {c.estado === "PROGRAMADA" && (
           <Btn tone="primary" onClick={() => onAction(c.id, "send", "Envío iniciado")}>Enviar ya</Btn>
         )}
-        {c.estado === "ENVIANDO" && (
+        {enviando && (
           <>
             <Btn tone="warning" onClick={() => onAction(c.id, "pause", "Pausada")}>Pausar</Btn>
             <Btn tone="danger" onClick={() => onAction(c.id, "cancel", "Cancelada")}>Cancelar</Btn>
@@ -253,7 +366,7 @@ function CampaignCard({ c, onAction, onRemove, onDetail, onEdit }) {
             <Btn tone="danger" onClick={() => onAction(c.id, "cancel", "Cancelada")}>Cancelar</Btn>
           </>
         )}
-        {c.estado !== "ENVIANDO" && (
+        {!enviando && (
           <Btn tone="ghost" onClick={() => onRemove(c.id)}>Eliminar</Btn>
         )}
       </div>

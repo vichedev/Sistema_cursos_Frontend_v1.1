@@ -17,6 +17,9 @@ export function useUsuarios() {
   const [filterEmpresa, setFilterEmpresa] = useState("");
   const [filterCurso, setFilterCurso] = useState("");
   const [filterCedula, setFilterCedula] = useState("");
+  const [filterPais, setFilterPais] = useState("");
+  // "todos" | "verificados" | "noVerificados"
+  const [filterVerificado, setFilterVerificado] = useState("todos");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -50,6 +53,7 @@ export function useUsuarios() {
           empresa: u.empresa || "",
           cargo: u.cargo || "",
           cedula: u.cedula || "",
+          pais: u.pais || "",
           cursos: Array.isArray(u.cursos) ? u.cursos : [],
         });
 
@@ -77,6 +81,7 @@ export function useUsuarios() {
     return {
       ciudades: [...new Set(est.map((u) => u.ciudad).filter(Boolean))].sort(),
       empresas: [...new Set(est.map((u) => u.empresa).filter(Boolean))].sort(),
+      paises: [...new Set(est.map((u) => u.pais).filter(Boolean))].sort(),
       cursos: [
         ...new Set(
           est.flatMap((u) => u.cursos.map((c) => c.titulo || "Sin título")),
@@ -84,6 +89,27 @@ export function useUsuarios() {
       ].sort(),
     };
   }, [data.estudiantes, activeTab]);
+
+  // Estadísticas rápidas de estudiantes (para las tarjetas inteligentes)
+  const estudiantesStats = useMemo(() => {
+    const est = data.estudiantes || [];
+    const verificados = est.filter((u) => u.emailVerified).length;
+    const noVerificados = est.length - verificados;
+    const paises = new Set(est.map((u) => u.pais).filter(Boolean)).size;
+    return {
+      total: est.length,
+      verificados,
+      noVerificados,
+      paises,
+      pctVerificados: est.length ? Math.round((verificados / est.length) * 100) : 0,
+    };
+  }, [data.estudiantes]);
+
+  // Estudiantes sin verificar (respetando los demás filtros activos)
+  const estudiantesNoVerificados = useMemo(
+    () => (data.estudiantes || []).filter((u) => !u.emailVerified),
+    [data.estudiantes],
+  );
 
   const filteredUsers = useCallback(
     (users) => {
@@ -105,18 +131,25 @@ export function useUsuarios() {
           const matchesCiudad = !filterCiudad || user.ciudad === filterCiudad;
           const matchesEmpresa =
             !filterEmpresa || user.empresa === filterEmpresa;
+          const matchesPais = !filterPais || user.pais === filterPais;
           const matchesCurso =
             !filterCurso || user.cursos.some((c) => c.titulo === filterCurso);
           const matchesCedula =
             !filterCedula ||
             user.cedula.toLowerCase().includes(filterCedula.toLowerCase());
+          const matchesVerificado =
+            filterVerificado === "todos" ||
+            (filterVerificado === "verificados" && user.emailVerified) ||
+            (filterVerificado === "noVerificados" && !user.emailVerified);
 
           return (
             matchesSearch &&
             matchesCiudad &&
             matchesEmpresa &&
+            matchesPais &&
             matchesCurso &&
-            matchesCedula
+            matchesCedula &&
+            matchesVerificado
           );
         }
 
@@ -127,8 +160,10 @@ export function useUsuarios() {
       debouncedSearchTerm,
       filterCiudad,
       filterEmpresa,
+      filterPais,
       filterCurso,
       filterCedula,
+      filterVerificado,
       activeTab,
     ],
   );
@@ -163,12 +198,18 @@ export function useUsuarios() {
     setFilterCurso,
     filterCedula,
     setFilterCedula,
+    filterPais,
+    setFilterPais,
+    filterVerificado,
+    setFilterVerificado,
     currentPage,
     setCurrentPage,
     itemsPerPage,
     setItemsPerPage,
     fetchUsuarios,
     filterOptions,
+    estudiantesStats,
+    estudiantesNoVerificados,
     paginatedUsers,
     totalItems,
     filteredUsers,

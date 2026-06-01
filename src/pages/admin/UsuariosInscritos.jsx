@@ -43,7 +43,21 @@ import {
   FaFileExcel,
   FaFilter,
   FaSearch,
+  FaUserCheck,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaGlobeAmericas,
 } from "react-icons/fa";
+
+// Nombres de países por código ISO (para mostrar bonito en filtros y chips)
+const COUNTRY_NAMES = {
+  EC: "Ecuador", CO: "Colombia", AR: "Argentina", PE: "Perú", CL: "Chile",
+  BO: "Bolivia", PY: "Paraguay", UY: "Uruguay", VE: "Venezuela", MX: "México",
+  GT: "Guatemala", HN: "Honduras", SV: "El Salvador", NI: "Nicaragua",
+  CR: "Costa Rica", PA: "Panamá", DO: "Rep. Dominicana", CU: "Cuba",
+  BR: "Brasil", PR: "Puerto Rico", US: "Estados Unidos", ES: "España",
+};
+const countryLabel = (code) => COUNTRY_NAMES[code] || code;
 
 // ─── Función helper: banderas de países ───────────────────────────────────────
 const getCountryFlag = (pais) => {
@@ -324,18 +338,25 @@ export default function UsuariosInscritos() {
     setFilterCurso,
     filterCedula,
     setFilterCedula,
+    filterPais,
+    setFilterPais,
+    filterVerificado,
+    setFilterVerificado,
     currentPage,
     setCurrentPage,
     itemsPerPage,
     setItemsPerPage,
     fetchUsuarios,
     filterOptions,
+    estudiantesStats,
+    estudiantesNoVerificados,
     paginatedUsers,
     totalItems,
     filteredUsers,
   } = useUsuarios();
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [verifyingBulk, setVerifyingBulk] = useState(false);
 
   // Estados para modales
   const [modalType, setModalType] = useState(null);
@@ -367,8 +388,94 @@ export default function UsuariosInscritos() {
     filterEmpresa,
     filterCurso,
     filterCedula,
+    filterPais,
+    filterVerificado,
     activeTab,
   ]);
+
+  const isDarkMode = () => document.documentElement.classList.contains("dark");
+
+  // Verificación MASIVA de los estudiantes sin verificar.
+  const handleBulkVerify = async () => {
+    const ids = estudiantesNoVerificados.map((u) => u.id);
+    if (ids.length === 0) return;
+
+    const result = await Swal.fire({
+      icon: "question",
+      title: `¿Verificar ${ids.length} estudiante${ids.length === 1 ? "" : "s"}?`,
+      html: `Se marcarán como verificados y se les enviará un correo de aviso. Esta acción es inmediata.`,
+      showCancelButton: true,
+      confirmButtonText: "Sí, verificar todos",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#10b981",
+      background: isDarkMode() ? "#1f2937" : "#fff",
+      color: isDarkMode() ? "#f9fafb" : "#111827",
+    });
+    if (!result.isConfirmed) return;
+
+    setVerifyingBulk(true);
+    try {
+      const { data: resp } = await api.post("/api/auth/admin/verify-users", { ids });
+      fetchUsuarios();
+      Swal.fire({
+        icon: "success",
+        title: "¡Verificación completada!",
+        text: resp.message || `${resp.verified} estudiantes verificados`,
+        timer: 2800,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        background: isDarkMode() ? "#1f2937" : "#fff",
+        color: isDarkMode() ? "#f9fafb" : "#111827",
+        iconColor: "#22c55e",
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || "No se pudo completar la verificación",
+        background: isDarkMode() ? "#1f2937" : "#fff",
+        color: isDarkMode() ? "#f9fafb" : "#111827",
+      });
+    } finally {
+      setVerifyingBulk(false);
+    }
+  };
+
+  // Verificación INDIVIDUAL rápida desde la fila.
+  const handleQuickVerify = async (user) => {
+    const result = await Swal.fire({
+      icon: "question",
+      title: "¿Verificar a este estudiante?",
+      html: `<b>${user.nombres} ${user.apellidos}</b><br><span style="font-size:0.85rem">${user.correo}</span>`,
+      showCancelButton: true,
+      confirmButtonText: "Sí, verificar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#10b981",
+      background: isDarkMode() ? "#1f2937" : "#fff",
+      color: isDarkMode() ? "#f9fafb" : "#111827",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await handleVerifyAccount(user.id);
+      Swal.fire({
+        icon: "success",
+        title: "Verificado",
+        timer: 1800,
+        showConfirmButton: false,
+        background: isDarkMode() ? "#1f2937" : "#fff",
+        color: isDarkMode() ? "#f9fafb" : "#111827",
+        iconColor: "#22c55e",
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "No se pudo verificar",
+        background: isDarkMode() ? "#1f2937" : "#fff",
+        color: isDarkMode() ? "#f9fafb" : "#111827",
+      });
+    }
+  };
 
   const handleUpdateUser = async (updatedUser) => {
     setModalLoading(true);
@@ -533,6 +640,15 @@ export default function UsuariosInscritos() {
   const estudiantesActions = useCallback(
     (user) => (
       <div className="flex items-center gap-2">
+        {!user.emailVerified && (
+          <button
+            onClick={() => handleQuickVerify(user)}
+            className="p-2 bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-800/30 transition-colors duration-200"
+            title="Verificar cuenta"
+          >
+            <FaUserCheck />
+          </button>
+        )}
         <button
           onClick={() => handleView(user)}
           className="p-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-colors duration-200"
@@ -758,6 +874,7 @@ export default function UsuariosInscritos() {
                 filterEmpresa ||
                 filterCurso ||
                 filterCedula ||
+                filterPais ||
                 isFilterOpen) &&
                 activeTab === "estudiantes" && (
                   <div className="space-y-3">
@@ -765,12 +882,25 @@ export default function UsuariosInscritos() {
                     {(filterCiudad ||
                       filterEmpresa ||
                       filterCurso ||
-                      filterCedula) && (
+                      filterCedula ||
+                      filterPais) && (
                       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
                             Filtros aplicados:
                           </span>
+
+                          {filterPais && (
+                            <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
+                              {getCountryFlag(filterPais)} País: {countryLabel(filterPais)}
+                              <button
+                                onClick={() => setFilterPais("")}
+                                className="ml-1 hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
 
                           {filterCiudad && (
                             <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs">
@@ -829,6 +959,7 @@ export default function UsuariosInscritos() {
                               setFilterEmpresa("");
                               setFilterCurso("");
                               setFilterCedula("");
+                              setFilterPais("");
                             }}
                             className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                           >
@@ -852,13 +983,31 @@ export default function UsuariosInscritos() {
                               setFilterEmpresa("");
                               setFilterCurso("");
                               setFilterCedula("");
+                              setFilterPais("");
                             }}
                             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                           >
                             Limpiar filtros
                           </button>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              País
+                            </label>
+                            <select
+                              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200 text-sm"
+                              value={filterPais}
+                              onChange={(e) => setFilterPais(e.target.value)}
+                            >
+                              <option value="">Todos los países</option>
+                              {(filterOptions?.paises || []).map((pais) => (
+                                <option key={pais} value={pais}>
+                                  {getCountryFlag(pais)} {countryLabel(pais)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                               Ciudad
@@ -936,6 +1085,80 @@ export default function UsuariosInscritos() {
               {/* ════ TAB ESTUDIANTES ════ */}
               {activeTab === "estudiantes" && (
                 <section>
+                  {/* ── Tarjetas de estadísticas inteligentes ── */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                    <StatCard
+                      icon={<FaGraduationCap />}
+                      label="Total estudiantes"
+                      value={estudiantesStats.total}
+                      tone="blue"
+                    />
+                    <StatCard
+                      icon={<FaCheckCircle />}
+                      label="Verificados"
+                      value={estudiantesStats.verificados}
+                      sub={`${estudiantesStats.pctVerificados}%`}
+                      tone="green"
+                    />
+                    <StatCard
+                      icon={<FaExclamationTriangle />}
+                      label="Sin verificar"
+                      value={estudiantesStats.noVerificados}
+                      tone="amber"
+                    />
+                    <StatCard
+                      icon={<FaGlobeAmericas />}
+                      label="Países"
+                      value={estudiantesStats.paises}
+                      tone="purple"
+                    />
+                  </div>
+
+                  {/* ── Zona de estudiantes sin verificar ── */}
+                  {estudiantesStats.noVerificados > 0 && (
+                    <div className="mb-5 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+                          <FaExclamationTriangle />
+                        </span>
+                        <div>
+                          <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm">
+                            Hay {estudiantesStats.noVerificados} estudiante
+                            {estudiantesStats.noVerificados === 1 ? "" : "s"} sin verificar
+                          </p>
+                          <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                            Verifícalos en un clic o revisa solo los pendientes.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() =>
+                            setFilterVerificado(
+                              filterVerificado === "noVerificados" ? "todos" : "noVerificados",
+                            )
+                          }
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition"
+                        >
+                          <FaFilter className="text-xs" />
+                          {filterVerificado === "noVerificados" ? "Ver todos" : "Ver solo pendientes"}
+                        </button>
+                        <button
+                          onClick={handleBulkVerify}
+                          disabled={verifyingBulk}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm disabled:opacity-60"
+                        >
+                          {verifyingBulk ? (
+                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <FaUserCheck />
+                          )}
+                          Verificar todos ({estudiantesStats.noVerificados})
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Vista móvil (tarjetas) */}
                   <div className="block md:hidden">
                     {paginatedUsers.length === 0 ? (
@@ -1088,6 +1311,30 @@ export default function UsuariosInscritos() {
           />
         )}
       </Suspense>
+    </div>
+  );
+}
+
+// ─── Tarjeta de estadística ───────────────────────────────────────────────────
+function StatCard({ icon, label, value, sub, tone = "blue" }) {
+  const map = {
+    blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+    green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+    amber: "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
+    purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
+  };
+  return (
+    <div className="bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 rounded-xl p-4 flex items-center gap-3">
+      <span className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-lg ${map[tone]}`}>
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
+          {sub && <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">{sub}</span>}
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{label}</p>
+      </div>
     </div>
   );
 }
