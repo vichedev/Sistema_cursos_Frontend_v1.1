@@ -1,5 +1,6 @@
 // src/pages/admin/CrearCurso.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "../../utils/axiosInstance";
 import { formatDateOnly } from "../../utils/dateUtils";
@@ -66,8 +67,11 @@ export default function CrearCurso() {
     notificarWhatsapp: false,
   });
 
+  const navigate = useNavigate();
   // Curso recién creado (para mostrar el panel de material didáctico)
   const [createdCourse, setCreatedCourse] = useState(null);
+  // null = elegir; "now" = agregar material en este momento
+  const [materialMode, setMaterialMode] = useState(null);
   const [imagenFile, setImagenFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [profesores, setProfesores] = useState([]);
@@ -404,7 +408,8 @@ export default function CrearCurso() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // Abre el panel de material didáctico para el curso recién creado.
+      // Abre el modal del curso recién creado (elegir material ahora o después).
+      setMaterialMode(null);
       setCreatedCourse(res.data);
 
       setForm({
@@ -704,7 +709,7 @@ export default function CrearCurso() {
         />
       )}
 
-      {/* 📚 MODAL: material didáctico del curso recién creado */}
+      {/* 📚 MODAL: curso creado — elegir material ahora o después */}
       {createdCourse && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-0 md:p-4 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-2xl w-full max-w-2xl md:my-6">
@@ -714,7 +719,8 @@ export default function CrearCurso() {
                   <FaCheckCircle className="text-green-500" /> ¡Curso creado!
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  <b>{createdCourse.titulo}</b> — agrega material didáctico (opcional).
+                  <b>{createdCourse.titulo}</b>
+                  {materialMode === "now" ? " — agrega su material didáctico" : " — ¿quieres añadir material didáctico?"}
                 </p>
               </div>
               <button
@@ -725,18 +731,77 @@ export default function CrearCurso() {
               </button>
             </div>
 
-            <div className="p-6">
-              <CursoRecursos cursoId={createdCourse.id} compact />
-            </div>
+            {materialMode === "now" ? (
+              <>
+                <div className="p-6">
+                  <CursoRecursos cursoId={createdCourse.id} compact />
+                </div>
+                <div className="flex justify-between gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+                  <button
+                    onClick={() => setMaterialMode(null)}
+                    className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    ← Volver
+                  </button>
+                  <button
+                    onClick={() => setCreatedCourse(null)}
+                    className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
+                  >
+                    Finalizar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="p-6 space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  El curso ya está publicado. Puedes asociarle el material didáctico (enlaces de MEGA,
+                  Drive, etc.) <b>ahora</b> o <b>más tarde</b> desde la sección Material didáctico.
+                </p>
 
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700">
-              <button
-                onClick={() => setCreatedCourse(null)}
-                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
-              >
-                Finalizar
-              </button>
-            </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {/* Ahora */}
+                  <button
+                    onClick={() => setMaterialMode("now")}
+                    className="text-left p-4 rounded-2xl border-2 border-orange-200 dark:border-orange-800/50 bg-orange-50/60 dark:bg-orange-900/15 hover:border-orange-400 transition group"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-500 flex items-center justify-center">
+                        <FaFileAlt />
+                      </span>
+                      <span className="font-bold text-gray-800 dark:text-gray-100">Agregar ahora</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Pega los enlaces del material para este curso en este momento.
+                    </p>
+                  </button>
+
+                  {/* Después */}
+                  <button
+                    onClick={() => setCreatedCourse(null)}
+                    className="text-left p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 transition"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center">
+                        <FaCheckCircle />
+                      </span>
+                      <span className="font-bold text-gray-800 dark:text-gray-100">Configurar después</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Termina ahora; lo agregas luego desde Material didáctico.
+                    </p>
+                  </button>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    onClick={() => navigate("/admin/material-didactico")}
+                    className="text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline"
+                  >
+                    Ir a Material didáctico →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
