@@ -408,6 +408,19 @@ export default function CrearCurso() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      // Toast fugaz de confirmación
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "¡Curso creado con éxito! 🎉",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
+        color: document.documentElement.classList.contains("dark") ? "#f9fafb" : "#111827",
+      });
+
       // Abre el modal del curso recién creado (elegir material ahora o después).
       setMaterialMode(null);
       setCreatedCourse(res.data);
@@ -777,7 +790,20 @@ export default function CrearCurso() {
 
                   {/* Después */}
                   <button
-                    onClick={() => setCreatedCourse(null)}
+                    onClick={() => {
+                      setCreatedCourse(null);
+                      Swal.fire({
+                        toast: true,
+                        position: "top-end",
+                        icon: "info",
+                        title: "Cárgalos cuando quieras en la sección 📚 Material didáctico",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        background: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
+                        color: document.documentElement.classList.contains("dark") ? "#f9fafb" : "#111827",
+                      });
+                    }}
                     className="text-left p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 transition"
                   >
                     <div className="flex items-center gap-2 mb-1">
