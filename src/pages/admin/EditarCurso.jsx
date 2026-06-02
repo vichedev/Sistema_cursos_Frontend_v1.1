@@ -9,6 +9,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import {
   FaBook,
   FaChalkboardTeacher,
+  FaTags,
   FaCalendarAlt,
   FaLink,
   FaUsers,
@@ -52,7 +53,7 @@ export default function EditarCurso() {
     tipo: "ONLINE_GRATIS",
     cupos: 1,
     link: "",
-    recursosLink: "",
+    categoriaId: "",
     precio: 0,
     fecha: "",
     hora: "",
@@ -60,6 +61,7 @@ export default function EditarCurso() {
   const [imagenFile, setImagenFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [profesores, setProfesores] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -104,6 +106,11 @@ export default function EditarCurso() {
       });
 
     api
+      .get(`/api/categories`)
+      .then((res) => setCategorias(res.data?.data || []))
+      .catch(() => setCategorias([]));
+
+    api
       .get(`/api/courses/${id}`, {})
       .then((res) => {
         const curso = res.data;
@@ -124,7 +131,7 @@ export default function EditarCurso() {
           tipo: curso.tipo || "ONLINE_GRATIS",
           cupos: cuposValue,
           link: curso.link || "",
-          recursosLink: curso.recursosLink || "",
+          categoriaId: curso.categoriaId ? String(curso.categoriaId) : "",
           precio: precioValue,
           fecha: curso.fecha || "",
           hora: curso.hora || "",
@@ -446,7 +453,7 @@ export default function EditarCurso() {
       data.append("tipo", form.tipo);
       data.append("cupos", form.cupos);
       data.append("link", form.link);
-      data.append("recursosLink", form.recursosLink);
+      data.append("categoriaId", form.categoriaId || "");
 
       if (form.tipo.endsWith("GRATIS")) {
         data.append("precio", "0");
@@ -585,6 +592,14 @@ export default function EditarCurso() {
                       ))}
                   </select>
                 </Field>
+                <Field label="Categoría" icon={<FaTags />}>
+                  <select name="categoriaId" value={form.categoriaId} onChange={handleChange} className={inputCls(false)}>
+                    <option value="">Sin categoría</option>
+                    {categorias.map((c) => (
+                      <option key={c.id} value={String(c.id)}>{c.icono ? `${c.icono} ` : ""}{c.nombre}</option>
+                    ))}
+                  </select>
+                </Field>
               </div>
               {profesorSeleccionado && profesorSeleccionado.asignatura && (
                 <span className="inline-block px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium text-xs border border-blue-100 dark:border-blue-800">
@@ -614,9 +629,6 @@ export default function EditarCurso() {
                   className={inputCls(errors.link)}
                   placeholder={form.tipo.startsWith("ONLINE") ? "https://meet.google.com/..." : "https://goo.gl/maps/..."}
                 />
-              </Field>
-              <Field label="Link de recursos (opcional)" icon={<FaFileAlt />} hint="Materiales del curso: Google Drive, Notion, etc.">
-                <input name="recursosLink" value={form.recursosLink} onChange={handleChange} className={inputCls(false)} placeholder="https://drive.google.com/..." />
               </Field>
             </FormCard>
 

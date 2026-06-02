@@ -288,8 +288,25 @@ function ImageModal({ open, imageUrl, onClose }) {
   );
 }
 
+// Píldora de filtro por categoría
+function CatPill({ active, onClick, color, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${
+        active
+          ? "text-white border-transparent shadow-md scale-105"
+          : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:scale-105"
+      }`}
+      style={active ? { background: color || "#2563eb" } : undefined}
+    >
+      {children}
+    </button>
+  );
+}
+
 // ✅ COMPONENTE CURSO CARD MEJORADO
-function CursoCard({ curso, onAccessClick }) {
+function CursoCard({ curso, onAccessClick, categoria }) {
   const [modalDesc, setModalDesc] = useState({ open: false, curso: null });
   const [modalImage, setModalImage] = useState({ open: false, imageUrl: "" });
 
@@ -438,6 +455,16 @@ function CursoCard({ curso, onAccessClick }) {
         </div>
 
         <div className="flex-1 flex flex-col justify-between p-6">
+          {/* CATEGORÍA */}
+          {categoria && (
+            <span
+              className="inline-flex items-center gap-1.5 self-start px-3 py-1 rounded-full text-xs font-bold mb-2"
+              style={{ background: (categoria.color || "#2563eb") + "1a", color: categoria.color || "#2563eb" }}
+            >
+              {categoria.icono || "🏷️"} {categoria.nombre}
+            </span>
+          )}
+
           {/* TÍTULO */}
           <h3 className="text-xl font-bold text-gray-900 mb-3">
             {curso.titulo}
@@ -612,6 +639,8 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 const CursosDisponibles = () => {
   const navigate = useNavigate();
   const [cursos, setCursos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [catFilter, setCatFilter] = useState("TODAS");
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const cursosPerPage = 9; // 3 columnas × 3 filas = 9 cursos por página
@@ -646,13 +675,36 @@ const CursosDisponibles = () => {
       }
     };
     fetchCursos();
+
+    // Categorías (para badges y filtro)
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/categories`)
+      .then((r) => r.json())
+      .then((d) => setCategorias(d?.data || []))
+      .catch(() => setCategorias([]));
   }, []);
+
+  // Mapa id → categoría para mostrar badges
+  const catMap = {};
+  categorias.forEach((c) => (catMap[c.id] = c));
+
+  // Solo categorías que tienen al menos un curso visible
+  const catsConCursos = categorias.filter((c) =>
+    cursos.some((cu) => cu.categoriaId === c.id)
+  );
+
+  // Filtrar por categoría
+  const cursosFiltrados =
+    catFilter === "TODAS"
+      ? cursos
+      : catFilter === "SIN"
+        ? cursos.filter((c) => !c.categoriaId)
+        : cursos.filter((c) => c.categoriaId === catFilter);
 
   // ✅ Calcular cursos para la página actual
   const indexOfLastCurso = currentPage * cursosPerPage;
   const indexOfFirstCurso = indexOfLastCurso - cursosPerPage;
-  const currentCursos = cursos.slice(indexOfFirstCurso, indexOfLastCurso);
-  const totalPages = Math.ceil(cursos.length / cursosPerPage);
+  const currentCursos = cursosFiltrados.slice(indexOfFirstCurso, indexOfLastCurso);
+  const totalPages = Math.ceil(cursosFiltrados.length / cursosPerPage);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -712,12 +764,32 @@ const CursosDisponibles = () => {
           </div>
         </div>
 
+        {/* Filtro por categoría */}
+        {catsConCursos.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-2 mb-10">
+            <CatPill active={catFilter === "TODAS"} onClick={() => { setCatFilter("TODAS"); setCurrentPage(1); }}>
+              🎯 Todas
+            </CatPill>
+            {catsConCursos.map((c) => (
+              <CatPill
+                key={c.id}
+                active={catFilter === c.id}
+                color={c.color}
+                onClick={() => { setCatFilter(c.id); setCurrentPage(1); }}
+              >
+                {c.icono ? `${c.icono} ` : ""}{c.nombre}
+              </CatPill>
+            ))}
+          </div>
+        )}
+
         {/* Grid de Cursos */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentCursos.map((curso) => (
             <CursoCard
               key={curso.id}
               curso={curso}
+              categoria={catMap[curso.categoriaId] || null}
               onAccessClick={() => navigate("/login")}
             />
           ))}

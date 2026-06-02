@@ -79,6 +79,8 @@ export default function Publicidad() {
   const [detailId, setDetailId] = useState(null);
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("TODOS");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const pollRef = useRef(null);
 
   // Conteo por estado para las pestañas de filtro
@@ -94,15 +96,22 @@ export default function Publicidad() {
     [counts],
   );
 
-  // Campañas tras aplicar búsqueda + filtro de estado
+  // Campañas tras aplicar búsqueda + filtro de estado + rango de fechas
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const from = dateFrom ? new Date(dateFrom + "T00:00:00").getTime() : null;
+    const to = dateTo ? new Date(dateTo + "T23:59:59").getTime() : null;
     return campaigns.filter((c) => {
       if (estadoFilter !== "TODOS" && c.estado !== estadoFilter) return false;
       if (q && !`${c.nombre} ${c.asunto || ""} ${c.titulo || ""}`.toLowerCase().includes(q)) return false;
+      if (from || to) {
+        const t = new Date(c.createdAt || 0).getTime();
+        if (from && t < from) return false;
+        if (to && t > to) return false;
+      }
       return true;
     });
-  }, [campaigns, search, estadoFilter]);
+  }, [campaigns, search, estadoFilter, dateFrom, dateTo]);
 
   const load = useCallback(async () => {
     try {
@@ -197,6 +206,32 @@ export default function Publicidad() {
                 </FilterPill>
               ))}
             </div>
+
+            {/* Filtro por rango de fechas (creación) */}
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-400 dark:text-gray-500 whitespace-nowrap">📅 Desde</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2.5 py-2 text-sm text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-orange-400"
+              />
+              <span className="text-gray-400 dark:text-gray-500">hasta</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2.5 py-2 text-sm text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-orange-400"
+              />
+              {(dateFrom || dateTo) && (
+                <button
+                  onClick={() => { setDateFrom(""); setDateTo(""); }}
+                  className="text-xs text-orange-600 dark:text-orange-400 hover:underline whitespace-nowrap"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
           </div>
 
           {/* ── Grid de tarjetas ── */}
@@ -208,6 +243,8 @@ export default function Publicidad() {
                 onClick={() => {
                   setSearch("");
                   setEstadoFilter("TODOS");
+                  setDateFrom("");
+                  setDateTo("");
                 }}
                 className="mt-3 text-sm font-medium text-orange-600 dark:text-orange-400 hover:underline"
               >

@@ -1,7 +1,7 @@
 // src/components/admin/SidebarAdmin.jsx
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiLogOut } from "react-icons/fi";
+import { FiLogOut, FiChevronDown } from "react-icons/fi";
 
 export default function SidebarAdmin({ className = "", onNavigate }) {
   const [userData, setUserData] = useState({
@@ -10,6 +10,10 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
     rol: "ADMIN",
   });
   const location = useLocation();
+
+  // Rutas que pertenecen al grupo desplegable "Cursos"
+  const cursosRoutes = ["/admin/crear-curso", "/admin/ver-todo", "/admin/material-didactico", "/admin/categorias"];
+  const cursosActive = cursosRoutes.includes(location.pathname);
 
   useEffect(() => {
     const usuario = localStorage.getItem("usuario") || "Administrador";
@@ -82,32 +86,64 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
           }
           onNavigate={onNavigate}
         />
-        <SidebarLink
-          to="/admin/crear-curso"
-          label="Crear curso"
-          active={location.pathname === "/admin/crear-curso"}
+        <SidebarGroup
+          label="Cursos"
+          defaultOpen={cursosActive}
           icon={
-            <img
-              src="https://img.icons8.com/?size=100&id=oZAinaxvg8AD&format=png&color=0077B6"
-              className="w-6 h-6"
-              alt=""
-            />
+            <span className="text-xl leading-none" role="img" aria-label="cursos">
+              📘
+            </span>
           }
-          onNavigate={onNavigate}
-        />
-        <SidebarLink
-          to="/admin/ver-todo"
-          label="Todos los cursos"
-          active={location.pathname === "/admin/ver-todo"}
-          icon={
-            <img
-              src="https://img.icons8.com/?size=100&id=3N5nsXW7ytVx&format=png&color=0077B6"
-              className="w-6 h-6"
-              alt=""
-            />
-          }
-          onNavigate={onNavigate}
-        />
+        >
+          <SidebarLink
+            to="/admin/crear-curso"
+            label="Crear curso"
+            active={location.pathname === "/admin/crear-curso"}
+            icon={
+              <img
+                src="https://img.icons8.com/?size=100&id=oZAinaxvg8AD&format=png&color=0077B6"
+                className="w-6 h-6"
+                alt=""
+              />
+            }
+            onNavigate={onNavigate}
+          />
+          <SidebarLink
+            to="/admin/ver-todo"
+            label="Todos los cursos"
+            active={location.pathname === "/admin/ver-todo"}
+            icon={
+              <img
+                src="https://img.icons8.com/?size=100&id=3N5nsXW7ytVx&format=png&color=0077B6"
+                className="w-6 h-6"
+                alt=""
+              />
+            }
+            onNavigate={onNavigate}
+          />
+          <SidebarLink
+            to="/admin/material-didactico"
+            label="Material didáctico"
+            active={location.pathname === "/admin/material-didactico"}
+            icon={
+              <span className="text-xl leading-none" role="img" aria-label="material">
+                📚
+              </span>
+            }
+            onNavigate={onNavigate}
+          />
+          <SidebarLink
+            to="/admin/categorias"
+            label="Categorías"
+            active={location.pathname === "/admin/categorias"}
+            icon={
+              <span className="text-xl leading-none" role="img" aria-label="categorias">
+                🏷️
+              </span>
+            }
+            onNavigate={onNavigate}
+          />
+        </SidebarGroup>
         <SidebarLink
           to="/admin/usuarios-inscritos"
           label="Usuarios Inscritos"
@@ -172,6 +208,17 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
           onNavigate={onNavigate}
         />
         <SidebarLink
+          to="/admin/logs-acceso"
+          label="Logs de acceso"
+          active={location.pathname === "/admin/logs-acceso"}
+          icon={
+            <span className="text-xl leading-none" role="img" aria-label="logs">
+              🔐
+            </span>
+          }
+          onNavigate={onNavigate}
+        />
+        <SidebarLink
           to="/admin/configuracion"
           label="Configuración"
           active={location.pathname === "/admin/configuracion"}
@@ -200,6 +247,37 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
         </button>
       </div>
     </aside>
+  );
+}
+
+function SidebarGroup({ label, icon, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  // Mantener abierto si una ruta hija pasa a estar activa
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center px-4 py-3 rounded-xl font-medium gap-3 text-gray-700 dark:text-gray-300 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/10 dark:hover:text-green-400 transition-all duration-200"
+      >
+        <div className="p-1.5 rounded-lg bg-green-100 dark:bg-gray-700">{icon}</div>
+        <span className="select-none">{label}</span>
+        <FiChevronDown
+          className={`ml-auto transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          size={18}
+        />
+      </button>
+      {open && (
+        <div className="mt-1 ml-4 pl-3 border-l border-gray-200 dark:border-gray-700 flex flex-col gap-1">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 

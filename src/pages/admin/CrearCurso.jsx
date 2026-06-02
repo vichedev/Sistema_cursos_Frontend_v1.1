@@ -5,6 +5,7 @@ import api from "../../utils/axiosInstance";
 import { formatDateOnly } from "../../utils/dateUtils";
 import { compressImage } from "../../utils/compressImage";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
+import CursoRecursos from "../../components/admin/CursoRecursos";
 import {
   FormCard,
   Field,
@@ -20,6 +21,8 @@ import {
   FaChalkboardTeacher,
   FaCalendarAlt,
   FaLink,
+  FaFileAlt,
+  FaTags,
   FaUsers,
   FaDollarSign,
   FaBell,
@@ -32,6 +35,8 @@ import {
   FaPlus,
   FaImage,
   FaCog,
+  FaCheckCircle,
+  FaTimes,
 } from "react-icons/fa";
 
 import { useNotifications } from "../../context/NotificationContext";
@@ -53,7 +58,7 @@ export default function CrearCurso() {
     tipo: "ONLINE_GRATIS",
     cupos: 1,
     link: "",
-    recursosLink: "",
+    categoriaId: "",
     precio: 0,
     fecha: "",
     hora: "",
@@ -61,9 +66,12 @@ export default function CrearCurso() {
     notificarWhatsapp: false,
   });
 
+  // Curso recién creado (para mostrar el panel de material didáctico)
+  const [createdCourse, setCreatedCourse] = useState(null);
   const [imagenFile, setImagenFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [profesores, setProfesores] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [errors, setErrors] = useState({});
@@ -95,6 +103,11 @@ export default function CrearCurso() {
         console.error("Error al obtener profesores:", err);
         setProfesores([]);
       });
+
+    api
+      .get(`/api/categories`)
+      .then((res) => setCategorias(res.data?.data || []))
+      .catch(() => setCategorias([]));
   }, []);
 
   // 🎁 FUNCIONES PARA CUPONES
@@ -387,34 +400,12 @@ export default function CrearCurso() {
 
       if (imagenFile) data.append("imagen", imagenFile);
 
-      await api.post(`/api/courses/create`, data, {
+      const res = await api.post(`/api/courses/create`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      Swal.fire({
-        icon: "success",
-        title: "Curso creado",
-        html: `
-          <div class="text-left">
-            <p>El curso <strong>${
-              form.titulo
-            }</strong> ha sido creado exitosamente.</p>
-            ${
-              cupones.length > 0
-                ? `<p class="mt-2">🎁 Se han creado ${cupones.length} cupones de descuento.</p>`
-                : ""
-            }
-            ${
-              form.notificarCorreo || form.notificarWhatsapp
-                ? `
-              <p class="mt-3">Las notificaciones se están enviando en segundo plano.</p>
-              <p class="text-sm text-gray-600">Puedes ver el progreso en el icono de campana.</p>`
-                : ""
-            }
-          </div>
-        `,
-        confirmButtonColor: "#3b82f6",
-      });
+      // Abre el panel de material didáctico para el curso recién creado.
+      setCreatedCourse(res.data);
 
       setForm({
         titulo: "",
@@ -423,7 +414,7 @@ export default function CrearCurso() {
         tipo: "ONLINE_GRATIS",
         cupos: 1,
         link: "",
-        recursosLink: "",
+        categoriaId: "",
         precio: 0,
         fecha: "",
         hora: "",
@@ -519,6 +510,14 @@ export default function CrearCurso() {
                       ))}
                   </select>
                 </Field>
+                <Field label="Categoría" icon={<FaTags />} hint="Crea categorías en el menú Cursos → Categorías">
+                  <select name="categoriaId" value={form.categoriaId} onChange={handleChange} className={inputCls(false)}>
+                    <option value="">Sin categoría</option>
+                    {categorias.map((c) => (
+                      <option key={c.id} value={c.id}>{c.icono ? `${c.icono} ` : ""}{c.nombre}</option>
+                    ))}
+                  </select>
+                </Field>
               </div>
             </FormCard>
 
@@ -548,15 +547,11 @@ export default function CrearCurso() {
                   placeholder={form.tipo.startsWith("ONLINE") ? "https://meet.google.com/..." : "https://goo.gl/maps/..."}
                 />
               </Field>
-              <Field label="Link de recursos (opcional)" icon={<FaLink />} hint="Materiales del curso: Google Drive, Dropbox, Notion, etc.">
-                <input
-                  name="recursosLink"
-                  value={form.recursosLink || ""}
-                  onChange={handleChange}
-                  className={inputCls(false)}
-                  placeholder="https://drive.google.com/..."
-                />
-              </Field>
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-1.5 mt-1">
+                <FaFileAlt className="mt-0.5 flex-shrink-0 text-orange-400" />
+                El material didáctico se asocia como enlaces (MEGA, Drive…) después de crear el curso,
+                y tú decides cuándo enviarlo a los inscritos.
+              </p>
             </FormCard>
 
             {/* Cupones (solo pagados) */}
@@ -707,6 +702,43 @@ export default function CrearCurso() {
           onClose={() => setShowCouponModal(false)}
           onCreate={crearCupon}
         />
+      )}
+
+      {/* 📚 MODAL: material didáctico del curso recién creado */}
+      {createdCourse && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-0 md:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-2xl w-full max-w-2xl md:my-6">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+              <div>
+                <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" /> ¡Curso creado!
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <b>{createdCourse.titulo}</b> — agrega material didáctico (opcional).
+                </p>
+              </div>
+              <button
+                onClick={() => setCreatedCourse(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <FaTimes size={18} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <CursoRecursos cursoId={createdCourse.id} compact />
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setCreatedCourse(null)}
+                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
+              >
+                Finalizar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

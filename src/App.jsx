@@ -26,6 +26,9 @@ import GestionDiplomas from "./pages/admin/GestionDiplomas";
 // ✅ NUEVO: configuración y publicidad
 import Configuracion from "./pages/admin/Configuracion";
 import Publicidad from "./pages/admin/Publicidad";
+import MaterialDidactico from "./pages/admin/MaterialDidactico";
+import Categorias from "./pages/admin/Categorias";
+import LogsAcceso from "./pages/admin/LogsAcceso";
 
 // ESTUDIANTE
 import EstudianteLayout from "./layouts/EstudianteLayout";
@@ -79,7 +82,10 @@ function App() {
               <Route path="diplomas" element={<GestionDiplomas />} />
               {/* ✅ NUEVO: publicidad y configuración */}
               <Route path="publicidad" element={<Publicidad />} />
+              <Route path="material-didactico" element={<MaterialDidactico />} />
+              <Route path="categorias" element={<Categorias />} />
               <Route path="configuracion" element={<Configuracion />} />
+              <Route path="logs-acceso" element={<LogsAcceso />} />
             </Route>
 
             {/* ESTUDIANTE */}
