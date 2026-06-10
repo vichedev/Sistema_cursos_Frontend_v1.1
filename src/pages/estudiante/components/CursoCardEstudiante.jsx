@@ -12,7 +12,7 @@ import {
   FaGift,
   FaTimes,
 } from "react-icons/fa";
-import { isCourseExpired } from "../../../utils/dateUtils";
+import { isCourseExpired, isCourseLive } from "../../../utils/dateUtils";
 import { getCourseLaunchInfo } from "../utils/courseSorting";
 import {
   isTodayCourse,
@@ -38,6 +38,7 @@ export default function CursoCardEstudiante({
   onPaymentSuccess,
 }) {
   const isExpired = isCourseExpired(curso);
+  const isLive = isCourseLive(curso);
   const launchInfo = getCourseLaunchInfo(curso);
   const isToday = isTodayCourse(curso);
   const isTomorrow = isTomorrowCourse(curso);
@@ -146,9 +147,16 @@ export default function CursoCardEstudiante({
             </span>
           )}
 
+          {isLive && (
+            <span className="px-3 py-1.5 rounded-lg text-xs bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md flex items-center gap-1 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+              🔴 EN ESTE MOMENTO
+            </span>
+          )}
+
           {isExpired && (
             <span className="px-3 py-1.5 rounded-lg text-xs bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold shadow-md">
-              ⏰ FINALIZADO
+              ✅ FINALIZADO
             </span>
           )}
         </div>

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useState, useMemo, useCallback } from "react";
 import Swal from "sweetalert2";
 import api from "../../utils/axiosInstance";
-import { isCourseExpired } from "../../utils/dateUtils";
+import { isCourseExpired, isCourseLive } from "../../utils/dateUtils";
 import {
   FaEye,
   FaTimes,
@@ -298,6 +298,7 @@ export default function CursoCardAdmin({
   // ✅ USAR useMemo PARA CÁLCULOS COSTOSOS
   const courseData = useMemo(() => {
     const isExpired = isCourseExpired(curso);
+    const isLive = isCourseLive(curso);
     const launchInfo = getCourseLaunchInfo(curso);
     const isToday = isTodayCourse(curso);
     const isTomorrow = isTomorrowCourse(curso);
@@ -309,6 +310,7 @@ export default function CursoCardAdmin({
 
     return {
       isExpired,
+      isLive,
       launchInfo,
       isToday,
       isTomorrow,
@@ -379,6 +381,41 @@ export default function CursoCardAdmin({
     }
   }, [curso.id, token, setCursos]);
 
+  // ✅ Finalizar / reabrir curso (manual, lo decide el admin)
+  const toggleFinalizado = useCallback(async () => {
+    const finalizar = !curso.finalizado;
+    const confirm = await Swal.fire({
+      title: finalizar ? "¿Marcar curso como finalizado?" : "¿Reabrir curso?",
+      text: finalizar
+        ? "El curso pasará a 'Finalizado' y dejará de mostrarse como activo a los estudiantes."
+        : "El curso volverá a estar activo / en curso.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: finalizar ? "Sí, finalizar" : "Sí, reabrir",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: finalizar ? "#64748b" : "#10b981",
+    });
+    if (!confirm.isConfirmed) return;
+
+    setLoading(true);
+    try {
+      await api.patch(`/api/courses/${curso.id}/finalizar`, { finalizado: finalizar });
+      setCursos((prev) =>
+        prev.map((c) => (c.id === curso.id ? { ...c, finalizado: finalizar } : c)),
+      );
+      Swal.fire(
+        finalizar ? "Finalizado" : "Reabierto",
+        finalizar ? "Curso marcado como finalizado" : "Curso reabierto correctamente",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error al cambiar finalización:", error);
+      Swal.fire("Error", "No se pudo actualizar el estado del curso", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [curso.id, curso.finalizado, setCursos]);
+
   const eliminarPermanentemente = useCallback(async () => {
     const confirm = await Swal.fire({
       title: "¿Eliminar permanentemente?",
@@ -426,6 +463,7 @@ export default function CursoCardAdmin({
     hasLimitedSpots,
     LaunchIcon,
     isExpired,
+    isLive,
   } = courseData;
 
   // ✅ DETERMINAR QUÉ BOTONES MOSTRAR
@@ -556,9 +594,16 @@ export default function CursoCardAdmin({
                 </span>
               )}
 
+              {isLive && (
+                <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-md flex items-center gap-1.5 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-white" />
+                  🔴 EN ESTE MOMENTO
+                </span>
+              )}
+
               {isExpired && (
                 <span className="px-4 py-2 rounded-lg text-sm bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold shadow-md">
-                  ⏰ FINALIZADO
+                  ✅ FINALIZADO
                 </span>
               )}
             </div>
@@ -678,6 +723,20 @@ export default function CursoCardAdmin({
                   <FaUsers className="text-xs sm:text-sm" />
                   <span className="truncate">Estudiantes</span>
                 </Link>
+                <button
+                  onClick={toggleFinalizado}
+                  disabled={loading}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 flex-1 min-w-0 text-sm sm:text-base disabled:opacity-50 ${
+                    curso.finalizado
+                      ? "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
+                      : "bg-gradient-to-r from-slate-500 to-slate-700 hover:from-slate-600 hover:to-slate-800"
+                  }`}
+                >
+                  <span className="text-xs sm:text-sm">{curso.finalizado ? "↩️" : "🏁"}</span>
+                  <span className="truncate">
+                    {loading ? "..." : curso.finalizado ? "Reabrir" : "Finalizar"}
+                  </span>
+                </button>
                 <button
                   onClick={archivarCurso}
                   disabled={loading}

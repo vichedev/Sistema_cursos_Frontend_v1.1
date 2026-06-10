@@ -295,20 +295,65 @@ function EstudiantesDiploma({ curso, onBack }) {
     setSendingAll(true);
     try {
       const res = await api.post(`/api/diplomas/enviar-todos/${curso.id}`, {});
-      const { enviados, errores } = res.data;
-      setSent(new Set(data.estudiantes.map((e) => e.estudianteId)));
+      const { jobId, total: totalJob } = res.data;
+
+      // El envío ocurre en segundo plano (anti-baneo). Mostramos progreso en vivo.
+      const dark = isDark();
+      const render = (j) => {
+        const proc = (j.enviados || 0) + (j.errores || 0);
+        const pct = j.total ? Math.round((proc / j.total) * 100) : 0;
+        const done = j.estado === "COMPLETADO";
+        return `
+          <div style="text-align:center">
+            <div style="font-size:13px;color:#888;margin-bottom:6px">
+              ${done ? "Proceso completado" : `Enviando con pausas anti-baneo… (lote ${j.lote || 1}/${j.totalLotes || 1})`}
+            </div>
+            <div style="background:${dark ? "#374151" : "#e5e7eb"};border-radius:9999px;height:12px;overflow:hidden;margin:8px 0">
+              <div style="height:100%;width:${pct}%;background:${done ? "#22c55e" : "#3b82f6"};transition:width .5s;border-radius:9999px"></div>
+            </div>
+            <div style="font-weight:700;font-size:18px;margin-bottom:8px">${pct}%</div>
+            <div style="display:flex;gap:8px;justify-content:center;font-size:13px">
+              <span style="color:#16a34a">✅ ${j.enviados || 0}</span>
+              <span style="color:#d97706">⏳ ${Math.max(0, (j.total || 0) - proc)}</span>
+              <span style="color:#dc2626">❌ ${j.errores || 0}</span>
+            </div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:10px">de ${j.total || totalJob} diploma(s)</div>
+          </div>`;
+      };
+
       Swal.fire({
-        icon: errores === 0 ? "success" : "warning",
-        title: errores === 0 ? "¡Diplomas enviados!" : "Envío con errores",
-        html: `
-          <div style="text-align:left;font-size:14px;line-height:2;">
-            <p>✅ Enviados correctamente: <strong>${enviados}</strong></p>
-            ${errores > 0 ? `<p>❌ Errores: <strong>${errores}</strong></p>` : ""}
-          </div>`,
-        confirmButtonText: "Entendido",
-        background: isDark() ? "#1f2937" : "#fff",
-        color: isDark() ? "#f9fafb" : "#111827",
+        title: "Enviando diplomas",
+        html: render({ total: totalJob, enviados: 0, errores: 0, estado: "ENVIANDO", lote: 1, totalLotes: 1 }),
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
         customClass: { popup: "rounded-2xl" },
+      });
+
+      await new Promise((resolve) => {
+        const iv = setInterval(async () => {
+          try {
+            const { data: s } = await api.get(`/api/diplomas/enviar-todos/status/${jobId}`);
+            if (!s.found) return; // aún registrándose
+            const cont = Swal.getHtmlContainer();
+            if (cont) cont.innerHTML = render(s);
+            if (s.estado === "COMPLETADO") {
+              clearInterval(iv);
+              setSent(new Set(data.estudiantes.map((e) => e.estudianteId)));
+              Swal.update({
+                title: s.errores === 0 ? "¡Diplomas enviados! 🎓" : "Envío finalizado con errores",
+                showConfirmButton: true,
+                confirmButtonText: "Entendido",
+              });
+              Swal.hideLoading();
+              resolve();
+            }
+          } catch {
+            /* reintenta */
+          }
+        }, 2000);
       });
     } catch (e) {
       Swal.fire("Error", e.response?.data?.message || "No se pudieron enviar los diplomas", "error");

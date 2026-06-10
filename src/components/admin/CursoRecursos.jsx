@@ -225,6 +225,8 @@ function EnviarMaterialModal({ cursoId, resources, onClose }) {
   const [selRes, setSelRes] = useState(() => new Set(resources.map((r) => r.id)));
   const [selStu, setSelStu] = useState(() => new Set()); // vacío = todos
   const [sending, setSending] = useState(false);
+  const [jobId, setJobId] = useState(null);
+  const [job, setJob] = useState(null); // progreso en vivo
 
   useEffect(() => {
     api
@@ -233,6 +235,35 @@ function EnviarMaterialModal({ cursoId, resources, onClose }) {
       .catch(() => swError("No se pudieron cargar los inscritos"))
       .finally(() => setLoading(false));
   }, [cursoId]);
+
+  // Polling del progreso del envío (anti-baneo)
+  useEffect(() => {
+    if (!jobId) return;
+    let stop = false;
+    const tick = async () => {
+      try {
+        const { data } = await api.get(`/api/courses/${cursoId}/resources/send-status/${jobId}`);
+        if (data.found && !stop) {
+          setJob((prev) => ({ ...prev, ...data }));
+          if (data.estado === "COMPLETADO") stop = true;
+        }
+      } catch {
+        /* reintenta en el próximo tick */
+      }
+    };
+    tick();
+    const iv = setInterval(() => {
+      if (stop) {
+        clearInterval(iv);
+        return;
+      }
+      tick();
+    }, 1500);
+    return () => {
+      stop = true;
+      clearInterval(iv);
+    };
+  }, [jobId, cursoId]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -257,8 +288,16 @@ function EnviarMaterialModal({ cursoId, resources, onClose }) {
         studentIds: enviarATodos ? "all" : [...selStu],
       };
       const { data } = await api.post(`/api/courses/${cursoId}/resources/send`, body);
-      swSuccess("Material enviado", data.message);
-      onClose();
+      // Cambia a la vista de progreso en vivo
+      setJob({
+        total: data.total,
+        enviados: 0,
+        fallidos: 0,
+        estado: "ENVIANDO",
+        plan: data.plan,
+        recursos: data.recursos,
+      });
+      setJobId(data.jobId);
     } catch (err) {
       swError("Error al enviar", err.response?.data?.message || err.message);
     } finally {
@@ -282,6 +321,10 @@ function EnviarMaterialModal({ cursoId, resources, onClose }) {
           </button>
         </div>
 
+        {job ? (
+          <EnvioProgreso job={job} onClose={onClose} />
+        ) : (
+        <>
         <div className="p-6 space-y-5 overflow-y-auto">
           {/* Materiales */}
           <div>
@@ -389,7 +432,103 @@ function EnviarMaterialModal({ cursoId, resources, onClose }) {
             {sending ? <FaSpinner className="animate-spin" /> : <FaPaperPlane size={13} />} Enviar por correo
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
+  );
+}
+
+// ─── Vista de progreso en vivo del envío (anti-baneo) ────────────────────────
+function EnvioProgreso({ job, onClose }) {
+  const total = job.total || 0;
+  const enviados = job.enviados || 0;
+  const fallidos = job.fallidos || 0;
+  const procesados = enviados + fallidos;
+  const pct = total ? Math.round((procesados / total) * 100) : 0;
+  const pendientes = Math.max(0, total - procesados);
+  const completado = job.estado === "COMPLETADO";
+  const plan = job.plan || {};
+
+  const fmtSeg = (s) => {
+    s = Number(s);
+    if (!Number.isFinite(s) || s <= 0) return "—";
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return r ? `${m}m ${r}s` : `${m}m`;
+  };
+
+  return (
+    <>
+      <div className="p-6 space-y-5 overflow-y-auto">
+        {/* Estado */}
+        <div className="flex items-center justify-center">
+          {completado ? (
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+              <FaCheck /> Envío completado
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <FaSpinner className="animate-spin" /> Enviando…
+            </span>
+          )}
+        </div>
+
+        {/* Barra de progreso */}
+        <div>
+          <div className="flex justify-between text-sm mb-1.5">
+            <span className="text-gray-500 dark:text-gray-400">
+              {procesados} de {total} procesados
+            </span>
+            <span className="font-bold text-gray-800 dark:text-gray-100">{pct}%</span>
+          </div>
+          <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${completado ? "bg-green-500" : "bg-blue-500"}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Contadores */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{enviados}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Enviados</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pendientes}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">En cola</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{fallidos}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Fallidos</p>
+          </div>
+        </div>
+
+        {/* Info anti-baneo */}
+        <div className="rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
+          🛡️ <b>Envío anti-baneo:</b> 1 correo cada <b>{fmtSeg(plan.delaySeg)}</b>, en lotes de{" "}
+          <b>{plan.batchSize}</b> con pausa de <b>{fmtSeg(plan.batchPauseSeg)}</b>.
+          {!completado && (
+            <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Tiempo estimado total: ~{fmtSeg(plan.etaSeg)}. Puedes cerrar esta ventana; el envío continúa en segundo plano.
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+        <button
+          onClick={onClose}
+          className={`px-5 py-2.5 rounded-lg font-semibold text-sm text-white ${
+            completado ? "bg-green-600 hover:bg-green-700" : "bg-gray-500 hover:bg-gray-600"
+          }`}
+        >
+          {completado ? "Finalizar" : "Cerrar (sigue en segundo plano)"}
+        </button>
+      </div>
+    </>
   );
 }

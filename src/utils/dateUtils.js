@@ -40,21 +40,25 @@ export const isCouponExpired = (fechaExpiracion) => {
   return hoySoloDia > exp;
 };
 
-export const isCourseExpired = (course) => {
-  if (!course.fecha) return false; // Si no tiene fecha, considerar como no expirado
-  
+/**
+ * ¿El curso está FINALIZADO? Ahora la finalización es MANUAL (la decide el
+ * administrador con el botón "Finalizar"); ya NO se calcula por la fecha.
+ */
+export const isCourseExpired = (course) => !!course?.finalizado;
+
+/**
+ * ¿El curso se está dando EN ESTE MOMENTO? Ya llegó su fecha/hora de inicio y el
+ * administrador aún no lo ha marcado como finalizado.
+ */
+export const isCourseLive = (course) => {
+  if (!course || course.finalizado) return false;
+  if (!course.fecha) return false;
   try {
-    // Crear fecha del curso (combinar fecha y hora si existe)
-    const courseDateTime = course.hora 
-      ? `${course.fecha}T${course.hora}` 
+    const courseDateTime = course.hora
+      ? `${course.fecha}T${course.hora}`
       : `${course.fecha}T00:00`;
-    
-    const courseDate = new Date(courseDateTime);
-    const now = new Date();
-    
-    return courseDate < now;
-  } catch (error) {
-    console.error("Error verificando fecha del curso:", error);
+    return new Date(courseDateTime) <= new Date();
+  } catch {
     return false;
   }
 };

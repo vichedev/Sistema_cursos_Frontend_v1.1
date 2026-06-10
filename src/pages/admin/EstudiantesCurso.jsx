@@ -12,6 +12,8 @@ import {
   FaArrowLeft,
   FaEnvelope,
   FaIdBadge,
+  FaPhone,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 import { HiOutlineAcademicCap } from "react-icons/hi";
 import { FiUsers, FiDownload, FiMail } from "react-icons/fi";
@@ -650,8 +652,24 @@ export default function EstudiantesCurso() {
                       </h3>
                       <div className="flex items-center gap-1 mt-1 text-gray-600 dark:text-gray-300 transition-colors duration-200">
                         <FaEnvelope className="text-blue-500 text-xs" />
-                        <span className="text-xs truncate">{est.correo}</span>
+                        <span className="text-xs truncate">{est.correo || "—"}</span>
                       </div>
+                      <div className="flex items-center gap-1 mt-0.5 text-gray-600 dark:text-gray-300">
+                        <FaPhone className="text-green-500 text-xs" />
+                        <span className="text-xs">{est.celular || "Sin teléfono"}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5 text-gray-600 dark:text-gray-300">
+                        <FaIdBadge className="text-gray-400 text-xs" />
+                        <span className="text-xs font-mono">{est.cedula || "—"}</span>
+                      </div>
+                      {(est.pais || est.ciudad) && (
+                        <div className="flex items-center gap-1 mt-0.5 text-gray-600 dark:text-gray-300">
+                          <FaMapMarkerAlt className="text-purple-500 text-xs" />
+                          <span className="text-xs">
+                            {est.pais || ""}{est.ciudad ? ` · ${est.ciudad}` : ""}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Pago */}
                       <div className="mt-2">
@@ -691,7 +709,13 @@ export default function EstudiantesCurso() {
                       Estudiante
                     </th>
                     <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Correo electrónico
+                      Contacto
+                    </th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Cédula
+                    </th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      País / Ciudad
                     </th>
                     <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider rounded-tr-xl md:rounded-tr-2xl">
                       Pago
@@ -722,10 +746,32 @@ export default function EstudiantesCurso() {
                         </div>
                       </td>
                       <td className="px-4 md:px-6 py-3 md:py-4">
-                        <div className="flex items-center gap-2">
-                          <FiMail className="text-blue-500 text-sm md:text-lg" />
-                          <span className="text-gray-700 dark:text-gray-300 text-sm md:text-base transition-colors duration-200">
-                            {est.correo}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <FiMail className="text-blue-500 text-sm" />
+                            <span className="text-gray-700 dark:text-gray-300 text-xs md:text-sm transition-colors duration-200">
+                              {est.correo || "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <FaPhone className="text-green-500 text-xs" />
+                            <span className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
+                              {est.celular || "Sin teléfono"}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <span className="text-gray-700 dark:text-gray-300 text-sm font-mono">
+                          {est.cedula || "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                          <FaMapMarkerAlt className="text-purple-500 text-xs" />
+                          <span>
+                            {est.pais || "—"}
+                            {est.ciudad ? ` · ${est.ciudad}` : ""}
                           </span>
                         </div>
                       </td>
