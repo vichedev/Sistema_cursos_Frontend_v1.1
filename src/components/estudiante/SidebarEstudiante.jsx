@@ -87,6 +87,13 @@ export default function SidebarEstudiante({ onNavigate }) {
           onNavigate={onNavigate}
           badge={diplomaNotifications.length > 0 ? diplomaNotifications.length : null}
         />
+        <SidebarLink
+          to="/estudiante/mi-perfil"
+          label="Mi Perfil"
+          icon="👤"
+          active={location.pathname === "/estudiante/mi-perfil"}
+          onNavigate={onNavigate}
+        />
       </nav>
 
       {/* Footer */}

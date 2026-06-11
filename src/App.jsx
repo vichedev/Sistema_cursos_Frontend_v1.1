@@ -36,6 +36,7 @@ import DashboardEstudiante from "./pages/estudiante/DashboardEstudiante";
 import CursosEstudiante from "./pages/estudiante/CursosEstudiante";
 import MisCursos from "./pages/estudiante/MisCursos";
 import MisDiplomas from "./pages/estudiante/MisDiplomas";
+import MiPerfil from "./pages/estudiante/MiPerfil";
 
 // PAGOS
 import PaymentSuccess from "./pages/estudiante/PaymentSuccess";
@@ -95,6 +96,7 @@ function App() {
               <Route path="cursos" element={<CursosEstudiante />} />
               <Route path="mis-cursos" element={<MisCursos />} />
               <Route path="mis-diplomas" element={<MisDiplomas />} />
+              <Route path="mi-perfil" element={<MiPerfil />} />
             </Route>
 
             {/* PAGOS */}

@@ -786,20 +786,56 @@ export default function MisCursos() {
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200 p-4 sm:p-6">
-      {/* Header con gradiente - Oculto en móvil */}
-      <div className="hidden md:block bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">MIS CURSOS</h1>
-            <p className="text-blue-100">
-              Gestiona y accede a todos tus cursos inscritos
+      {/* HEADER + FILTROS — compacto y responsivo (filtros a la derecha) */}
+      <div className="mb-4 flex flex-col gap-3">
+        {/* Barra de título compacta */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl px-5 py-3.5 text-white shadow-md flex items-center gap-3">
+          <FaGraduationCap className="text-xl flex-shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-xl font-bold leading-tight">Mis cursos</h1>
+            <p className="text-blue-100 text-xs">
+              {statistics.total} inscrito{statistics.total === 1 ? "" : "s"} · {statistics.cursosActivos.length} activos
             </p>
+          </div>
+        </div>
+
+        {/* Búsqueda (crece) + tabs de filtro (derecha, scroll en móvil) */}
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch">
+          <div className="relative flex-1">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar mis cursos..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white text-sm"
+            />
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto sm:ml-auto pb-1 -mb-1 flex-shrink-0">
+            {[
+              { key: "ACTIVOS", label: "Activos", count: statistics.cursosActivos.length },
+              { key: "INACTIVOS", label: "Inactivos", count: statistics.cursosInactivos.length },
+              { key: "GRATIS", label: "Gratis", count: statistics.cursosGratis.length },
+              { key: "PAGADOS", label: "Pagados", count: statistics.cursosPagados.length },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={`whitespace-nowrap px-3 py-2 rounded-xl text-sm font-medium transition ${
+                  activeTab === tab.key
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              >
+                {tab.label} <span className="opacity-70">({tab.count})</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* BARRA DE BÚSQUEDA Y FILTROS - VERSIÓN COMPLETA */}
-      <div className="relative">
+      {/* (oculto: barra antigua) */}
+      <div className="relative hidden">
         {/* VERSIÓN DESKTOP */}
         <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 mb-6">
           <div className="flex flex-col lg:flex-row items-stretch gap-4">

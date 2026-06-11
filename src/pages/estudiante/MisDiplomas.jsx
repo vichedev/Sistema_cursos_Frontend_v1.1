@@ -194,43 +194,40 @@ export default function MisDiplomas() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-amber-500 via-yellow-500 to-amber-600 px-6 py-8 sm:py-10 shadow-lg">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-inner">
-              <FaAward className="text-white text-2xl" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 transition-colors duration-200">
+      <div className="max-w-6xl mx-auto">
+      {/* Header compacto: título + stats inline + búsqueda a la derecha */}
+      <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl px-5 py-3.5 shadow-md mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 sm:flex-1">
+            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+              <FaAward className="text-white text-lg" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Mis Diplomas</h1>
-              <p className="text-amber-100 text-sm mt-0.5">
-                {totalDiplomas > 0
-                  ? `Tienes ${totalDiplomas} diploma${totalDiplomas !== 1 ? "s" : ""} — ¡felicitaciones!`
-                  : "Aquí aparecerán tus diplomas cuando el administrador los emita"}
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-xl font-bold text-white leading-tight">Mis diplomas</h1>
+              <p className="text-amber-100 text-xs">
+                {totalDiplomas} diploma{totalDiplomas === 1 ? "" : "s"} · {cursos.length - totalDiplomas} pendiente
+                {cursos.length - totalDiplomas === 1 ? "" : "s"}
               </p>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 text-center">
-              <p className="text-2xl sm:text-3xl font-bold text-white">{totalDiplomas}</p>
-              <p className="text-xs text-amber-100 mt-0.5 flex items-center justify-center gap-1"><FaAward className="text-[10px]" /> Diplomas</p>
+          {cursos.length > 0 && (
+            <div className="relative sm:w-72 flex-shrink-0">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70 text-sm pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar curso..."
+                className="w-full pl-9 pr-3 py-2 rounded-lg bg-white/15 border border-white/25 text-white placeholder-white/70 text-sm focus:outline-none focus:ring-2 focus:ring-white/60 focus:bg-white focus:text-gray-900 focus:placeholder-gray-400 transition"
+              />
             </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 text-center">
-              <p className="text-2xl sm:text-3xl font-bold text-white">{cursos.length}</p>
-              <p className="text-xs text-amber-100 mt-0.5 flex items-center justify-center gap-1"><FaBookOpen className="text-[10px]" /> Cursos</p>
-            </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 text-center">
-              <p className="text-2xl sm:text-3xl font-bold text-white">{cursos.length - totalDiplomas}</p>
-              <p className="text-xs text-amber-100 mt-0.5 flex items-center justify-center gap-1"><FaClock className="text-[10px]" /> Pendientes</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <div>
         {/* Empty state — no courses at all */}
         {cursos.length === 0 && (
           <div className="text-center py-20">
@@ -247,20 +244,6 @@ export default function MisDiplomas() {
             >
               <FaBookOpen /> Explorar cursos disponibles
             </Link>
-          </div>
-        )}
-
-        {/* Search */}
-        {cursos.length > 0 && (
-          <div className="relative mb-6">
-            <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre del curso..."
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-sm"
-            />
           </div>
         )}
 
@@ -323,6 +306,7 @@ export default function MisDiplomas() {
             </p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
