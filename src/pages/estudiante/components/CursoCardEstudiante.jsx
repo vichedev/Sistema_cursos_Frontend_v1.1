@@ -13,6 +13,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { isCourseExpired, isCourseLive } from "../../../utils/dateUtils";
+import HorariosLatam from "../../../components/HorariosLatam";
 import { getCourseLaunchInfo } from "../utils/courseSorting";
 import {
   isTodayCourse,
@@ -240,6 +241,10 @@ export default function CursoCardEstudiante({
             <span className="font-medium">⏰ {curso.hora || "Por definir"}</span>
           </div>
         </div>
+
+        {/* Horarios por país (LATAM) */}
+        <HorariosLatam fecha={curso.fecha} hora={curso.hora} zonaHoraria={curso.zonaHoraria} titulo={curso.titulo} />
+
 
         {/* BOTONES DE ACCIÓN */}
         <div>

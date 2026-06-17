@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/axiosInstance";
 import {
   FaUserGraduate,
@@ -14,6 +14,7 @@ import {
   FaIdBadge,
   FaPhone,
   FaMapMarkerAlt,
+  FaSearch,
 } from "react-icons/fa";
 import { HiOutlineAcademicCap } from "react-icons/hi";
 import { FiUsers, FiDownload, FiMail } from "react-icons/fi";
@@ -27,6 +28,8 @@ export default function EstudiantesCurso() {
   const [curso, setCurso] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterPais, setFilterPais] = useState("");
   const [paymentData, setPaymentData] = useState({
     totalRecaudado: 0,
     estudiantesPagados: 0,
@@ -331,6 +334,42 @@ export default function EstudiantesCurso() {
     console.log("💰 Total recaudado:", paymentData.totalRecaudado);
     console.log("📋 Datos de estudiantes:", estudiantes); // Para debug
   };
+
+  // Conteo de estudiantes por país (para chips/filtro)
+  const paisOptions = useMemo(() => {
+    const m = new Map();
+    estudiantes.forEach((e) => {
+      const p = e.pais || "Sin país";
+      m.set(p, (m.get(p) || 0) + 1);
+    });
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }, [estudiantes]);
+
+  // Lista filtrada por búsqueda + país
+  const filteredEstudiantes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return estudiantes.filter((e) => {
+      const pais = e.pais || "Sin país";
+      if (filterPais && pais !== filterPais) return false;
+      if (q) {
+        const hay = `${e.nombres || ""} ${e.apellidos || ""} ${e.correo || ""} ${e.cedula || ""} ${e.celular || ""} ${e.ciudad || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [estudiantes, search, filterPais]);
+
+  const fmtRegistro = (d) => {
+    if (!d) return "—";
+    try {
+      return new Date(d).toLocaleString("es-EC", {
+        day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+      });
+    } catch {
+      return "—";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -630,9 +669,71 @@ export default function EstudiantesCurso() {
           </div>
         ) : (
           <>
+            {/* ── Filtros: búsqueda + país ── */}
+            <div className="flex flex-col lg:flex-row gap-3 lg:items-center mb-4">
+              <div className="relative flex-1">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nombre, cédula, correo, teléfono o ciudad..."
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <select
+                value={filterPais}
+                onChange={(e) => setFilterPais(e.target.value)}
+                className="rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">Todos los países ({estudiantes.length})</option>
+                {paisOptions.map(([pais, count]) => (
+                  <option key={pais} value={pais}>{pais} ({count})</option>
+                ))}
+              </select>
+              <span className="text-sm text-gray-400 whitespace-nowrap">
+                {filteredEstudiantes.length} de {estudiantes.length}
+              </span>
+            </div>
+
+            {/* ── Chips: cuántos por país (clic para filtrar) ── */}
+            {paisOptions.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-5">
+                <button
+                  onClick={() => setFilterPais("")}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                    !filterPais
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  🌎 Todos · {estudiantes.length}
+                </button>
+                {paisOptions.map(([pais, count]) => (
+                  <button
+                    key={pais}
+                    onClick={() => setFilterPais(filterPais === pais ? "" : pais)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                      filterPais === pais
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    📍 {pais} · {count}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {filteredEstudiantes.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <FaSearch className="mx-auto text-3xl mb-2 opacity-40" />
+                No hay estudiantes que coincidan con el filtro.
+              </div>
+            ) : (
+            <>
             {/* Mobile Cards */}
             <div className="block md:hidden space-y-3">
-              {estudiantes.map((est, i) => (
+              {filteredEstudiantes.map((est, i) => (
                 <div
                   key={est.id || i}
                   className="bg-white dark:bg-gray-700 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 p-4 hover:shadow-md transition-all duration-200"
@@ -670,6 +771,10 @@ export default function EstudiantesCurso() {
                           </span>
                         </div>
                       )}
+                      <div className="flex items-center gap-1 mt-0.5 text-gray-500 dark:text-gray-400">
+                        <FaClock className="text-gray-400 text-xs" />
+                        <span className="text-xs">{fmtRegistro(est.fechaInscripcion)}</span>
+                      </div>
 
                       {/* Pago */}
                       <div className="mt-2">
@@ -717,13 +822,16 @@ export default function EstudiantesCurso() {
                     <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                       País / Ciudad
                     </th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Registro
+                    </th>
                     <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider rounded-tr-xl md:rounded-tr-2xl">
                       Pago
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600 transition-colors duration-200">
-                  {estudiantes.map((est, i) => (
+                  {filteredEstudiantes.map((est, i) => (
                     <tr
                       key={est.id || i}
                       className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
@@ -776,6 +884,12 @@ export default function EstudiantesCurso() {
                         </div>
                       </td>
                       <td className="px-4 md:px-6 py-3 md:py-4">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          <FaClock className="text-gray-400" />
+                          {fmtRegistro(est.fechaInscripcion)}
+                        </div>
+                      </td>
+                      <td className="px-4 md:px-6 py-3 md:py-4">
                         {est.montoPagado > 0 ? (
                           <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-3 py-2 rounded-lg md:rounded-xl text-sm md:text-base transition-colors duration-200">
                             <FaDollarSign className="text-sm md:text-lg" />
@@ -797,6 +911,8 @@ export default function EstudiantesCurso() {
                 </tbody>
               </table>
             </div>
+            </>
+            )}
 
             {/* Summary Footer */}
             <div className="mt-6 md:mt-8 p-4 md:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl md:rounded-2xl border border-blue-200 dark:border-blue-800 transition-colors duration-200">

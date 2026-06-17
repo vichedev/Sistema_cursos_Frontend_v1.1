@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import api from "../../utils/axiosInstance";
 import { formatDateOnly } from "../../utils/dateUtils";
 import { compressImage } from "../../utils/compressImage";
+import { LATAM_TIMEZONES } from "../../utils/timezones";
 import CursoImageUpload from "../../components/admin/CursoImageUpload";
 import CursoRecursos from "../../components/admin/CursoRecursos";
 import {
@@ -24,6 +25,7 @@ import {
   FaLink,
   FaFileAlt,
   FaTags,
+  FaGlobeAmericas,
   FaUsers,
   FaDollarSign,
   FaBell,
@@ -63,6 +65,7 @@ export default function CrearCurso() {
     precio: 0,
     fecha: "",
     hora: "",
+    zonaHoraria: "America/Guayaquil",
     notificarCorreo: false,
     notificarWhatsapp: false,
   });
@@ -436,6 +439,7 @@ export default function CrearCurso() {
         precio: 0,
         fecha: "",
         hora: "",
+        zonaHoraria: "America/Guayaquil",
         notificarCorreo: false,
         notificarWhatsapp: false,
       });
@@ -552,6 +556,13 @@ export default function CrearCurso() {
                   />
                 </Field>
               </div>
+              <Field label="Zona horaria del curso" icon={<FaGlobeAmericas />} hint="La hora se ingresa en esta zona; los estudiantes la verán convertida a su país (LATAM).">
+                <select name="zonaHoraria" value={form.zonaHoraria} onChange={handleChange} className={inputCls(false)}>
+                  {LATAM_TIMEZONES.map((z) => (
+                    <option key={z.code} value={z.tz}>{z.flag} {z.name} ({z.tz})</option>
+                  ))}
+                </select>
+              </Field>
               <Field
                 label={form.tipo.startsWith("ONLINE") ? "Link de la videollamada" : "Ubicación (Google Maps)"}
                 icon={<FaLink />}

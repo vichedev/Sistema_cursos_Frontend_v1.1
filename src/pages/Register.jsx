@@ -7,6 +7,11 @@ import { City } from "country-state-city";
 import InternationalPhoneInput from "../components/InternationalPhoneInput";
 import "../styles/phone-input.css";
 import { LATAM_COUNTRIES } from "../constants/latam-countries";
+
+// Ciudades faltantes o mal registradas en country-state-city que añadimos manualmente
+const EXTRA_CITIES = {
+  VE: ["San Fernando de Apure"], // capital del estado Apure (no estaba en la librería)
+};
 import {
   sanitizeInput,
   sanitizeEmail,
@@ -80,7 +85,14 @@ export default function Register() {
 
       setLoadingCiudades(true);
       try {
-        const cities = City.getCitiesOfCountry(form.pais) || [];
+        let cities = City.getCitiesOfCountry(form.pais) || [];
+        // Ciudades que faltan o están mal en la librería (se agregan/corrigen)
+        const extras = (EXTRA_CITIES[form.pais] || [])
+          .filter((name) => !cities.some((c) => c.name.toLowerCase() === name.toLowerCase()))
+          .map((name) => ({ name, countryCode: form.pais, stateCode: "", latitude: "", longitude: "" }));
+        if (extras.length) {
+          cities = [...cities, ...extras].sort((a, b) => a.name.localeCompare(b.name, "es"));
+        }
         setCiudades(cities);
       } catch (error) {
         console.error("Error cargando ciudades:", error);

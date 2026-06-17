@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../../utils/axiosInstance";
 import { formatDateOnly } from "../../utils/dateUtils";
 import { compressImage } from "../../utils/compressImage";
+import { LATAM_TIMEZONES } from "../../utils/timezones";
 import Swal from "sweetalert2";
 import { FiArrowLeft } from "react-icons/fi";
 import {
@@ -57,6 +58,7 @@ export default function EditarCurso() {
     precio: 0,
     fecha: "",
     hora: "",
+    zonaHoraria: "America/Guayaquil",
   });
   const [imagenFile, setImagenFile] = useState(null);
   const [preview, setPreview] = useState("");
@@ -135,6 +137,7 @@ export default function EditarCurso() {
           precio: precioValue,
           fecha: curso.fecha || "",
           hora: curso.hora || "",
+          zonaHoraria: curso.zonaHoraria || "America/Guayaquil",
         });
 
         setTempCupos(cuposValue === 0 ? "" : cuposValue.toString());
@@ -463,6 +466,7 @@ export default function EditarCurso() {
 
       data.append("fecha", form.fecha);
       data.append("hora", form.hora);
+      data.append("zonaHoraria", form.zonaHoraria || "America/Guayaquil");
 
       if (cupones.length > 0) {
         const cuponesParaEnviar = prepararCuponesParaEnvio();
@@ -615,6 +619,13 @@ export default function EditarCurso() {
                 </Field>
                 <Field label="Hora" error={errors.hora}>
                   <TimeField value={form.hora} error={errors.hora} onChange={(v) => handleChange({ target: { name: "hora", value: v } })} />
+                </Field>
+                <Field label="Zona horaria del curso" hint="Los estudiantes la verán convertida a su país (LATAM).">
+                  <select name="zonaHoraria" value={form.zonaHoraria} onChange={handleChange} className={inputCls(false)}>
+                    {LATAM_TIMEZONES.map((z) => (
+                      <option key={z.code} value={z.tz}>{z.flag} {z.name} ({z.tz})</option>
+                    ))}
+                  </select>
                 </Field>
               </div>
               <Field

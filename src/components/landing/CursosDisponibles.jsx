@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import HorariosLatam from "../HorariosLatam";
 import {
   FaEye,
   FaTimes,
@@ -513,6 +514,11 @@ function CursoCard({ curso, onAccessClick, categoria }) {
                 ⏰ {curso.hora || "Por definir"}
               </span>
             </div>
+          </div>
+
+          {/* Horarios por país (LATAM) */}
+          <div className="mb-4">
+            <HorariosLatam fecha={curso.fecha} hora={curso.hora} zonaHoraria={curso.zonaHoraria} titulo={curso.titulo} />
           </div>
 
           {/* BOTÓN DE ACCESO */}
