@@ -75,12 +75,19 @@ export function useUsuarios() {
           cursos: Array.isArray(u.cursos) ? u.cursos : [],
         });
 
-        const estudiantes = convertirAArray(res.data.estudiantes).map(
+        const todosEstudiantes = convertirAArray(res.data.estudiantes).map(
           normalizarUsuario,
         );
         const administradores = convertirAArray(res.data.administradores).map(
           normalizarUsuario,
         );
+
+        // Solo los estudiantes "correctos" se muestran en Usuarios Inscritos:
+        // verificados, no suspendidos y con correo no inválido. El resto se
+        // gestiona en el módulo "Verificación".
+        const esCorrecto = (u) =>
+          u.emailVerified && !u.suspendido && u.emailEstado !== "invalido";
+        const estudiantes = todosEstudiantes.filter(esCorrecto);
 
         setData({ estudiantes, administradores });
       })

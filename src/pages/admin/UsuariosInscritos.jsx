@@ -63,14 +63,31 @@ const COUNTRY_NAMES = {
 };
 const countryLabel = (code) => COUNTRY_NAMES[code] || code;
 
-// Badge del estado de validación del correo
-function EmailEstadoBadge({ estado }) {
+// Dominios de proveedores conocidos: se consideran reales sin necesidad de sondeo
+const DOMINIOS_CONFIABLES = new Set([
+  "gmail.com", "googlemail.com", "hotmail.com", "hotmail.es", "outlook.com",
+  "outlook.es", "live.com", "msn.com", "yahoo.com", "yahoo.es", "ymail.com",
+  "icloud.com", "me.com", "aol.com", "proton.me", "protonmail.com",
+]);
+
+// Badge del estado de validación del correo.
+// Si no se ha revisado pero la cuenta está verificada (o el dominio es confiable),
+// el buzón es real → se muestra como tal automáticamente.
+function EmailEstadoBadge({ estado, verified, correo }) {
+  let efectivo = estado;
+  if (!efectivo) {
+    const dominio = (correo || "").split("@")[1]?.toLowerCase();
+    if (verified || (dominio && DOMINIOS_CONFIABLES.has(dominio))) {
+      efectivo = "valido";
+    }
+  }
+
   const map = {
     valido: { cls: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400", label: "✅ Real" },
     riesgoso: { cls: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400", label: "⚠️ Dudoso" },
     invalido: { cls: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400", label: "❌ Inválido" },
   };
-  const m = map[estado];
+  const m = map[efectivo];
   if (!m) {
     return (
       <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full text-xs font-medium">
@@ -222,7 +239,9 @@ const ESTUDIANTES_COLUMNS = [
     label: "Correo real",
     sortable: true,
     defaultVisible: true,
-    render: (val) => <EmailEstadoBadge estado={val} />,
+    render: (val, row) => (
+      <EmailEstadoBadge estado={val} verified={row?.emailVerified} correo={row?.correo} />
+    ),
   },
   {
     key: "suspendido",
@@ -1407,51 +1426,6 @@ export default function UsuariosInscritos() {
                       tone="purple"
                     />
                   </div>
-
-                  {/* ── Zona de estudiantes sin verificar ── */}
-                  {estudiantesStats.noVerificados > 0 && (
-                    <div className="mb-5 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
-                          <FaExclamationTriangle />
-                        </span>
-                        <div>
-                          <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm">
-                            Hay {estudiantesStats.noVerificados} estudiante
-                            {estudiantesStats.noVerificados === 1 ? "" : "s"} sin verificar
-                          </p>
-                          <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">
-                            Verifícalos en un clic o revisa solo los pendientes.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() =>
-                            setFilterVerificado(
-                              filterVerificado === "noVerificados" ? "todos" : "noVerificados",
-                            )
-                          }
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition"
-                        >
-                          <FaFilter className="text-xs" />
-                          {filterVerificado === "noVerificados" ? "Ver todos" : "Ver solo pendientes"}
-                        </button>
-                        <button
-                          onClick={handleBulkVerify}
-                          disabled={verifyingBulk}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm disabled:opacity-60"
-                        >
-                          {verifyingBulk ? (
-                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <FaUserCheck />
-                          )}
-                          Verificar todos ({estudiantesStats.noVerificados})
-                        </button>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Vista móvil (tarjetas) */}
                   <div className="block md:hidden">

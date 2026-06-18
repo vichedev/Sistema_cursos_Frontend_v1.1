@@ -15,6 +15,10 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
   const cursosRoutes = ["/admin/crear-curso", "/admin/ver-todo", "/admin/material-didactico", "/admin/categorias"];
   const cursosActive = cursosRoutes.includes(location.pathname);
 
+  // Rutas del grupo desplegable "Usuarios"
+  const usuariosRoutes = ["/admin/usuarios-inscritos", "/admin/verificacion"];
+  const usuariosActive = usuariosRoutes.includes(location.pathname);
+
   useEffect(() => {
     const usuario = localStorage.getItem("usuario") || "Administrador";
     const nombres = localStorage.getItem("nombres") || "";
@@ -144,10 +148,9 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
             onNavigate={onNavigate}
           />
         </SidebarGroup>
-        <SidebarLink
-          to="/admin/usuarios-inscritos"
-          label="Usuarios Inscritos"
-          active={location.pathname === "/admin/usuarios-inscritos"}
+        <SidebarGroup
+          label="Usuarios"
+          defaultOpen={usuariosActive}
           icon={
             <img
               src="https://img.icons8.com/?size=100&id=CiGKDwbd2k7v&format=png&color=0077B6"
@@ -155,8 +158,30 @@ export default function SidebarAdmin({ className = "", onNavigate }) {
               alt=""
             />
           }
-          onNavigate={onNavigate}
-        />
+        >
+          <SidebarLink
+            to="/admin/usuarios-inscritos"
+            label="Usuarios Inscritos"
+            active={location.pathname === "/admin/usuarios-inscritos"}
+            icon={
+              <span className="text-xl leading-none" role="img" aria-label="inscritos">
+                👥
+              </span>
+            }
+            onNavigate={onNavigate}
+          />
+          <SidebarLink
+            to="/admin/verificacion"
+            label="Verificación"
+            active={location.pathname === "/admin/verificacion"}
+            icon={
+              <span className="text-xl leading-none" role="img" aria-label="verificacion">
+                🛡️
+              </span>
+            }
+            onNavigate={onNavigate}
+          />
+        </SidebarGroup>
         <SidebarLink
           to="/admin/gestionar-cupones"
           label="Gestión de Cupones"

@@ -19,6 +19,7 @@ import CrearCurso from "./pages/admin/CrearCurso";
 import EditarCurso from "./pages/admin/EditarCurso";
 import EstudiantesCurso from "./pages/admin/EstudiantesCurso";
 import UsuariosInscritos from "./pages/admin/UsuariosInscritos";
+import Verificacion from "./pages/admin/Verificacion";
 import VerTodosLosCursos from "./pages/admin/VerTodosLosCursos";
 import GestionarCupones from "./pages/admin/GestionarCupones";
 // ✅ NUEVO
@@ -78,6 +79,7 @@ function App() {
                 path="usuarios-inscritos"
                 element={<UsuariosInscritos />}
               />
+              <Route path="verificacion" element={<Verificacion />} />
               <Route path="gestionar-cupones" element={<GestionarCupones />} />
               {/* ✅ NUEVO */}
               <Route path="diplomas" element={<GestionDiplomas />} />
