@@ -47,6 +47,10 @@ import {
   FaCheckCircle,
   FaExclamationTriangle,
   FaGlobeAmericas,
+  FaEnvelopeOpenText,
+  FaUserSlash,
+  FaUserShield,
+  FaBan,
 } from "react-icons/fa";
 
 // Nombres de países por código ISO (para mostrar bonito en filtros y chips)
@@ -58,6 +62,28 @@ const COUNTRY_NAMES = {
   BR: "Brasil", PR: "Puerto Rico", US: "Estados Unidos", ES: "España",
 };
 const countryLabel = (code) => COUNTRY_NAMES[code] || code;
+
+// Badge del estado de validación del correo
+function EmailEstadoBadge({ estado }) {
+  const map = {
+    valido: { cls: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400", label: "✅ Real" },
+    riesgoso: { cls: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400", label: "⚠️ Dudoso" },
+    invalido: { cls: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400", label: "❌ Inválido" },
+  };
+  const m = map[estado];
+  if (!m) {
+    return (
+      <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full text-xs font-medium">
+        — Sin revisar
+      </span>
+    );
+  }
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${m.cls}`}>
+      {m.label}
+    </span>
+  );
+}
 
 // ─── Función helper: banderas de países ───────────────────────────────────────
 const getCountryFlag = (pais) => {
@@ -188,6 +214,32 @@ const ESTUDIANTES_COLUMNS = [
       ) : (
         <span className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold">
           ✗ No
+        </span>
+      ),
+  },
+  {
+    key: "emailEstado",
+    label: "Correo real",
+    sortable: true,
+    defaultVisible: true,
+    render: (val) => <EmailEstadoBadge estado={val} />,
+  },
+  {
+    key: "suspendido",
+    label: "Estado cuenta",
+    sortable: true,
+    defaultVisible: true,
+    render: (val, row) =>
+      val ? (
+        <span
+          title={row?.motivoSuspension || "Cuenta suspendida"}
+          className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full text-xs font-semibold"
+        >
+          ⛔ Suspendida
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full text-xs font-medium">
+          ● Activa
         </span>
       ),
   },
@@ -477,6 +529,211 @@ export default function UsuariosInscritos() {
     }
   };
 
+  // Verifica si el correo del estudiante es real (sintaxis + dominio MX + buzón).
+  const handleValidateEmail = async (user) => {
+    const dark = isDarkMode();
+    Swal.fire({
+      title: "Verificando correo…",
+      html: `<span style="font-size:0.9rem">${user.correo}</span>`,
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+      background: dark ? "#1f2937" : "#fff",
+      color: dark ? "#f9fafb" : "#111827",
+    });
+    try {
+      const { data } = await api.post(`/api/users/${user.id}/validate-email`);
+      const r = data.data;
+      const icon =
+        r.estado === "valido" ? "success" : r.estado === "riesgoso" ? "warning" : "error";
+      Swal.fire({
+        icon,
+        title:
+          r.estado === "valido"
+            ? "Correo real ✅"
+            : r.estado === "riesgoso"
+            ? "Correo dudoso ⚠️"
+            : "Correo inválido ❌",
+        html: `
+          <div style="text-align:left; font-size:0.9rem; line-height:1.6">
+            <p style="margin:0 0 .5rem"><b>${user.correo}</b></p>
+            <p style="margin:0 0 .5rem">${r.razon}</p>
+            <ul style="margin:0; padding-left:1.1rem; color:${dark ? "#9ca3af" : "#6b7280"}">
+              <li>Sintaxis: ${r.sintaxis ? "✓" : "✗"}</li>
+              <li>Dominio con servidor de correo (MX): ${r.mx ? "✓" : "✗"}</li>
+              <li>Buzón: ${
+                r.smtp === "valido"
+                  ? "✓ existe"
+                  : r.smtp === "invalido"
+                  ? "✗ no existe"
+                  : r.estado === "valido"
+                  ? "proveedor confiable (Gmail/Outlook no permiten sondearlo)"
+                  : "no se pudo sondear"
+              }</li>
+            </ul>
+            ${r.sugerencia ? `<p style="margin:.5rem 0 0; color:#f59e0b">Sugerencia: ${r.sugerencia}</p>` : ""}
+            <p style="margin:.7rem 0 0; padding-top:.6rem; border-top:1px solid ${dark ? "#374151" : "#e5e7eb"}; font-size:0.8rem; color:${dark ? "#9ca3af" : "#6b7280"}">
+              💡 La confirmación 100% del buzón es la columna <b>"Verificado"</b>: si el usuario hizo clic en el correo de verificación, el buzón existe y es suyo.
+            </p>
+          </div>`,
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+        confirmButtonColor: "#2563eb",
+      });
+      fetchUsuarios();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || "No se pudo verificar el correo",
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+    }
+  };
+
+  // Suspende la cuenta de un estudiante (no podrá entrar hasta reactivarla).
+  const handleSuspend = async (user) => {
+    const dark = isDarkMode();
+    const { value: motivo, isConfirmed } = await Swal.fire({
+      icon: "warning",
+      title: "Suspender cuenta",
+      html: `<p style="font-size:0.9rem; margin-bottom:.5rem"><b>${user.nombres} ${user.apellidos}</b><br>${user.correo}</p>`,
+      input: "text",
+      inputLabel: "Motivo (lo verá el usuario al intentar entrar)",
+      inputValue: "Datos pendientes de revalidación. Contacta a soporte.",
+      inputPlaceholder: "Motivo de la suspensión",
+      showCancelButton: true,
+      confirmButtonText: "Sí, suspender",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#f59e0b",
+      background: dark ? "#1f2937" : "#fff",
+      color: dark ? "#f9fafb" : "#111827",
+    });
+    if (!isConfirmed) return;
+    try {
+      await api.post(`/api/users/${user.id}/suspender`, { motivo });
+      Swal.fire({
+        icon: "success",
+        title: "Cuenta suspendida",
+        text: "El usuario no podrá iniciar sesión hasta que la reactives.",
+        timer: 2200,
+        showConfirmButton: false,
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+      fetchUsuarios();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || "No se pudo suspender la cuenta",
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+    }
+  };
+
+  // Reactiva una cuenta suspendida (tras revalidar datos con soporte).
+  const handleReactivate = async (user) => {
+    const dark = isDarkMode();
+    const { isConfirmed } = await Swal.fire({
+      icon: "question",
+      title: "Reactivar cuenta",
+      html: `<p style="font-size:0.9rem"><b>${user.nombres} ${user.apellidos}</b><br>${user.correo}</p><p style="font-size:0.85rem; margin-top:.5rem">Podrá volver a iniciar sesión.</p>`,
+      showCancelButton: true,
+      confirmButtonText: "Sí, reactivar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#10b981",
+      background: dark ? "#1f2937" : "#fff",
+      color: dark ? "#f9fafb" : "#111827",
+    });
+    if (!isConfirmed) return;
+    try {
+      await api.post(`/api/users/${user.id}/reactivar`);
+      Swal.fire({
+        icon: "success",
+        title: "Cuenta reactivada",
+        timer: 1800,
+        showConfirmButton: false,
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+      fetchUsuarios();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || "No se pudo reactivar la cuenta",
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+    }
+  };
+
+  // Verifica en lote los correos de los estudiantes que aún no se han revisado.
+  const handleVerifyEmailsBulk = async () => {
+    const dark = isDarkMode();
+    const pendientes = (data.estudiantes || []).filter((u) => !u.emailEstado);
+    if (pendientes.length === 0) {
+      Swal.fire({
+        icon: "info",
+        title: "Todo revisado",
+        text: "Todos los correos ya fueron verificados. Usa el botón de cada fila para volver a revisar uno.",
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+      return;
+    }
+    const confirm = await Swal.fire({
+      icon: "question",
+      title: `¿Verificar ${pendientes.length} correos?`,
+      text: "Se comprobará el dominio y la existencia de cada buzón. Puede tardar un momento.",
+      showCancelButton: true,
+      confirmButtonText: "Sí, verificar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#4f46e5",
+      background: dark ? "#1f2937" : "#fff",
+      color: dark ? "#f9fafb" : "#111827",
+    });
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({
+      title: "Verificando correos…",
+      html: `Procesando <b>${pendientes.length}</b> correos. No cierres esta ventana.`,
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+      background: dark ? "#1f2937" : "#fff",
+      color: dark ? "#f9fafb" : "#111827",
+    });
+    try {
+      const ids = pendientes.map((u) => u.id);
+      const { data: res } = await api.post("/api/users/validate-emails-bulk", { ids });
+      const r = res.resumen || {};
+      Swal.fire({
+        icon: "success",
+        title: "Verificación completada",
+        html: `
+          <div style="text-align:left; font-size:0.95rem; line-height:1.7">
+            <p style="margin:0">✅ Reales: <b>${r.valido || 0}</b></p>
+            <p style="margin:0">⚠️ Dudosos: <b>${r.riesgoso || 0}</b></p>
+            <p style="margin:0">❌ Inválidos: <b>${r.invalido || 0}</b></p>
+          </div>`,
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+        confirmButtonColor: "#2563eb",
+      });
+      fetchUsuarios();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || "No se pudieron verificar los correos",
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+    }
+  };
+
   const handleUpdateUser = async (updatedUser) => {
     setModalLoading(true);
     setModalError(null);
@@ -648,6 +905,32 @@ export default function UsuariosInscritos() {
           >
             <FaUserCheck />
           </button>
+        )}
+        <button
+          onClick={() => handleValidateEmail(user)}
+          className="p-2 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800/30 transition-colors duration-200"
+          title="Verificar si el correo es real"
+        >
+          <FaEnvelopeOpenText />
+        </button>
+        {user.suspendido ? (
+          <button
+            onClick={() => handleReactivate(user)}
+            className="p-2 bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-800/30 transition-colors duration-200"
+            title="Reactivar cuenta"
+          >
+            <FaUserShield />
+          </button>
+        ) : (
+          (!user.emailVerified || user.emailEstado === "invalido") && (
+            <button
+              onClick={() => handleSuspend(user)}
+              className="p-2 bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800/30 transition-colors duration-200"
+              title="Suspender cuenta (hasta revalidar con soporte)"
+            >
+              <FaUserSlash />
+            </button>
+          )
         )}
         <button
           onClick={() => handleView(user)}
@@ -854,6 +1137,17 @@ export default function UsuariosInscritos() {
                     >
                       <FaPlus className="flex-shrink-0 text-xs" />
                       <span className="whitespace-nowrap">Agregar</span>
+                    </button>
+                  )}
+
+                  {activeTab === "estudiantes" && (
+                    <button
+                      onClick={handleVerifyEmailsBulk}
+                      className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded-xl transition shadow-md text-xs sm:text-sm"
+                      title="Verificar qué correos son reales"
+                    >
+                      <FaEnvelopeOpenText className="flex-shrink-0 text-xs" />
+                      <span className="whitespace-nowrap">Verificar correos</span>
                     </button>
                   )}
 

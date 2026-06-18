@@ -72,6 +72,38 @@ export default function Register() {
   const [ciudades, setCiudades] = useState([]);
   const [loadingCiudades, setLoadingCiudades] = useState(false);
 
+  // Verificación en vivo del correo (¿es real?): { loading, estado, razon, sugerencia }
+  const [emailCheck, setEmailCheck] = useState(null);
+  const emailCheckTimer = useRef(null);
+
+  // Llama al backend para validar si el correo es real (con debounce).
+  const checkEmailLive = useCallback((correo) => {
+    if (emailCheckTimer.current) clearTimeout(emailCheckTimer.current);
+    const value = (correo || "").trim();
+    if (!isValidEmail(value)) {
+      setEmailCheck(null);
+      return;
+    }
+    setEmailCheck({ loading: true });
+    emailCheckTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/auth/check-email`,
+          { correo: value },
+        );
+        const r = data?.data || {};
+        setEmailCheck({
+          loading: false,
+          estado: r.estado,
+          razon: r.razon,
+          sugerencia: r.sugerencia,
+        });
+      } catch {
+        setEmailCheck(null); // si falla la verificación, no estorbar
+      }
+    }, 650);
+  }, []);
+
   // País seleccionado
   const selectedCountry = LATAM_COUNTRIES.find((c) => c.code === form.pais);
 
@@ -252,7 +284,17 @@ export default function Register() {
       setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     }
 
+    if (name === "correo") checkEmailLive(sanitizedValue);
+
     debouncedValidate(name, sanitizedValue);
+  };
+
+  // Aplica la sugerencia de corrección del dominio (typo) al correo.
+  const aplicarSugerenciaCorreo = () => {
+    if (!emailCheck?.sugerencia) return;
+    setForm((prev) => ({ ...prev, correo: emailCheck.sugerencia }));
+    setFieldErrors((prev) => ({ ...prev, correo: "" }));
+    checkEmailLive(emailCheck.sugerencia);
   };
 
   // Validación completa del formulario
@@ -315,6 +357,31 @@ export default function Register() {
     setFieldErrors((prev) => ({ ...prev, ...errors }));
     return Object.keys(errors).length === 0;
   };
+
+  // ¿Está todo el registro correcto para habilitar el botón "Crear Cuenta"?
+  const isFormComplete = useMemo(() => {
+    const f = form;
+    const soloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const nombresOk = !!f.nombres.trim() && soloLetras.test(f.nombres);
+    const apellidosOk = !!f.apellidos.trim() && soloLetras.test(f.apellidos);
+    // Correo: formato válido y que la verificación en vivo NO lo marque inválido
+    // (si la verificación falló o no corrió, se permite y el backend lo valida).
+    const correoOk =
+      !!f.correo.trim() &&
+      isValidEmail(f.correo) &&
+      !(emailCheck && emailCheck.loading) &&
+      !(emailCheck && emailCheck.estado === "invalido");
+    const paisOk = !!f.pais;
+    const usuarioOk = f.usuario.trim().length >= 3;
+    const cedulaOk = !!f.cedula.trim() && isValidCedula(f.cedula, f.pais);
+    const celularOk = !!f.celular.trim() && isValidCelular(f.celular);
+    const passwordOk = f.password.trim().length >= 6;
+    const ciudadOk = !!f.ciudad.trim();
+    return (
+      nombresOk && apellidosOk && correoOk && paisOk &&
+      usuarioOk && cedulaOk && celularOk && passwordOk && ciudadOk
+    );
+  }, [form, emailCheck]);
 
   // Manejar errores del backend
   const handleBackendErrors = (errorResponse) => {
@@ -663,6 +730,42 @@ export default function Register() {
                       {fieldErrors.correo}
                     </p>
                   )}
+
+                  {/* Verificación en vivo: ¿el correo es real? */}
+                  {!fieldErrors.correo && emailCheck && (
+                    <div className="mt-1.5 text-sm">
+                      {emailCheck.loading ? (
+                        <span className="inline-flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          Verificando correo…
+                        </span>
+                      ) : emailCheck.estado === "valido" ? (
+                        <span className="inline-flex items-center gap-1.5 text-green-600 dark:text-green-400 font-medium">
+                          ✅ Correo válido
+                        </span>
+                      ) : emailCheck.estado === "riesgoso" ? (
+                        <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                          ⚠️ No pudimos confirmar este correo, revísalo bien
+                        </span>
+                      ) : (
+                        <div className="text-red-600 dark:text-red-400">
+                          <span className="font-medium">❌ {emailCheck.razon || "Correo no válido"}</span>
+                          {emailCheck.sugerencia && (
+                            <button
+                              type="button"
+                              onClick={aplicarSugerenciaCorreo}
+                              className="ml-2 underline font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700"
+                            >
+                              Usar {emailCheck.sugerencia}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -833,9 +936,16 @@ export default function Register() {
               <div className="pt-4">
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className={`w-full py-4 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ${
-                    isLoading ? "opacity-75 cursor-not-allowed" : ""
+                  disabled={isLoading || !isFormComplete}
+                  title={
+                    !isFormComplete
+                      ? "Completa todos los campos correctamente para crear la cuenta"
+                      : ""
+                  }
+                  className={`w-full py-4 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-lg shadow-lg transition-all duration-200 ${
+                    isLoading || !isFormComplete
+                      ? "opacity-60 cursor-not-allowed"
+                      : "hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl transform hover:scale-[1.02]"
                   }`}
                 >
                   {isLoading ? (
@@ -866,6 +976,11 @@ export default function Register() {
                     "Crear Cuenta"
                   )}
                 </button>
+                {!isLoading && !isFormComplete && (
+                  <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+                    Completa todos los campos correctamente para crear tu cuenta
+                  </p>
+                )}
               </div>
 
               {/* Link a login */}

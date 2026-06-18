@@ -1,6 +1,7 @@
 // src/pages/admin/modals/ModalCrearUsuarioAdmin.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Swal from "sweetalert2";
+import api from "../../../utils/axiosInstance";
 import {
   FaUserPlus,
   FaEnvelope,
@@ -114,6 +115,41 @@ export default function ModalCrearUsuarioAdmin({
   const [touched, setTouched] = useState({});
   const firstInputRef = useRef(null);
 
+  // Verificación en vivo del correo (¿es real?)
+  const [emailCheck, setEmailCheck] = useState(null);
+  const emailCheckTimer = useRef(null);
+
+  const checkEmailLive = useCallback((correo) => {
+    if (emailCheckTimer.current) clearTimeout(emailCheckTimer.current);
+    const value = (correo || "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setEmailCheck(null);
+      return;
+    }
+    setEmailCheck({ loading: true });
+    emailCheckTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await api.post("/api/auth/check-email", { correo: value });
+        const r = data?.data || {};
+        setEmailCheck({
+          loading: false,
+          estado: r.estado,
+          razon: r.razon,
+          sugerencia: r.sugerencia,
+        });
+      } catch {
+        setEmailCheck(null);
+      }
+    }, 650);
+  }, []);
+
+  const aplicarSugerenciaCorreo = () => {
+    if (!emailCheck?.sugerencia) return;
+    setForm((f) => ({ ...f, correo: emailCheck.sugerencia }));
+    setFieldErrors((p) => ({ ...p, correo: "" }));
+    checkEmailLive(emailCheck.sugerencia);
+  };
+
   // Foco al abrir
   useEffect(() => {
     firstInputRef.current?.focus();
@@ -171,7 +207,28 @@ export default function ModalCrearUsuarioAdmin({
     setTouched((t) => ({ ...t, [name]: true }));
     if (fieldErrors[name]) setFieldErrors((p) => ({ ...p, [name]: "" }));
     if (generalError) setGeneralError("");
+    if (name === "correo") checkEmailLive(v);
   };
+
+  // ¿Está todo el formulario correcto para habilitar "Crear Administrador"?
+  const isFormComplete = useMemo(() => {
+    const f = form;
+    const soloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const correoOk =
+      !!f.correo.trim() &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.correo) &&
+      !(emailCheck && emailCheck.loading) &&
+      !(emailCheck && emailCheck.estado === "invalido");
+    return (
+      !!f.nombres.trim() && soloLetras.test(f.nombres) &&
+      !!f.apellidos.trim() && soloLetras.test(f.apellidos) &&
+      correoOk &&
+      f.usuario.trim().length >= 3 &&
+      f.cedula.length === 10 &&
+      f.celular.length === EC_DIGITS &&
+      f.password.trim().length >= 6
+    );
+  }, [form, emailCheck]);
 
   const handleBlur = (name) => {
     setTouched((t) => ({ ...t, [name]: true }));
@@ -407,6 +464,31 @@ export default function ModalCrearUsuarioAdmin({
               className={`${inputCls(fieldErrors.correo)} pl-9`}
             />
           </div>
+          {/* Verificación en vivo: ¿el correo es real? */}
+          {!fieldErrors.correo && emailCheck && (
+            <div className="mt-1 text-xs">
+              {emailCheck.loading ? (
+                <span className="text-gray-500 dark:text-gray-400">Verificando correo…</span>
+              ) : emailCheck.estado === "valido" ? (
+                <span className="text-green-600 dark:text-green-400 font-medium">✅ Correo válido</span>
+              ) : emailCheck.estado === "riesgoso" ? (
+                <span className="text-amber-600 dark:text-amber-400">⚠️ No se pudo confirmar, revísalo bien</span>
+              ) : (
+                <span className="text-red-600 dark:text-red-400">
+                  ❌ {emailCheck.razon || "Correo no válido"}
+                  {emailCheck.sugerencia && (
+                    <button
+                      type="button"
+                      onClick={aplicarSugerenciaCorreo}
+                      className="ml-2 underline font-semibold text-blue-600 dark:text-blue-400"
+                    >
+                      Usar {emailCheck.sugerencia}
+                    </button>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
         </Field>
 
         {/* ── Usuario y Contraseña ── */}
@@ -585,11 +667,16 @@ export default function ModalCrearUsuarioAdmin({
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isFormComplete}
+            title={
+              !isFormComplete
+                ? "Completa todos los campos correctamente para crear el usuario"
+                : ""
+            }
             className={`flex-[2] py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200
               ${
-                loading
-                  ? "bg-blue-400 cursor-not-allowed"
+                loading || !isFormComplete
+                  ? "bg-blue-400 opacity-60 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-blue-300/40 active:scale-[0.98]"
               }`}
           >

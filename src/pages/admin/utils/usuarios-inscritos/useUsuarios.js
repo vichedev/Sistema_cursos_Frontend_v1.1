@@ -6,7 +6,25 @@ export function useUsuarios() {
   const [data, setData] = useState({ estudiantes: [], administradores: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("estudiantes");
+  // La pestaña activa se recuerda entre visitas (persistente en el navegador)
+  const [activeTab, setActiveTabState] = useState(() => {
+    try {
+      const saved = localStorage.getItem("usuarios_activeTab");
+      return saved === "administradores" || saved === "estudiantes"
+        ? saved
+        : "estudiantes";
+    } catch {
+      return "estudiantes";
+    }
+  });
+  const setActiveTab = useCallback((tab) => {
+    setActiveTabState(tab);
+    try {
+      localStorage.setItem("usuarios_activeTab", tab);
+    } catch {
+      /* almacenamiento no disponible */
+    }
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
   // ✅ FIX: leadingEdge true para que el primer valor vacío ("") se aplique inmediatamente
