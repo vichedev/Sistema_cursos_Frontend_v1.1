@@ -88,8 +88,10 @@ export default function Verificacion() {
         const arr = Array.isArray(res.data.estudiantes)
           ? res.data.estudiantes
           : Object.values(res.data.estudiantes || {});
+        // Problemáticos = no verificados o con correo inválido. Los suspendidos
+        // que están verificados se gestionan desde Usuarios Inscritos.
         const problematicos = arr.filter(
-          (u) => !(u.emailVerified && !u.suspendido && u.emailEstado !== "invalido"),
+          (u) => !u.emailVerified || u.emailEstado === "invalido",
         );
         setEstudiantes(problematicos);
       })

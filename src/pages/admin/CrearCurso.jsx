@@ -407,9 +407,15 @@ export default function CrearCurso() {
 
       if (imagenFile) data.append("imagen", imagenFile);
 
+      // Recordamos los canales elegidos antes de resetear el formulario
+      const notiCorreo = form.notificarCorreo;
+      const notiWhatsapp = form.notificarWhatsapp;
+
       const res = await api.post(`/api/courses/create`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      const dark = document.documentElement.classList.contains("dark");
 
       // Toast fugaz de confirmación
       Swal.fire({
@@ -420,9 +426,55 @@ export default function CrearCurso() {
         showConfirmButton: false,
         timer: 2000,
         timerProgressBar: true,
-        background: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
-        color: document.documentElement.classList.contains("dark") ? "#f9fafb" : "#111827",
+        background: dark ? "#1f2937" : "#ffffff",
+        color: dark ? "#f9fafb" : "#111827",
       });
+
+      // ── Notificaciones: aviso atractivo + validación SMTP ──
+      if (notiCorreo || notiWhatsapp) {
+        let smtpOk = true;
+        if (notiCorreo) {
+          try {
+            const r = await api.get("/api/settings/smtp-status");
+            smtpOk = r.data?.ok !== false;
+          } catch {
+            smtpOk = true; // si no se pudo verificar, no estorbar
+          }
+        }
+
+        if (notiCorreo && !smtpOk) {
+          await Swal.fire({
+            icon: "warning",
+            title: "Curso creado, pero el correo no saldrá",
+            html: `
+              <div style="text-align:left;font-size:0.92rem;line-height:1.6">
+                <p>El servidor de correo (SMTP) <b>no está disponible</b> (credenciales incorrectas o caducadas).</p>
+                <p>El curso se creó correctamente, pero <b>las notificaciones por correo no se enviarán</b> hasta corregir el SMTP.</p>
+                <p style="margin-top:.6rem">👉 Ve a <b>Configuración → Correo (SMTP)</b>, corrige los datos y luego usa <b>“Reenviar notificaciones”</b> desde la tarjeta del curso.</p>
+              </div>`,
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#2563eb",
+            background: dark ? "#1f2937" : "#fff",
+            color: dark ? "#f9fafb" : "#111827",
+          });
+        } else {
+          const canales = [notiCorreo && "📧 correo", notiWhatsapp && "📱 WhatsApp"]
+            .filter(Boolean)
+            .join(" y ");
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "info",
+            title: `📨 Notificaciones en cola (${canales})`,
+            html: `<span style="font-size:0.8rem">Se envían por lotes para evitar bloqueos. Verás el progreso en pantalla.</span>`,
+            showConfirmButton: false,
+            timer: 4200,
+            timerProgressBar: true,
+            background: dark ? "#1f2937" : "#ffffff",
+            color: dark ? "#f9fafb" : "#111827",
+          });
+        }
+      }
 
       // Abre el modal del curso recién creado (elegir material ahora o después).
       setMaterialMode(null);

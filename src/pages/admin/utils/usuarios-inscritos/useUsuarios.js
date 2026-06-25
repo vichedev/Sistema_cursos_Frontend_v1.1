@@ -82,12 +82,13 @@ export function useUsuarios() {
           normalizarUsuario,
         );
 
-        // Solo los estudiantes "correctos" se muestran en Usuarios Inscritos:
-        // verificados, no suspendidos y con correo no inválido. El resto se
-        // gestiona en el módulo "Verificación".
-        const esCorrecto = (u) =>
-          u.emailVerified && !u.suspendido && u.emailEstado !== "invalido";
-        const estudiantes = todosEstudiantes.filter(esCorrecto);
+        // En Usuarios Inscritos salen los estudiantes "válidos": verificados y con
+        // correo no inválido. Los SUSPENDIDOS también aparecen aquí (mostrando su
+        // estado), porque siguen siendo usuarios reales. Los no verificados o con
+        // correo inválido se gestionan en el módulo "Verificación".
+        const esInscrito = (u) =>
+          u.emailVerified && u.emailEstado !== "invalido";
+        const estudiantes = todosEstudiantes.filter(esInscrito);
 
         setData({ estudiantes, administradores });
       })

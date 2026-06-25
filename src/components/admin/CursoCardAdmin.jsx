@@ -416,6 +416,69 @@ export default function CursoCardAdmin({
     }
   }, [curso.id, curso.finalizado, setCursos]);
 
+  // ✅ Reenviar notificaciones de "nuevo curso" (si no salieron o fallaron por SMTP)
+  const reenviarNotificaciones = useCallback(async () => {
+    const dark = document.documentElement.classList.contains("dark");
+    const { value, isConfirmed } = await Swal.fire({
+      title: "Reenviar notificaciones",
+      html: `
+        <p style="font-size:0.9rem;margin:0 0 .6rem">Avisar a los estudiantes sobre <b>${curso.titulo}</b>:</p>
+        <div style="text-align:left;display:inline-block;font-size:0.95rem">
+          <label style="display:block;margin-bottom:.4rem"><input type="checkbox" id="rn-correo" checked> 📧 Correo</label>
+          <label style="display:block"><input type="checkbox" id="rn-wa"> 📱 WhatsApp</label>
+        </div>`,
+      showCancelButton: true,
+      confirmButtonText: "Reenviar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#2563eb",
+      background: dark ? "#1f2937" : "#fff",
+      color: dark ? "#f9fafb" : "#111827",
+      preConfirm: () => ({
+        correo: document.getElementById("rn-correo")?.checked,
+        whatsapp: document.getElementById("rn-wa")?.checked,
+      }),
+    });
+    if (!isConfirmed) return;
+    if (!value.correo && !value.whatsapp) {
+      Swal.fire({ icon: "info", title: "Selecciona un canal", text: "Marca correo y/o WhatsApp.", background: dark ? "#1f2937" : "#fff", color: dark ? "#f9fafb" : "#111827" });
+      return;
+    }
+    try {
+      const { data } = await api.post(`/api/courses/${curso.id}/notificar`, {
+        notificarCorreo: value.correo,
+        notificarWhatsapp: value.whatsapp,
+      });
+      if (value.correo && data?.smtpOk === false) {
+        Swal.fire({
+          icon: "warning",
+          title: "SMTP no disponible",
+          html: `<p style="font-size:0.92rem">Las notificaciones por correo <b>no saldrán</b> porque el SMTP falla (credenciales). Corrígelo en <b>Configuración → Correo (SMTP)</b> y vuelve a reenviar.</p>`,
+          confirmButtonColor: "#2563eb",
+          background: dark ? "#1f2937" : "#fff",
+          color: dark ? "#f9fafb" : "#111827",
+        });
+      } else {
+        Swal.fire({
+          icon: "success",
+          title: "Notificaciones en cola",
+          text: "Se envían por lotes (anti-baneo). Verás el progreso en pantalla.",
+          timer: 2600,
+          showConfirmButton: false,
+          background: dark ? "#1f2937" : "#fff",
+          color: dark ? "#f9fafb" : "#111827",
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.message || "No se pudieron reenviar las notificaciones",
+        background: dark ? "#1f2937" : "#fff",
+        color: dark ? "#f9fafb" : "#111827",
+      });
+    }
+  }, [curso.id, curso.titulo]);
+
   const eliminarPermanentemente = useCallback(async () => {
     const confirm = await Swal.fire({
       title: "¿Eliminar permanentemente?",
@@ -736,6 +799,15 @@ export default function CursoCardAdmin({
                   <span className="truncate">
                     {loading ? "..." : curso.finalizado ? "Reabrir" : "Finalizar"}
                   </span>
+                </button>
+                <button
+                  onClick={reenviarNotificaciones}
+                  disabled={loading}
+                  title="Reenviar notificaciones de este curso a los estudiantes"
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 text-white font-semibold shadow-lg hover:from-indigo-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 flex-1 min-w-0 text-sm sm:text-base disabled:opacity-50"
+                >
+                  <span className="text-xs sm:text-sm">📨</span>
+                  <span className="truncate">Notificar</span>
                 </button>
                 <button
                   onClick={archivarCurso}

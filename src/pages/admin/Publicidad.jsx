@@ -904,7 +904,13 @@ function StudentPicker({ channels, initial, onClose, onConfirm }) {
     });
   }, [students, search, fCiudad, fEmpresa, fCurso]);
 
+  // Un estudiante NO es seleccionable si está suspendido o su correo es inválido.
+  // (Evita que la publicidad por correo se mande a cuentas problemáticas.)
+  const motivoBloqueo = (s) =>
+    s.suspendido ? "⛔ Suspendido" : s.emailEstado === "invalido" ? "❌ Correo inválido" : null;
+
   const toggle = (s) => {
+    if (motivoBloqueo(s)) return; // no se puede seleccionar
     setSelected((prev) => {
       const next = new Map(prev);
       if (next.has(s.id)) next.delete(s.id);
@@ -913,14 +919,17 @@ function StudentPicker({ channels, initial, onClose, onConfirm }) {
     });
   };
 
-  const allFilteredSelected = filtered.length > 0 && filtered.every((s) => selected.has(s.id));
+  // Solo cuentan los seleccionables para "seleccionar todos"
+  const seleccionables = filtered.filter((s) => !motivoBloqueo(s));
+  const allFilteredSelected =
+    seleccionables.length > 0 && seleccionables.every((s) => selected.has(s.id));
   const toggleAllFiltered = () => {
     setSelected((prev) => {
       const next = new Map(prev);
       if (allFilteredSelected) {
-        filtered.forEach((s) => next.delete(s.id));
+        seleccionables.forEach((s) => next.delete(s.id));
       } else {
-        filtered.forEach((s) =>
+        seleccionables.forEach((s) =>
           next.set(s.id, { id: s.id, nombre: `${s.nombres} ${s.apellidos}`.trim(), correo: s.correo, celular: s.celular }),
         );
       }
@@ -986,7 +995,7 @@ function StudentPicker({ channels, initial, onClose, onConfirm }) {
           <div className="flex items-center justify-between text-sm">
             <label className="inline-flex items-center gap-2 cursor-pointer text-gray-600 dark:text-gray-300">
               <input type="checkbox" checked={allFilteredSelected} onChange={toggleAllFiltered} className="w-4 h-4 accent-orange-500" />
-              Seleccionar los {filtered.length} resultados
+              Seleccionar los {seleccionables.length} disponibles
             </label>
             <span className="text-gray-400">{filtered.length} de {students.length}</span>
           </div>
@@ -1003,16 +1012,23 @@ function StudentPicker({ channels, initial, onClose, onConfirm }) {
           ) : (
             filtered.map((s) => {
               const isSel = selected.has(s.id);
+              const bloqueo = motivoBloqueo(s);
               return (
                 <button
                   key={s.id}
                   onClick={() => toggle(s)}
+                  disabled={!!bloqueo}
+                  title={bloqueo ? `No disponible: ${bloqueo}` : ""}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition mb-1 ${
-                    isSel ? "bg-orange-50 dark:bg-orange-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    bloqueo
+                      ? "opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800/40"
+                      : isSel
+                      ? "bg-orange-50 dark:bg-orange-900/20"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   }`}
                 >
-                  <span className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center ${isSel ? "bg-orange-500 border-orange-500 text-white" : "border-gray-300 dark:border-gray-500"}`}>
-                    {isSel && <FaCheck size={10} />}
+                  <span className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center ${bloqueo ? "border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700" : isSel ? "bg-orange-500 border-orange-500 text-white" : "border-gray-300 dark:border-gray-500"}`}>
+                    {bloqueo ? <span className="text-gray-400 text-xs">✕</span> : isSel && <FaCheck size={10} />}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
@@ -1024,7 +1040,12 @@ function StudentPicker({ channels, initial, onClose, onConfirm }) {
                       {s.empresa && ` · ${s.empresa}`}
                     </p>
                   </div>
-                  <div className="flex-shrink-0 flex gap-1">
+                  <div className="flex-shrink-0 flex gap-1 items-center">
+                    {bloqueo && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 font-semibold whitespace-nowrap">
+                        {bloqueo}
+                      </span>
+                    )}
                     {channels.email && (
                       <span className={`text-[10px] px-1.5 py-0.5 rounded ${s.correo ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300" : "bg-gray-100 text-gray-400 dark:bg-gray-700"}`}>
                         {s.correo ? "✉" : "sin correo"}

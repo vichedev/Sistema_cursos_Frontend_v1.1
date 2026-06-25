@@ -941,15 +941,13 @@ export default function UsuariosInscritos() {
             <FaUserShield />
           </button>
         ) : (
-          (!user.emailVerified || user.emailEstado === "invalido") && (
-            <button
-              onClick={() => handleSuspend(user)}
-              className="p-2 bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800/30 transition-colors duration-200"
-              title="Suspender cuenta (hasta revalidar con soporte)"
-            >
-              <FaUserSlash />
-            </button>
-          )
+          <button
+            onClick={() => handleSuspend(user)}
+            className="p-2 bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800/30 transition-colors duration-200"
+            title="Suspender cuenta (hasta revalidar con soporte)"
+          >
+            <FaUserSlash />
+          </button>
         )}
         <button
           onClick={() => handleView(user)}
